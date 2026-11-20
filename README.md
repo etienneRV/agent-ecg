@@ -94,3 +94,10 @@ opentslm/        train.py, predict.py, common.py (GPU only), and a dataset class
 tests/           metric, parser and converter tests (uv run pytest)
 results/         baseline scores (Markdown + JSON)
 ```
+
+## Licence
+
+The code is MIT-licensed (see [LICENSE](LICENSE)). The data is not part of this repository: the
+nebius/SWE-agent-trajectories release is CC BY 4.0, its model outputs also fall under the Llama 3.1
+License, and the base models you fine-tune (Llama 3.2, Gemma 3) keep their own licences.
+
