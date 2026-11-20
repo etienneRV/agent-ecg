@@ -14,7 +14,7 @@ is heading for success. We turned 80,036 runs of SWE-agent on real GitHub issues
 dataset of **checkpoints**: the first 5, 10, 20 or 30 steps of a run that is still going. A model sees
 per-step signals, the agent's own reasoning and the issue, and must predict whether the run will
 resolve the issue, how it will end, and write a short status report. On held-out repositories, a
-simple model of the agent's thoughts reaches AUROC 0.68-0.70 at every checkpoint, against 0.61 for a
+simple model of the agent's thoughts reaches AUROC 0.68-0.70 at every checkpoint, against 0.61-0.62 for a
 model that reads only the issue: the agent's behaviour carries signal beyond how hard the issue is.
 That is the bar our OpenTSLM model has to clear.
 
@@ -80,7 +80,8 @@ on the held-out **test** split. Three choices matter:
 
 ## 5. Baselines
 
-All baselines run on a laptop CPU, train on train, tune on validation, and are scored on test. Each
+All baselines run on a laptop CPU, train on train, tune on validation (by mean per-checkpoint
+AUROC), and are scored on test. Each
 checkpoint is weighted by 1 / (checkpoints of its run) so long, failing runs do not count four times.
 
 | Baseline | Inputs | Model |
@@ -104,7 +105,7 @@ agent-based baselines beat the issue-only one, the monitor really learns from th
 | Baseline | 5 steps | 10 steps | 20 steps | 30 steps |
 | --- | --- | --- | --- | --- |
 | majority | 0.50 (0.16) | 0.50 (0.14) | 0.50 (0.07) | 0.50 (0.06) |
-| issue only | 0.61 [0.54, 0.69] (0.24) | 0.62 [0.55, 0.69] (0.22) | 0.61 [0.50, 0.70] (0.11) | 0.61 [0.46, 0.71] (0.09) |
+| issue only | 0.61 [0.54, 0.69] (0.25) | 0.62 [0.55, 0.70] (0.23) | 0.62 [0.50, 0.70] (0.11) | 0.62 [0.46, 0.72] (0.10) |
 | signals | 0.61 [0.56, 0.66] (0.24) | 0.63 [0.58, 0.67] (0.21) | 0.65 [0.56, 0.73] (0.12) | 0.67 [0.58, 0.77] (0.11) |
 | thoughts | **0.68** [0.63, 0.73] (0.28) | **0.70** [0.65, 0.75] (0.26) | 0.70 [0.61, 0.77] (0.17) | **0.70** [0.60, 0.79] (0.13) |
 | signals+thoughts | 0.68 [0.63, 0.73] (0.29) | 0.69 [0.64, 0.74] (0.25) | **0.71** [0.63, 0.78] (0.16) | 0.70 [0.62, 0.77] (0.15) |
@@ -116,13 +117,13 @@ agent-based baselines beat the issue-only one, the monitor really learns from th
 
   | AUROC gain over issue-only | 5 steps | 10 steps | 20 steps | 30 steps |
   | --- | --- | --- | --- | --- |
-  | thoughts | **+0.07** [+0.01, +0.13] | **+0.09** [+0.02, +0.15] | **+0.09** [+0.02, +0.17] | **+0.09** [+0.01, +0.19] |
-  | signals | -0.01 [-0.08, +0.07] | +0.02 [-0.05, +0.08] | +0.04 [-0.07, +0.13] | +0.06 [-0.05, +0.19] |
+  | thoughts | **+0.07** [+0.01, +0.13] | **+0.09** [+0.01, +0.15] | **+0.09** [+0.01, +0.17] | **+0.09** [+0.003, +0.19] |
+  | signals | -0.01 [-0.08, +0.07] | +0.01 [-0.06, +0.08] | +0.04 [-0.07, +0.13] | +0.06 [-0.05, +0.19] |
 
   The thoughts often restate the issue, so part of their score may still be issue difficulty; the
   gain is what watching the agent adds on top.
 - **The step signals trend upward as the run goes on** (0.61 at 5 steps to 0.67 at 30) while the
-  issue-only model stays flat at 0.61, which is the ECG idea: the longer you watch, the more the trace
+  issue-only model stays flat at 0.61-0.62, which is the ECG idea: the longer you watch, the more the trace
   says. With this test set the trend is not yet significant (the intervals above include 0).
 - **Combining signals and thoughts in a linear model adds nothing yet.** A model that reads the trace
   as a sequence, such as a TSLM, is the obvious next step.
@@ -161,7 +162,7 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
   best checkpoint is chosen by validation pass/fail AUROC. Two runs: all three tasks vs pass/fail only.
 - **Plan:** a 20-step smoke test on the GPU, then the full fine-tune on Nebius GPUs;
   scored with the same script, against the baselines above.
-- **Bar to clear:** AUROC above the thoughts baseline (0.68 / 0.70 / 0.70 / 0.70 at 5 / 10 / 20 / 30 steps), and clearly above the issue-only model, so the gain comes from watching the agent.
+- **Bar to clear:** AUROC above the thoughts baseline (0.68 / 0.70 / 0.70 / 0.70 at 5 / 10 / 20 / 30 steps), and clearly above the issue-only model (0.61-0.62), so the gain comes from watching the agent.
 
 ## 7. Limitations
 
