@@ -47,6 +47,18 @@ def _evaluate(args: argparse.Namespace) -> None:
         args.json.write_text(json.dumps(report, indent=2))
 
 
+def _compare(args: argparse.Namespace) -> None:
+    gold = data.load_checkpoints(args.data)
+    read = lambda path: pd.read_csv(path) if path.suffix == ".csv" else pd.read_parquet(path)  # noqa: E731
+    result = metrics.paired_auroc_gain(gold, read(args.a), read(args.b), args.split)
+    print(f"AUROC of {args.a.stem} minus {args.b.stem} ({args.split}, paired repository bootstrap)")
+    for k, row in result.items():
+        low, high = row["gain_95"]
+        print(
+            f"  {k}: {row['gain']:+.3f} [{low:+.3f}, {high:+.3f}]  share of resamples not better: {row['p_not_better']:.3f}"
+        )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="agent-ecg", description=__doc__)
     parser.add_argument("--data", type=Path, default=Path("data"), help="where the flattened tables live")
@@ -66,6 +78,12 @@ def main() -> None:
     evaluate.add_argument("--split", default="test", choices=("validation", "test"))
     evaluate.add_argument("--json", type=Path, help="also write the report as JSON here")
     evaluate.set_defaults(run=_evaluate)
+
+    compare = commands.add_parser("compare", help="paired AUROC gain of predictions A over B, per checkpoint")
+    compare.add_argument("a", type=Path)
+    compare.add_argument("b", type=Path)
+    compare.add_argument("--split", default="test", choices=("validation", "test"))
+    compare.set_defaults(run=_compare)
 
     args = parser.parse_args()
     args.run(args)

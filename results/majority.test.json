@@ -1,0 +1,155 @@
+{
+  "split": "test",
+  "checkpoints": 19169,
+  "outcome": {
+    "k=5": {
+      "n": 7640,
+      "resolved_rate": 0.1643979057591623,
+      "auroc": 0.5,
+      "auroc_95": [
+        0.5,
+        0.5
+      ],
+      "auprc": 0.1643979057591623,
+      "brier": 0.13737426649750709,
+      "balanced_accuracy": 0.5
+    },
+    "k=10": {
+      "n": 6003,
+      "resolved_rate": 0.14059636848242546,
+      "auroc": 0.5,
+      "auroc_95": [
+        0.5,
+        0.5
+      ],
+      "auprc": 0.14059636848242546,
+      "brier": 0.12084474378932472,
+      "balanced_accuracy": 0.5
+    },
+    "k=20": {
+      "n": 3365,
+      "resolved_rate": 0.07102526002971768,
+      "auroc": 0.5,
+      "auroc_95": [
+        0.5,
+        0.5
+      ],
+      "auprc": 0.07102526002971768,
+      "brier": 0.06605786273877542,
+      "balanced_accuracy": 0.5
+    },
+    "k=30": {
+      "n": 2161,
+      "resolved_rate": 0.05876908838500694,
+      "auroc": 0.5,
+      "auroc_95": [
+        0.5,
+        0.5
+      ],
+      "auprc": 0.05876908838500694,
+      "brier": 0.055697995624855855,
+      "balanced_accuracy": 0.5
+    },
+    "all (pooled)": {
+      "n": 19169,
+      "resolved_rate": 0.12864520840941102,
+      "auroc": 0.5945869148807911,
+      "auroc_95": [
+        0.57491258872666,
+        0.6137481196839395
+      ],
+      "auprc": 0.15636764305281645,
+      "brier": 0.11047099325314641,
+      "balanced_accuracy": 0.5
+    }
+  },
+  "ending": {
+    "k=5": {
+      "n": 7640,
+      "accuracy": 0.625392670157068,
+      "macro_f1": 0.128254684060772
+    },
+    "k=10": {
+      "n": 6003,
+      "accuracy": 0.5443944694319507,
+      "macro_f1": 0.11749901125373026
+    },
+    "k=20": {
+      "n": 3365,
+      "accuracy": 0.2674591381872214,
+      "macro_f1": 0.07033997655334115
+    },
+    "k=30": {
+      "n": 2161,
+      "accuracy": 0.12494215640906987,
+      "macro_f1": 0.03702180172768408
+    },
+    "all (pooled)": {
+      "n": 19169,
+      "accuracy": 0.4807762533256821,
+      "macro_f1": 0.10822617579707593
+    }
+  },
+  "status": {
+    "k=5": {
+      "n": 7640,
+      "parse_rate": 1.0,
+      "remaining_mae": 15.339921465968587,
+      "remaining_median_ae": 9.0,
+      "ending_accuracy": 0.625392670157068,
+      "ending_macro_f1": 0.128254684060772,
+      "resolved_balanced_accuracy": 0.5,
+      "description_exact": 1.0,
+      "token_f1_full_text": 0.9694329889923268,
+      "token_f1_prediction": 0.8986693203614757
+    },
+    "k=10": {
+      "n": 6003,
+      "parse_rate": 1.0,
+      "remaining_mae": 16.206063634849244,
+      "remaining_median_ae": 10.0,
+      "ending_accuracy": 0.5443944694319507,
+      "ending_macro_f1": 0.11749901125373026,
+      "resolved_balanced_accuracy": 0.5,
+      "description_exact": 1.0,
+      "token_f1_full_text": 0.9653052121200973,
+      "token_f1_prediction": 0.8855392402965799
+    },
+    "k=20": {
+      "n": 3365,
+      "parse_rate": 1.0,
+      "remaining_mae": 17.7851411589896,
+      "remaining_median_ae": 9.0,
+      "ending_accuracy": 0.2674591381872214,
+      "ending_macro_f1": 0.07033997655334115,
+      "resolved_balanced_accuracy": 0.5,
+      "description_exact": 1.0,
+      "token_f1_full_text": 0.9531512912087827,
+      "token_f1_prediction": 0.8473659977228476
+    },
+    "k=30": {
+      "n": 2161,
+      "parse_rate": 1.0,
+      "remaining_mae": 19.988894030541417,
+      "remaining_median_ae": 9.0,
+      "ending_accuracy": 0.12494215640906987,
+      "ending_macro_f1": 0.03702180172768408,
+      "resolved_balanced_accuracy": 0.5,
+      "description_exact": 1.0,
+      "token_f1_full_text": 0.946461598476365,
+      "token_f1_prediction": 0.8266249461288029
+    },
+    "all (pooled)": {
+      "n": 19169,
+      "parse_rate": 1.0,
+      "remaining_mae": 16.56450519067244,
+      "remaining_median_ae": 9.0,
+      "ending_accuracy": 0.4807762533256821,
+      "ending_macro_f1": 0.10822617579707593,
+      "resolved_balanced_accuracy": 0.5,
+      "description_exact": 1.0,
+      "token_f1_full_text": 0.9626925157015648,
+      "token_f1_prediction": 0.8774296394169632
+    }
+  }
+}

@@ -22,6 +22,7 @@ uv run agent-ecg prepare      # build the TimeNet release (1.1 GB download, ~5 m
 uv run agent-ecg baselines    # fit the five CPU baselines, score them on test, write results/
 uv run agent-ecg evaluate my_predictions.parquet          # score any model on test
 uv run agent-ecg evaluate my_predictions.csv --split validation --json report.json
+uv run agent-ecg compare mine.parquet data/predictions/thoughts.test.parquet   # paired AUROC gain per checkpoint
 ```
 
 `prepare` writes three tables under `data/` (git-ignored):
@@ -56,7 +57,7 @@ src/agent_ecg/
   status.py      read and write the status report's sentences
   metrics.py     the evaluation (all tasks)
   baselines.py   majority, signals, thoughts, signals+thoughts, issue
-  cli.py         agent-ecg prepare | baselines | evaluate
+  cli.py         agent-ecg prepare | baselines | evaluate | compare
 tests/           metric and parser tests (uv run pytest)
 results/         baseline scores (Markdown + JSON)
 ```

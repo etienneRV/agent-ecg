@@ -194,3 +194,31 @@ def describe_matches(table: pd.DataFrame) -> float:
 
 def concat_reports(reports: Iterable[tuple[str, dict]]) -> str:
     return "\n".join(to_markdown(report, name) for name, report in reports)
+
+
+def paired_auroc_gain(gold: pd.DataFrame, a: pd.DataFrame, b: pd.DataFrame, split: str = "test", n: int = 1000) -> dict:
+    """AUROC of model ``a`` minus model ``b`` per checkpoint, with a 95 % interval from resampling the same
+    repositories for both, and the share of resamples where ``a`` does not beat ``b``."""
+    table = gold[gold["split"] == split].merge(a[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one")
+    table = table.merge(b[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one", suffixes=("_a", "_b"))
+    rng = np.random.default_rng(0)
+    result = {}
+    for k, group in table.groupby("k"):
+        y, pa_, pb = (
+            group["resolved"].to_numpy(bool),
+            group["p_resolved_a"].to_numpy(),
+            group["p_resolved_b"].to_numpy(),
+        )
+        repos = group["repository"].to_numpy()
+        members = [np.flatnonzero(repos == r) for r in np.unique(repos)]
+        gains = []
+        for _ in range(n):
+            rows = np.concatenate([members[i] for i in rng.integers(len(members), size=len(members))])
+            if 0 < y[rows].sum() < len(rows):
+                gains.append(roc_auc_score(y[rows], pa_[rows]) - roc_auc_score(y[rows], pb[rows]))
+        result[f"k={k}"] = {
+            "gain": float(roc_auc_score(y, pa_) - roc_auc_score(y, pb)),
+            "gain_95": [float(np.quantile(gains, 0.025)), float(np.quantile(gains, 0.975))],
+            "p_not_better": float(np.mean(np.array(gains) <= 0)),
+        }
+    return result

@@ -98,3 +98,13 @@ def test_missing_predictions_are_an_error() -> None:
     gold = _gold()
     with pytest.raises(ValueError, match="miss"):
         evaluate(gold, gold[["run_id", "k"]].iloc[:5].assign(p_resolved=0.5))
+
+
+def test_a_better_model_has_a_positive_paired_gain() -> None:
+    from agent_ecg.metrics import paired_auroc_gain
+
+    gold = _gold()
+    perfect = gold[["run_id", "k"]].assign(p_resolved=gold["resolved"].astype(float))
+    noise = gold[["run_id", "k"]].assign(p_resolved=np.random.default_rng(1).random(len(gold)))
+    result = paired_auroc_gain(gold, perfect, noise, n=200)["k=5"]
+    assert result["gain"] > 0.3 and result["gain_95"][0] > 0 and result["p_not_better"] == 0.0
