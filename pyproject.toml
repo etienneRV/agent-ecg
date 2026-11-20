@@ -13,6 +13,7 @@ dependencies = [
     "scipy>=1.14",
     "timenet>=0.12.0",
     "timenet-connectors",
+    "tokenizers>=0.23.3",
 ]
 
 [project.scripts]

@@ -33,6 +33,30 @@ uv run agent-ecg compare mine.parquet data/predictions/thoughts.test.parquet   #
 | `thoughts.parquet` | run | the agent's thoughts, step by step; a checkpoint at k sees the first k |
 | `issues.parquet` | issue annotation | the issue text (`issue_id` links it to checkpoints) |
 
+## Training data for OpenTSLM
+
+```bash
+uv run agent-ecg opentslm-export   # after prepare; writes data/opentslm/{train,validation,test}.parquet
+```
+
+Each row is one checkpoint in [OpenTSLM](https://github.com/OpenTSLM/OpenTSLM)'s sample format:
+`pre_prompt` (setting, issue, the agent's thoughts so far), 15 labelled per-step `time_series`, and
+the three tasks' answers. `post_prompts.json` holds each task's question. To train, copy
+[`opentslm/agent_ecg_dataset.py`](opentslm/agent_ecg_dataset.py) into an OpenTSLM checkout; its
+docstring explains the options (tasks, one checkpoint per run, sample caps).
+
+**Length limits** (Llama 3.2 tokens), chosen from the measured lengths so a prompt stays near 2,000 tokens:
+
+| Part | Kept | Why |
+| --- | --- | --- |
+| Issue | first 512 tokens | about 80 % of issues fit whole; the start states the problem |
+| Thoughts | latest steps first, up to 1,024 tokens, each step at most 256 | recent behaviour matters most for a monitor; the time series still cover every step |
+| Time series | all steps | 4 values make one token, so 15 series x 30 steps cost about 120 tokens |
+
+Measured on the export: a full sample is 1,340-1,460 tokens at the median and at most 2,341. At 30
+steps the thoughts budget drops the oldest 15 steps' thoughts for the median checkpoint; raise
+`THOUGHT_TOKENS` in `opentslm_data.py` if the GPU has memory to spare.
+
 ## Scoring a model
 
 A predictions file has one row per checkpoint of the split, keyed by `run_id` and `k`, with any of:
@@ -57,7 +81,9 @@ src/agent_ecg/
   status.py      read and write the status report's sentences
   metrics.py     the evaluation (all tasks)
   baselines.py   majority, signals, thoughts, signals+thoughts, issue
-  cli.py         agent-ecg prepare | baselines | evaluate | compare
-tests/           metric and parser tests (uv run pytest)
+  opentslm_data.py  checkpoints -> OpenTSLM samples (trimming, series, prompts)
+  cli.py         agent-ecg prepare | baselines | evaluate | compare | opentslm-export
+opentslm/        dataset class to drop into an OpenTSLM checkout
+tests/           metric, parser and converter tests (uv run pytest)
 results/         baseline scores (Markdown + JSON)
 ```

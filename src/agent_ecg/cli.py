@@ -47,6 +47,21 @@ def _evaluate(args: argparse.Namespace) -> None:
         args.json.write_text(json.dumps(report, indent=2))
 
 
+def _opentslm_export(args: argparse.Namespace) -> None:
+    from agent_ecg import opentslm_data
+
+    stats = opentslm_data.export(args.data, args.out)
+    print(f"OpenTSLM samples -> {args.out}")
+    print("| k | issue cut | issue tokens p50 / p99 | thought tokens p50 / p99 | runs with early steps dropped |")
+    print("|---|---|---|---|---|")
+    for k, group in stats.groupby("k"):
+        print(
+            f"| {k} | {group['issue_cut'].mean():.1%} | {group['issue_tokens'].median():.0f} / {group['issue_tokens'].quantile(0.99):.0f} "
+            f"| {group['thought_tokens'].median():.0f} / {group['thought_tokens'].quantile(0.99):.0f} "
+            f"| {(group['steps_dropped'] > 0).mean():.1%} (median dropped when cut: {group.loc[group['steps_dropped'] > 0, 'steps_dropped'].median():.0f}) |"
+        )
+
+
 def _compare(args: argparse.Namespace) -> None:
     gold = data.load_checkpoints(args.data)
     read = lambda path: pd.read_csv(path) if path.suffix == ".csv" else pd.read_parquet(path)  # noqa: E731
@@ -78,6 +93,10 @@ def main() -> None:
     evaluate.add_argument("--split", default="test", choices=("validation", "test"))
     evaluate.add_argument("--json", type=Path, help="also write the report as JSON here")
     evaluate.set_defaults(run=_evaluate)
+
+    export = commands.add_parser("opentslm-export", help="write OpenTSLM training samples (needs `prepare` first)")
+    export.add_argument("--out", type=Path, default=Path("data/opentslm"))
+    export.set_defaults(run=_opentslm_export)
 
     compare = commands.add_parser("compare", help="paired AUROC gain of predictions A over B, per checkpoint")
     compare.add_argument("a", type=Path)
