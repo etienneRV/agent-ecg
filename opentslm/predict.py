@@ -21,10 +21,9 @@ import time
 from pathlib import Path
 
 import pandas as pd
-import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import candidate_logprobs, embed_prompts, generate, load_model, model_sample, pick_device
+from common import candidate_logprobs, embed_prompts, generate, load_model, model_sample, p_resolved, pick_device
 
 from agent_ecg import opentslm_samples as samples
 
@@ -55,12 +54,10 @@ def main() -> None:
     started = time.perf_counter()
 
     if "outcome" in tasks or "ending" in tasks:
-        p_resolved, endings = [], []
+        probabilities, endings = [], []
         for i, row in enumerate(rows):
             if "outcome" in tasks:
-                (prompt,) = embed_prompts(model, [model_sample(row, "outcome", prompts)])
-                scores = candidate_logprobs(model, prompt, list(samples.OUTCOMES))
-                p_resolved.append(torch.softmax(scores, 0)[0].item())
+                probabilities += p_resolved(model, [row], prompts)
             if "ending" in tasks:
                 (prompt,) = embed_prompts(model, [model_sample(row, "ending", prompts)])
                 scores = candidate_logprobs(model, prompt, list(samples.ENDINGS))
@@ -69,8 +66,8 @@ def main() -> None:
                 print(
                     f"  scored {i + 1}/{len(rows)} ({(time.perf_counter() - started) / (i + 1):.2f} s each)", flush=True
                 )
-        if p_resolved:
-            out["p_resolved"] = p_resolved
+        if probabilities:
+            out["p_resolved"] = probabilities
             cut = 0.5
             if args.threshold_from:
                 val = pd.read_parquet(args.threshold_from).merge(

@@ -157,9 +157,10 @@ def evaluate(gold: pd.DataFrame, predictions: pd.DataFrame, split: str = "test",
     columns = [c for c in ("p_resolved", "pred_resolved", "pred_ending", "pred_status") if c in predictions]
     if not columns:
         raise ValueError("predictions hold none of p_resolved, pred_resolved, pred_ending, pred_status")
-    missing = table[columns].isna().all(axis=1).sum()
-    if missing:
-        raise ValueError(f"predictions miss {missing} of the {len(table)} {split} checkpoints")
+    for column in columns:
+        missing = int(table[column].isna().sum())
+        if missing:
+            raise ValueError(f"predictions miss {column} for {missing} of the {len(table)} {split} checkpoints")
     if "p_resolved" in columns or "pred_resolved" in columns:
         report["outcome"] = _by_checkpoint(table, score_outcome)
     if "pred_ending" in columns:
@@ -204,7 +205,14 @@ def concat_reports(reports: Iterable[tuple[str, dict]]) -> str:
 def paired_auroc_gain(gold: pd.DataFrame, a: pd.DataFrame, b: pd.DataFrame, split: str = "test", n: int = 1000) -> dict:
     """AUROC of model ``a`` minus model ``b`` per checkpoint, with a 95 % interval from resampling the same
     repositories for both, and the share of resamples where ``a`` does not beat ``b``."""
-    table = gold[gold["split"] == split].merge(a[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one")
+    gold = gold[gold["split"] == split]
+    for name, frame in (("A", a), ("B", b)):
+        covered = len(gold.merge(frame[KEY], on=KEY))
+        if covered != len(gold):
+            raise ValueError(
+                f"predictions {name} cover {covered} of the {len(gold)} {split} checkpoints; compare full files"
+            )
+    table = gold.merge(a[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one")
     table = table.merge(b[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one", suffixes=("_a", "_b"))
     rng = np.random.default_rng(0)
     result = {}
@@ -221,6 +229,9 @@ def paired_auroc_gain(gold: pd.DataFrame, a: pd.DataFrame, b: pd.DataFrame, spli
             rows = np.concatenate([members[i] for i in rng.integers(len(members), size=len(members))])
             if 0 < y[rows].sum() < len(rows):
                 gains.append(roc_auc_score(y[rows], pa_[rows]) - roc_auc_score(y[rows], pb[rows]))
+        if not gains or not 0 < y.sum() < len(y):
+            result[f"k={k}"] = {"gain": np.nan, "gain_95": [np.nan, np.nan], "p_not_better": np.nan}
+            continue
         result[f"k={k}"] = {
             "gain": float(roc_auc_score(y, pa_) - roc_auc_score(y, pb)),
             "gain_95": [float(np.quantile(gains, 0.025)), float(np.quantile(gains, 0.975))],

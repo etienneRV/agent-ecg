@@ -43,7 +43,6 @@ TOKENIZER = ("unsloth/Llama-3.2-1B", "tokenizer.json")  # same tokenizer as meta
 ISSUE_TOKENS = 512
 THOUGHT_TOKENS = 1024
 PER_THOUGHT_TOKENS = 256
-TASKS = ("outcome", "ending", "status")
 
 SETTING = (
     "You are monitoring a software engineering agent (SWE-agent) while it works. The agent is trying "
@@ -209,12 +208,3 @@ def export(data_dir: Path, out: Path, tokenizer: Tokenizer | None = None) -> pd.
         pd.DataFrame(rows).to_parquet(out / f"{split}.parquet", index=False)
         print(f"  {split}: {len(rows)} checkpoints", flush=True)
     return pd.DataFrame(stats)
-
-
-def answers(row: pd.Series) -> dict[str, str]:
-    """The answer of each task for one checkpoint row."""
-    return {
-        "outcome": "resolved" if row["resolved"] else "unresolved",
-        "ending": row["ending"],
-        "status": row["status"],
-    }

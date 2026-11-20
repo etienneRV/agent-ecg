@@ -44,7 +44,7 @@ class Prediction:
 
 def split_status(text: str) -> tuple[str, str]:
     """Split a report into its description and its prediction (from the last "The run will go on for")."""
-    at = text.rfind(PREDICTION_START)
+    at = text.lower().rfind(PREDICTION_START.lower())
     if at < 0:
         return text.strip(), ""
     return text[:at].strip(), text[at:].strip()

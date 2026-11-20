@@ -52,23 +52,21 @@ def export(release: Path, out: Path) -> None:
     from agent_ecg.status import parse_status
 
     out.mkdir(parents=True, exist_ok=True)
-    rows: dict[int, dict] = {}
+    rows: dict[str, dict] = {}
     thoughts: dict[str, list[str]] = {}
-    issues: dict[int, dict] = {}
+    issues: dict[tuple[str, str], dict] = {}
     with TimeFReader(open_local_version(release)) as reader:
         dataset = reader.read()
         for task in dataset.iter_tasks():
             record = task.inputs[0]
-            row = rows.get(id(record))
+            row = rows.get(str(record.id))
             if row is None:
                 meta = record.metadata
                 issue, thought = task.input_annotations
-                if id(issue) not in issues:
-                    issues[id(issue)] = {
-                        "issue_id": len(issues),
-                        "instance_id": issue.metadata["instance_id"],
-                        "text": read_value(issue.value),
-                    }
+                text = read_value(issue.value)
+                issue_key = (issue.metadata["instance_id"], text)
+                if issue_key not in issues:
+                    issues[issue_key] = {"issue_id": len(issues), "instance_id": issue_key[0], "text": text}
                 row = {
                     "run_id": meta["run_id"],
                     "instance_id": meta["instance_id"],
@@ -76,13 +74,15 @@ def export(release: Path, out: Path) -> None:
                     "model_name": meta["model_name"],
                     "k": meta["checkpoint_steps"],
                     "split": str(task.split),
-                    "issue_id": issues[id(issue)]["issue_id"],
+                    "issue_id": issues[issue_key]["issue_id"],
                 }
                 for signal in record.sources[0].signals:
                     row[signal.name] = signal.to_arrow().to_pylist()
-                # Checkpoints of a run come in ascending order; keep the longest prefix of thoughts.
-                thoughts[meta["run_id"]] = read_value(thought.value)
-                rows[id(record)] = row
+                # Keep the longest prefix of thoughts a run's checkpoints show, whatever their order.
+                seen = read_value(thought.value)
+                if len(seen) > len(thoughts.get(meta["run_id"], ())):
+                    thoughts[meta["run_id"]] = seen
+                rows[str(record.id)] = row
             target = read_value(task.targets[0])
             label_set = getattr(task, "label_set", None)
             if label_set is None:

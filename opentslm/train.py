@@ -73,6 +73,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--device", default="auto")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--smoke", action="store_true", help="20 optimizer steps on a small sample, then stop")
+    parser.add_argument("--overwrite", action="store_true", help="replace an earlier run with the same --name")
     return parser.parse_args()
 
 
@@ -83,9 +84,16 @@ def main() -> None:
         args.samples_per_epoch, args.epochs, args.eval_every = 20 * args.batch_size * args.grad_accum, 1, 10
     torch.manual_seed(args.seed)
     run = args.runs / args.name
+    if (run / "best_model.pt").exists():
+        if not (args.overwrite or args.smoke):
+            raise SystemExit(f"{run} already holds a trained model; pick another --name or pass --overwrite")
+        (run / "best_model.pt").unlink()
     run.mkdir(parents=True, exist_ok=True)
     device = pick_device(args.device)
     tasks = [t for t in args.tasks.split(",") if t]
+    if "outcome" not in tasks and args.select == "auroc":
+        print("pass/fail is not trained, so the best checkpoint is chosen by validation loss")
+        args.select = "loss"
     prompts = samples.post_prompts(args.data)
 
     train = samples.load(args.data, "train", one_per_run=args.one_per_run, cap=args.max_train, seed=args.seed)
@@ -110,7 +118,7 @@ def main() -> None:
     trainable = sum(p.numel() for g in groups for p in g["params"])
     print(f"trainable parameters: {trainable / 1e6:.1f} M")
     optimizer = torch.optim.AdamW(groups, weight_decay=args.weight_decay)
-    steps_per_epoch = math.ceil(args.samples_per_epoch / (args.batch_size * args.grad_accum))
+    steps_per_epoch = math.ceil(args.samples_per_epoch / args.batch_size) // args.grad_accum
     total_steps = steps_per_epoch * args.epochs
     scheduler = get_linear_schedule_with_warmup(optimizer, int(args.warmup * total_steps), total_steps)
     generator = torch.Generator().manual_seed(args.seed)
@@ -132,14 +140,21 @@ def main() -> None:
                 chunk = loss_items[start : start + args.batch_size]
                 rows, chunk_tasks = [valid_rows[r] for r, _ in chunk], [t for _, t in chunk]
                 losses.append(loss(model, rows, chunk_tasks, prompts, task_weights).item())
-            auroc = samples.mean_auroc(valid_resolved, valid_k, np.array(p_resolved(model, valid_rows, prompts)))
+            auroc = (
+                samples.mean_auroc(valid_resolved, valid_k, np.array(p_resolved(model, valid_rows, prompts)))
+                if "outcome" in tasks
+                else float("nan")
+            )
         model.train()
         return float(np.mean(losses)), auroc
 
     best, step, history, started = -math.inf, 0, [], time.perf_counter()
     model.train()
     for epoch in range(args.epochs):
+        optimizer.zero_grad(set_to_none=True)  # drop a leftover partial accumulation from the last epoch
         for micro, batch in enumerate(loader):
+            if micro >= steps_per_epoch * args.grad_accum:
+                break
             chosen = [train_items[i] for i in batch]
             rows, chosen_tasks = [train_rows[r] for r, _ in chosen], [t for _, t in chosen]
             value = loss(model, rows, chosen_tasks, prompts, task_weights)
@@ -187,7 +202,7 @@ def main() -> None:
     hours = (time.perf_counter() - started) / 3600
     print(f"done: best validation {args.select} {abs(best):.4f}, {hours:.2f} h; checkpoint {run / 'best_model.pt'}")
     if args.smoke:
-        full = math.ceil(60_000 / (args.batch_size * args.grad_accum)) * 2
+        full = math.ceil(60_000 / args.batch_size) // args.grad_accum * 2
         print(f"estimate for the default full run ({full} steps): {full * hours / step:.1f} h")
 
 

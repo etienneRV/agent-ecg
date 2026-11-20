@@ -14,7 +14,7 @@
     checkpoint. It never sees the agent: if the agent-based baselines beat it, they learn from the
     agent's behaviour and not only from how hard the issue is.
 
-All train on the train split, pick their decision threshold and regularisation on validation, and
+All train on the train split, pick their decision threshold and regularisation on validation (mean per-checkpoint AUROC), and
 predict validation and test. Each checkpoint is weighted by 1 / (checkpoints of its run), so long runs,
 which fail more often, do not count four times. The status report of a baseline is the description
 rebuilt from the signals plus a prediction sentence from its three predicted facts.
@@ -31,9 +31,9 @@ from scipy import sparse
 from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
 from sklearn.feature_extraction.text import HashingVectorizer, TfidfTransformer
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 from sklearn.preprocessing import StandardScaler
 
+from agent_ecg import opentslm_samples as samples
 from agent_ecg.status import describe, predict_sentence
 
 ACTIONS = ("edit", "create", "run", "read", "search", "submit", "other")
@@ -81,13 +81,6 @@ def thought_text(table: pd.DataFrame, thoughts: dict[str, list[str]]) -> list[st
 
 def _weights(table: pd.DataFrame) -> np.ndarray:
     return 1.0 / table.groupby("run_id")["k"].transform("size").to_numpy(float)
-
-
-def _threshold(resolved: np.ndarray, p: np.ndarray) -> float:
-    """The cut on p that maximises balanced accuracy on validation."""
-    candidates = np.quantile(p, np.linspace(0.01, 0.99, 99))
-    scores = [balanced_accuracy_score(resolved, p >= c) for c in candidates]
-    return float(candidates[int(np.argmax(scores))])
 
 
 def _log(message: str, start: float) -> None:
@@ -153,7 +146,7 @@ def run(
     end_clf.fit(X["train"], train["ending"], sample_weight=w_train)
     steps = HistGradientBoostingRegressor(max_iter=200, learning_rate=0.05, random_state=_SEED)
     steps.fit(X["train"], np.log1p(train["remaining"]), sample_weight=w_train)
-    threshold = _threshold(y_valid, clf.predict_proba(X["validation"])[:, 1])
+    threshold = samples.threshold(y_valid, clf.predict_proba(X["validation"])[:, 1])
     results["signals"] = {}
     for split in ("validation", "test"):
         p = clf.predict_proba(X[split])[:, 1]
@@ -186,13 +179,14 @@ def run(
         for c in (0.1, 0.3, 1.0):
             model = LogisticRegression(C=c, max_iter=2000, solver="liblinear", random_state=_SEED)
             model.fit(matrix["train"], y_train, sample_weight=w_train)
-            auroc = roc_auc_score(y_valid, model.predict_proba(matrix["validation"])[:, 1])
+            # Mean per-checkpoint AUROC: pooled AUROC would reward fitting the checkpoint, not the run.
+            auroc = samples.mean_auroc(y_valid, valid["k"].to_numpy(), model.predict_proba(matrix["validation"])[:, 1])
             _log(f"{name} C={c}: validation AUROC {auroc:.3f}", start)
             if auroc > best[0]:
                 best = (auroc, model)
         model = best[1]
         assert model is not None
-        threshold = _threshold(y_valid, model.predict_proba(matrix["validation"])[:, 1])
+        threshold = samples.threshold(y_valid, model.predict_proba(matrix["validation"])[:, 1])
         results[name] = {
             split: _predictions(parts[split], model.predict_proba(matrix[split])[:, 1], threshold)
             for split in ("validation", "test")

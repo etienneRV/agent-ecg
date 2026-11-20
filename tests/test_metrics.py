@@ -108,3 +108,25 @@ def test_a_better_model_has_a_positive_paired_gain() -> None:
     noise = gold[["run_id", "k"]].assign(p_resolved=np.random.default_rng(1).random(len(gold)))
     result = paired_auroc_gain(gold, perfect, noise, n=200)["k=5"]
     assert result["gain"] > 0.3 and result["gain_95"][0] > 0 and result["p_not_better"] == 0.0
+
+
+def test_the_prediction_is_found_whatever_its_case() -> None:
+    lower = STATUS.replace("The run will go on for", "the run will go on for")
+    assert parse_status(lower).remaining == 41
+
+
+def test_a_gap_in_one_prediction_column_is_an_error() -> None:
+    gold = _gold()
+    pred = gold[["run_id", "k"]].assign(p_resolved=0.5, pred_ending=gold["ending"])
+    pred.loc[3, "p_resolved"] = np.nan
+    with pytest.raises(ValueError, match="miss p_resolved for 1"):
+        evaluate(gold, pred)
+
+
+def test_compare_needs_full_files() -> None:
+    from agent_ecg.metrics import paired_auroc_gain
+
+    gold = _gold()
+    full = gold[["run_id", "k"]].assign(p_resolved=0.5)
+    with pytest.raises(ValueError, match="cover 10 of the 200"):
+        paired_auroc_gain(gold, full, full.iloc[:10], n=10)
