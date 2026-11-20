@@ -138,17 +138,22 @@ def _by_checkpoint(table: pd.DataFrame, score) -> dict:
     return result
 
 
-def evaluate(gold: pd.DataFrame, predictions: pd.DataFrame, split: str = "test") -> dict:
+def evaluate(gold: pd.DataFrame, predictions: pd.DataFrame, split: str = "test", subset: bool = False) -> dict:
     """Score predictions against the gold checkpoints of one split, per checkpoint and pooled.
+
+    With ``subset``, only the checkpoints the predictions cover are scored (for quick checks; report
+    full-split scores).
 
     Raises:
         ValueError: If the predictions miss a checkpoint of the split or repeat one.
     """
     gold = gold[gold["split"] == split]
+    if subset:
+        gold = gold.merge(predictions[KEY], on=KEY)
     if predictions.duplicated(KEY).any():
         raise ValueError("predictions repeat a (run_id, k) pair")
     table = gold.merge(predictions, on=KEY, how="left", validate="one_to_one", suffixes=("", "_pred"))
-    report: dict = {"split": split, "checkpoints": len(table)}
+    report: dict = {"split": split if not subset else f"{split} (subset)", "checkpoints": len(table)}
     columns = [c for c in ("p_resolved", "pred_resolved", "pred_ending", "pred_status") if c in predictions]
     if not columns:
         raise ValueError("predictions hold none of p_resolved, pred_resolved, pred_ending, pred_status")

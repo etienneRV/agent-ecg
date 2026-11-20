@@ -57,6 +57,13 @@ Measured on the export: a full sample is 1,340-1,460 tokens at the median and at
 steps the thoughts budget drops the oldest 15 steps' thoughts for the median checkpoint; raise
 `THOUGHT_TOKENS` in `opentslm_data.py` if the GPU has memory to spare.
 
+## Fine-tuning OpenTSLM
+
+See **[GPU.md](GPU.md)**: setup, a 20-step smoke test, the full run, and scoring.
+`opentslm/train.py` fine-tunes OpenTSLM-SP (encoder, projector and LoRA) on all three tasks;
+`opentslm/predict.py` writes a predictions file for `agent-ecg evaluate`, with pass/fail
+probabilities from the model's likelihood of "resolved" vs "unresolved".
+
 ## Scoring a model
 
 A predictions file has one row per checkpoint of the split, keyed by `run_id` and `k`, with any of:
@@ -83,7 +90,7 @@ src/agent_ecg/
   baselines.py   majority, signals, thoughts, signals+thoughts, issue
   opentslm_data.py  checkpoints -> OpenTSLM samples (trimming, series, prompts)
   cli.py         agent-ecg prepare | baselines | evaluate | compare | opentslm-export
-opentslm/        dataset class to drop into an OpenTSLM checkout
+opentslm/        train.py, predict.py, common.py (GPU only), and a dataset class for OpenTSLM's own trainer
 tests/           metric, parser and converter tests (uv run pytest)
 results/         baseline scores (Markdown + JSON)
 ```

@@ -1,0 +1,6 @@
+# Training and prediction with OpenTSLM, on the GPU machine only (see GPU.md).
+opentslm @ git+https://github.com/OpenTSLM/OpenTSLM@2968f4b891baab4307f7e9d0043e87677b593a30
+torch>=2.4
+transformers>=4.50
+peft>=0.13
+accelerate>=1.0

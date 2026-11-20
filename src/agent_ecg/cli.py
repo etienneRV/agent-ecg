@@ -41,7 +41,7 @@ def _baselines(args: argparse.Namespace) -> None:
 def _evaluate(args: argparse.Namespace) -> None:
     gold = data.load_checkpoints(args.data)
     reader = pd.read_csv if args.predictions.suffix == ".csv" else pd.read_parquet
-    report = metrics.evaluate(gold, reader(args.predictions), args.split)
+    report = metrics.evaluate(gold, reader(args.predictions), args.split, subset=args.subset)
     print(metrics.to_markdown(report, args.predictions.stem))
     if args.json:
         args.json.write_text(json.dumps(report, indent=2))
@@ -92,6 +92,7 @@ def main() -> None:
     evaluate.add_argument("predictions", type=Path)
     evaluate.add_argument("--split", default="test", choices=("validation", "test"))
     evaluate.add_argument("--json", type=Path, help="also write the report as JSON here")
+    evaluate.add_argument("--subset", action="store_true", help="score only the checkpoints the file covers")
     evaluate.set_defaults(run=_evaluate)
 
     export = commands.add_parser("opentslm-export", help="write OpenTSLM training samples (needs `prepare` first)")
