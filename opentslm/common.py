@@ -19,7 +19,7 @@ import torch.nn.functional as F
 from opentslm.model.llm.OpenTSLM import OpenTSLM
 from opentslm.model.llm.OpenTSLMSP import OpenTSLMSP
 
-from agent_ecg.opentslm_samples import answer
+from agent_ecg.opentslm_samples import OUTCOMES, answer
 
 LORA = {"lora_r": 16, "lora_alpha": 32, "lora_dropout": 0.0}  # OpenTSLM's curriculum settings
 
@@ -98,24 +98,62 @@ def assemble(model: OpenTSLMSP, prompts: list[torch.Tensor], answers: list[list[
     return inputs, mask, positions, labels
 
 
-def loss(model: OpenTSLMSP, rows: list[dict], tasks: list[str], post_prompts: dict[str, str]) -> torch.Tensor:
-    """Mean cross-entropy over the answer tokens of a batch of (checkpoint, task) items."""
+def _answer_logprobs(
+    model: OpenTSLMSP, prompts: list[torch.Tensor], answers: list[list[int]]
+) -> tuple[torch.Tensor, torch.Tensor]:
+    """Log-probability of each answer token, and which positions are answer tokens.
+
+    Left padding puts every answer at the end of its row, so only the last (longest answer + 1)
+    positions need logits; with Llama's 128k vocabulary that saves most of the memory.
+
+    Returns:
+        token log-probabilities [B, A] (0 off the answers) and the answer mask [B, A].
+    """
+    inputs, mask, positions, labels = assemble(model, prompts, answers)
+    keep = max(len(ids) for ids in answers) + 1
+    logits = model.llm(inputs_embeds=inputs, attention_mask=mask, position_ids=positions, logits_to_keep=keep).logits
+    logp = F.log_softmax(logits[:, :-1].float(), dim=-1)
+    targets = labels[:, -keep:][:, 1:]
+    valid = targets != -100
+    chosen = logp.gather(-1, targets.clamp(min=0).unsqueeze(-1)).squeeze(-1)
+    return chosen * valid, valid
+
+
+def loss(
+    model: OpenTSLMSP,
+    rows: list[dict],
+    tasks: list[str],
+    post_prompts: dict[str, str],
+    task_weights: dict[str, float] | None = None,
+) -> torch.Tensor:
+    """Weighted mean over items of each item's mean token cross-entropy.
+
+    Averaging per item first makes a 3-token "unresolved" count as much as a 110-token status report;
+    a plain token average (Hugging Face's default) would give the status reports ~97 % of the signal.
+    """
     prompts = embed_prompts(model, [model_sample(r, t, post_prompts) for r, t in zip(rows, tasks, strict=True)])
     answers = answer_ids(model, [answer(r, t) for r, t in zip(rows, tasks, strict=True)])
-    inputs, mask, positions, labels = assemble(model, prompts, answers)
-    return model.llm(inputs_embeds=inputs, attention_mask=mask, position_ids=positions, labels=labels).loss
+    token_logp, valid = _answer_logprobs(model, prompts, answers)
+    per_item = -token_logp.sum(-1) / valid.sum(-1)
+    weights = torch.tensor([(task_weights or {}).get(t, 1.0) for t in tasks], device=per_item.device)
+    return (per_item * weights).sum() / weights.sum()
 
 
 @torch.no_grad()
 def candidate_logprobs(model: OpenTSLMSP, prompt: torch.Tensor, candidates: list[str]) -> torch.Tensor:
     """Summed log-probability of each candidate answer (plus end of sequence) after one prompt."""
-    answers = answer_ids(model, candidates)
-    inputs, mask, positions, labels = assemble(model, [prompt] * len(candidates), answers)
-    logits = model.llm(inputs_embeds=inputs, attention_mask=mask, position_ids=positions).logits.float()
-    logp = F.log_softmax(logits[:, :-1], dim=-1)
-    targets = labels[:, 1:]
-    chosen = logp.gather(-1, targets.clamp(min=0).unsqueeze(-1)).squeeze(-1)
-    return (chosen * (targets != -100)).sum(-1)
+    token_logp, _ = _answer_logprobs(model, [prompt] * len(candidates), answer_ids(model, candidates))
+    return token_logp.sum(-1)
+
+
+@torch.no_grad()
+def p_resolved(model: OpenTSLMSP, rows: list[dict], post_prompts: dict[str, str]) -> list[float]:
+    """Probability of "resolved" over "unresolved" for each checkpoint, from the answers' likelihoods."""
+    out = []
+    for row in rows:
+        (prompt,) = embed_prompts(model, [model_sample(row, "outcome", post_prompts)])
+        out.append(torch.softmax(candidate_logprobs(model, prompt, list(OUTCOMES)), 0)[0].item())
+    return out
 
 
 @torch.no_grad()

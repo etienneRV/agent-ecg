@@ -157,6 +157,8 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
   per sample), and `opentslm/agent_ecg_dataset.py` plugs it into OpenTSLM's trainer.
 - **Training and prediction scripts: ready** (`opentslm/train.py`, `opentslm/predict.py`, steps in
   `GPU.md`). Pass/fail probabilities come from the model's likelihood of "resolved" vs "unresolved".
+  Each answer counts equally in the loss (a status report would otherwise dominate it), and the
+  best checkpoint is chosen by validation pass/fail AUROC. Two runs: all three tasks vs pass/fail only.
 - **Plan:** a 20-step smoke test on the GPU, then the full fine-tune on Nebius GPUs;
   scored with the same script, against the baselines above.
 - **Bar to clear:** AUROC above the thoughts baseline (0.68 / 0.70 / 0.70 / 0.70 at 5 / 10 / 20 / 30 steps), and clearly above the issue-only model, so the gain comes from watching the agent.

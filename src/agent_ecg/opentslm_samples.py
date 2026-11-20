@@ -11,7 +11,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.metrics import balanced_accuracy_score
+from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 from timenet_connectors.datasets.nebius.swe_agent_trajectories.tasks import ENDING_LABELS
 
 TASKS = ("outcome", "ending", "status")
@@ -68,6 +68,28 @@ def weights(table: pd.DataFrame, chosen: list[tuple[int, str]], resolved_share: 
         w[is_resolved] *= resolved_share / w[is_resolved].sum()
         w[~is_resolved] *= (1 - resolved_share) / w[~is_resolved].sum()
     return w / w.sum()
+
+
+def mean_auroc(resolved: np.ndarray, k: np.ndarray, p: np.ndarray) -> float:
+    """Mean of the per-checkpoint AUROCs (checkpoints with both outcomes), the model-selection score.
+
+    Pooling across checkpoints would reward knowing the checkpoint, not the run (see REPORT.md).
+    """
+    scores = [
+        roc_auc_score(resolved[k == c], p[k == c]) for c in np.unique(k) if 0 < resolved[k == c].sum() < (k == c).sum()
+    ]
+    return float(np.mean(scores)) if scores else float("nan")
+
+
+def parse_weights(text: str) -> dict[str, float]:
+    """``"outcome=2,status=0.5"`` -> {"outcome": 2.0, "status": 0.5}; unnamed tasks weigh 1."""
+    weights = {}
+    for part in filter(None, text.split(",")):
+        task, _, value = part.partition("=")
+        if task not in TASKS:
+            raise ValueError(f"unknown task {task!r} in task weights")
+        weights[task] = float(value)
+    return weights
 
 
 def threshold(resolved: np.ndarray, p: np.ndarray) -> float:

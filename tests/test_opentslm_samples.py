@@ -53,3 +53,19 @@ def test_evaluate_can_score_a_subset() -> None:
         evaluate(gold, pred)
     report = evaluate(gold, pred, subset=True)
     assert report["checkpoints"] == 3 and report["outcome"]["k=5"]["auroc"] == 1.0
+
+
+def test_mean_auroc_averages_checkpoints_and_skips_one_class_groups() -> None:
+    resolved = np.array([True, False, True, False, False, False])
+    k = np.array([5, 5, 10, 10, 20, 20])
+    p = np.array([0.9, 0.1, 0.2, 0.8, 0.5, 0.5])
+    # k=5 perfect (1.0), k=10 inverted (0.0), k=20 has no resolved run and is skipped.
+    assert s.mean_auroc(resolved, k, p) == 0.5
+    assert np.isnan(s.mean_auroc(np.zeros(3, bool), np.array([5, 5, 5]), np.ones(3)))
+
+
+def test_task_weights_parse() -> None:
+    assert s.parse_weights("outcome=2,status=0.5") == {"outcome": 2.0, "status": 0.5}
+    assert s.parse_weights("") == {}
+    with pytest.raises(ValueError, match="unknown task"):
+        s.parse_weights("vibes=1")

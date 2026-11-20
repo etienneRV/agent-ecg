@@ -1,8 +1,8 @@
 """Predict with a fine-tuned OpenTSLM-SP and write a file ``agent-ecg evaluate`` scores.
 
-    python opentslm/predict.py runs/llama1b-v0 --split validation
-    python opentslm/predict.py runs/llama1b-v0 --split test --threshold-from runs/llama1b-v0/predictions.validation.parquet
-    uv run agent-ecg evaluate runs/llama1b-v0/predictions.test.parquet
+    python opentslm/predict.py runs/llama1b-outcome --split validation
+    python opentslm/predict.py runs/llama1b-outcome --split test --threshold-from runs/llama1b-outcome/predictions.validation.parquet
+    uv run agent-ecg evaluate runs/llama1b-outcome/predictions.test.parquet
 
 - **Will it pass?** ``p_resolved`` compares the model's likelihood of answering "resolved" and
   "unresolved" (softmax over the two summed log-probabilities), so AUROC can be computed.

@@ -1,14 +1,20 @@
 """Fine-tune OpenTSLM-SP on the agent-ecg checkpoints.
 
     python opentslm/train.py --smoke                      # 20 steps: does everything run? prints s/step and memory
-    python opentslm/train.py --name llama1b-v0            # the full run with the defaults below
+    python opentslm/train.py --name llama1b-multi         # all three tasks, defaults below
+    python opentslm/train.py --name llama1b-outcome --tasks outcome   # pass/fail only
     python opentslm/train.py --name gemma-v0 --llm google/gemma-3-270m
 
 Trains the time-series encoder, the projector and LoRA adapters on the language model (OpenTSLM's
 own split of trainable parts), on all three tasks at once. Each epoch draws ``--samples-per-epoch``
 items with replacement: each checkpoint weighted by 1 / (checkpoints of its run), and resolved runs
-reweighted to ``--resolved-share`` of the weight. Validation loss on a fixed sample of validation
-checkpoints picks the best checkpoint, saved to ``runs/<name>/best_model.pt`` with ``config.json``.
+reweighted to ``--resolved-share`` of the weight.
+
+The loss averages each answer's tokens first, then the answers (weighted by ``--task-weights``), so a
+3-token "unresolved" counts as much as a 110-token status report. Every ``--eval-every`` steps the
+script measures the validation loss and the pass/fail AUROC (mean over the 5/10/20/30-step
+checkpoints, from the likelihood of "resolved" vs "unresolved"); the best AUROC is saved to
+``runs/<name>/best_model.pt`` with ``config.json`` (``--select loss`` uses the loss instead).
 """
 
 from __future__ import annotations
@@ -26,7 +32,7 @@ from torch.utils.data import DataLoader, WeightedRandomSampler
 from transformers import get_linear_schedule_with_warmup
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import load_model, loss, pick_device
+from common import load_model, loss, p_resolved, pick_device
 
 from agent_ecg import opentslm_samples as samples
 
@@ -41,10 +47,15 @@ def parse_args() -> argparse.Namespace:
         "--init-from", help="start from a pretrained OpenTSLM-SP on the Hub, e.g. OpenTSLM/llama-3.2-1b-tsqa-sp"
     )
     parser.add_argument("--no-lora", action="store_true", help="train only the encoder and projector")
-    parser.add_argument("--tasks", default="outcome,ending,status")
+    parser.add_argument("--tasks", default="outcome,ending,status", help="e.g. `outcome` for a pass/fail-only model")
+    parser.add_argument("--task-weights", default="", help="e.g. `outcome=2,status=0.5`; unnamed tasks weigh 1")
+    parser.add_argument(
+        "--select", default="auroc", choices=("auroc", "loss"), help="how the best checkpoint is chosen"
+    )
     parser.add_argument("--one-per-run", action="store_true", help="train on one random checkpoint per run")
     parser.add_argument("--max-train", type=int, help="cap on training checkpoints")
-    parser.add_argument("--val-checkpoints", type=int, default=600, help="validation checkpoints for the loss")
+    parser.add_argument("--val-checkpoints", type=int, default=2000, help="validation checkpoints for the AUROC")
+    parser.add_argument("--val-loss-checkpoints", type=int, default=300, help="of those, used for the loss")
     parser.add_argument(
         "--resolved-share", type=float, default=0.3, help="share of sampling weight on resolved runs; 0 = natural"
     )
@@ -68,7 +79,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     if args.smoke:
-        args.name, args.max_train, args.val_checkpoints = f"{args.name}-smoke", 400, 16
+        args.name, args.max_train, args.val_checkpoints, args.val_loss_checkpoints = f"{args.name}-smoke", 400, 32, 16
         args.samples_per_epoch, args.epochs, args.eval_every = 20 * args.batch_size * args.grad_accum, 1, 10
     torch.manual_seed(args.seed)
     run = args.runs / args.name
@@ -109,22 +120,29 @@ def main() -> None:
     config = vars(args) | {"device": device, "trainable_parameters": trainable, "total_steps": total_steps}
     (run / "config.json").write_text(json.dumps(config, indent=2, default=str))
 
-    def validate() -> float:
+    task_weights = samples.parse_weights(args.task_weights)
+    loss_items = [item for item in valid_items if item[0] < args.val_loss_checkpoints]
+    valid_resolved, valid_k = valid["resolved"].to_numpy(bool), valid["k"].to_numpy()
+
+    def validate() -> tuple[float, float]:
         model.eval()
         losses = []
         with torch.no_grad():
-            for start in range(0, len(valid_items), args.batch_size):
-                chunk = valid_items[start : start + args.batch_size]
-                losses.append(loss(model, [valid_rows[r] for r, _ in chunk], [t for _, t in chunk], prompts).item())
+            for start in range(0, len(loss_items), args.batch_size):
+                chunk = loss_items[start : start + args.batch_size]
+                rows, chunk_tasks = [valid_rows[r] for r, _ in chunk], [t for _, t in chunk]
+                losses.append(loss(model, rows, chunk_tasks, prompts, task_weights).item())
+            auroc = samples.mean_auroc(valid_resolved, valid_k, np.array(p_resolved(model, valid_rows, prompts)))
         model.train()
-        return float(np.mean(losses))
+        return float(np.mean(losses)), auroc
 
-    best, step, history, started = math.inf, 0, [], time.perf_counter()
+    best, step, history, started = -math.inf, 0, [], time.perf_counter()
     model.train()
     for epoch in range(args.epochs):
         for micro, batch in enumerate(loader):
             chosen = [train_items[i] for i in batch]
-            value = loss(model, [train_rows[r] for r, _ in chosen], [t for _, t in chosen], prompts)
+            rows, chosen_tasks = [train_rows[r] for r, _ in chosen], [t for _, t in chosen]
+            value = loss(model, rows, chosen_tasks, prompts, task_weights)
             (value / args.grad_accum).backward()
             if (micro + 1) % args.grad_accum:
                 continue
@@ -143,15 +161,31 @@ def main() -> None:
                     flush=True,
                 )
             if step % args.eval_every == 0 or step == total_steps:
-                val = validate()
-                history.append({"step": step, "train_loss": value.item(), "val_loss": val, "elapsed_s": elapsed})
+                val_loss, val_auroc = validate()
+                score = val_auroc if args.select == "auroc" else -val_loss
+                history.append(
+                    {
+                        "step": step,
+                        "train_loss": value.item(),
+                        "val_loss": val_loss,
+                        "val_auroc": val_auroc,
+                        "elapsed_s": elapsed,
+                    }
+                )
                 (run / "history.json").write_text(json.dumps(history, indent=2))
-                print(f"  validation loss {val:.4f}" + ("  (best, saved)" if val < best else ""), flush=True)
-                if val < best:
-                    best = val
+                # AUROC is undefined when a small validation sample has no resolved run (e.g. --smoke):
+                # keep the first checkpoint so prediction still has one, and wait for a defined score.
+                defined = not math.isnan(score)
+                saved = score > best if defined else not (run / "best_model.pt").exists()
+                print(
+                    f"  validation loss {val_loss:.4f}, AUROC {val_auroc:.3f}" + ("  (best, saved)" if saved else ""),
+                    flush=True,
+                )
+                if saved:
+                    best = score if defined else best
                     model.store_to_file(str(run / "best_model.pt"))
     hours = (time.perf_counter() - started) / 3600
-    print(f"done: best validation loss {best:.4f}, {hours:.2f} h; checkpoint {run / 'best_model.pt'}")
+    print(f"done: best validation {args.select} {abs(best):.4f}, {hours:.2f} h; checkpoint {run / 'best_model.pt'}")
     if args.smoke:
         full = math.ceil(60_000 / (args.batch_size * args.grad_accum)) * 2
         print(f"estimate for the default full run ({full} steps): {full * hours / step:.1f} h")

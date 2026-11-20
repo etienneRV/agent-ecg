@@ -21,9 +21,6 @@ agent-ecg = "agent_ecg.cli:main"
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.14"]
-train = [
-    "opentslm",
-]
 
 [build-system]
 requires = ["hatchling"]
@@ -32,7 +29,6 @@ build-backend = "hatchling.build"
 [tool.uv.sources]
 # Until OpenTSLM/TimeNet#832 is merged, the connector comes from its PR branch.
 timenet-connectors = { git = "https://github.com/etienneRV/TimeNet", branch = "feature/nebius-swe-agent-trajectories", subdirectory = "packages/timenet-connectors" }
-opentslm = { git = "https://github.com/OpenTSLM/OpenTSLM", rev = "2968f4b891baab4307f7e9d0043e87677b593a30" }
 
 [tool.ruff]
 line-length = 120
