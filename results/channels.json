@@ -1,0 +1,3354 @@
+{
+  "stage0": {
+    "baseline": {
+      "5": {
+        "auroc": 0.6628347724244296,
+        "fold_sd": 0.019309172286913125,
+        "cv5": 0.6612053970562279
+      },
+      "10": {
+        "auroc": 0.7128852592172216,
+        "fold_sd": 0.010649364425069599,
+        "cv5": 0.7097096457945322
+      },
+      "15": {
+        "auroc": 0.7306239816570029,
+        "fold_sd": 0.01115716228954982,
+        "cv5": 0.7290264770043914
+      },
+      "20": {
+        "auroc": 0.7483456229911135,
+        "fold_sd": 0.006205571226425181,
+        "cv5": 0.7478693544744301
+      },
+      "30": {
+        "auroc": 0.7645292023639839,
+        "fold_sd": 0.023506747294121683,
+        "cv5": 0.7760027674282766
+      }
+    },
+    "baseline_far_off_at": [],
+    "noise": {
+      "5": {
+        "auroc_baseline": 0.6628347724244296,
+        "auroc_candidate": 0.6626941571517903,
+        "gain": -0.00014061527263931062,
+        "fold_sd": 0.020321508056138096,
+        "same_issue_baseline": 0.5489312333005203,
+        "same_issue_change": -0.0010734542727229845,
+        "early_stop_recall_baseline": 0.06866982832542919,
+        "early_stop_recall_change": -0.014157464606338481,
+        "gain_95": [
+          -0.0025237852783581705,
+          0.002204031049919811
+        ],
+        "same_issue_change_95": [
+          -0.0047407028901625655,
+          0.002945897702617786
+        ]
+      },
+      "10": {
+        "auroc_baseline": 0.7128852592172216,
+        "auroc_candidate": 0.7118583998580719,
+        "gain": -0.001026859359149701,
+        "fold_sd": 0.010612861532104305,
+        "same_issue_baseline": 0.6136216224767449,
+        "same_issue_change": -0.0017995000949186934,
+        "early_stop_recall_baseline": 0.2731178616922512,
+        "early_stop_recall_change": -0.02141762203942399,
+        "gain_95": [
+          -0.002890571098429126,
+          0.0009973186314702453
+        ],
+        "same_issue_change_95": [
+          -0.004798264210448933,
+          0.001245850638881171
+        ]
+      },
+      "15": {
+        "auroc_baseline": 0.7306239816570029,
+        "auroc_candidate": 0.7297756242809919,
+        "gain": -0.0008483573760110774,
+        "fold_sd": 0.010413746455218422,
+        "same_issue_baseline": 0.6612592874833302,
+        "same_issue_change": 0.0006667936749856773,
+        "early_stop_recall_baseline": 0.11223486444725382,
+        "early_stop_recall_change": -0.005281640679870761,
+        "gain_95": [
+          -0.0033298220811113443,
+          0.0013760685013476522
+        ],
+        "same_issue_change_95": [
+          -0.002868107283485799,
+          0.004270041126830487
+        ]
+      },
+      "20": {
+        "auroc_baseline": 0.7483456229911135,
+        "auroc_candidate": 0.7464862409644593,
+        "gain": -0.001859382026654255,
+        "fold_sd": 0.007024206694088089,
+        "same_issue_baseline": 0.6951569467131694,
+        "same_issue_change": 0.0005739260959780612,
+        "early_stop_recall_baseline": 0.2528244168665485,
+        "early_stop_recall_change": 0.026488684951506913,
+        "gain_95": [
+          -0.004602631478205011,
+          0.0006061157867179255
+        ],
+        "same_issue_change_95": [
+          -0.004676130461792502,
+          0.005550621417001478
+        ]
+      },
+      "30": {
+        "auroc_baseline": 0.7645292023639839,
+        "auroc_candidate": 0.7672160390958749,
+        "gain": 0.0026868367318909625,
+        "fold_sd": 0.02230742841166879,
+        "same_issue_baseline": 0.7336629074617642,
+        "same_issue_change": 0.005252587671867759,
+        "early_stop_recall_baseline": 0.5009225092250923,
+        "early_stop_recall_change": 0.0069700697006969126,
+        "gain_95": [
+          -0.0014691552415103033,
+          0.006405587372636528
+        ],
+        "same_issue_change_95": [
+          -0.005078281544959188,
+          0.014448644265832106
+        ]
+      }
+    },
+    "noise_passes": false
+  },
+  "meta": {
+    "checkpoints": 212458,
+    "repositories": 1132,
+    "screening_sample": 0.3,
+    "fold_seeds": {
+      "screening": 0,
+      "confirmation": [
+        1,
+        2
+      ]
+    },
+    "rules": {
+      "advance": 8,
+      "ci_above_zero_at_least": 2,
+      "same_issue_floor": -0.005,
+      "same_issue_at_least": 3,
+      "early_stop_precision": {
+        "5": 0.95,
+        "10": 0.95,
+        "15": 0.99,
+        "20": 0.99,
+        "30": 0.99
+      },
+      "baseline_far_off": 0.03,
+      "stage_c_needs_passing": 2,
+      "screening_sample": 0.3
+    },
+    "bootstrap": 1000,
+    "deadline": "2026-11-22T09:00:00+01:00",
+    "stopped": null,
+    "minutes": 70.71449621191667,
+    "machine": "x86_64 CPU, 8 cores, OMP_NUM_THREADS=5"
+  },
+  "verdict": "**No channel reliably helps.** 8 candidates advanced from screening (`steps_since_success`, `same_exception`, `context_ratio`, `exception_changed`, `fail_streak`, `edit_span`, `edit_unviewed`, `tests_failed_delta`), but none met the fixed stage B rule on fresh folds. Keep the 19 series as they are for Sunday's training round. The proxies read features derived from the channels, while the TSLM reads the series itself, so this is a shortlist with evidence, not a guarantee. Only a **new information** channel is likely to help a model that already reads the full sequence of signals; a **re-expression** mostly restates what it can already learn.",
+  "stage_a": {
+    "results": {
+      "tests_failed": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6382906598380645,
+          "gain": 0.0008612201025415267,
+          "fold_sd": 0.012510213688012745,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.006681514476614692,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.010190095941838978
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6793010136188526,
+          "gain": -0.0007911815670966771,
+          "fold_sd": 0.026352645237383766,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.0038069114027891038,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.02227269397025422
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6906984550759924,
+          "gain": -0.0064426723401205255,
+          "fold_sd": 0.02456922763871499,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.005635506877228691,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.06495263870094721
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7093339901555965,
+          "gain": -0.0022746202804602156,
+          "fold_sd": 0.02012775849752284,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": 0.000331400165700102,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.054563130392514286
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7354062484527405,
+          "gain": -0.006220725850373809,
+          "fold_sd": 0.05593854747776686,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": 0.001491424310216205,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": 0.03424270931326434
+        }
+      },
+      "tests_passed": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6381126474969034,
+          "gain": 0.0006832077613804222,
+          "fold_sd": 0.013705538751974375,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": -0.0033488267002356187,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.011024372802574338
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.678985273646421,
+          "gain": -0.0011069215395282939,
+          "fold_sd": 0.028727603481054836,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": -0.0027430270713699745,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.037731701956187275
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.697634901892586,
+          "gain": 0.0004937744764731411,
+          "fold_sd": 0.029912422131108847,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.007991594498216958,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.055287067465687206
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7111164602318144,
+          "gain": -0.0004921502042423143,
+          "fold_sd": 0.025603458143178364,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.0008285004142501995,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.035605784420950304
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7478972124572957,
+          "gain": 0.006270238154181373,
+          "fold_sd": 0.05145682492077556,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.001491424310216205,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.002257761053621854
+        }
+      },
+      "tests_all_passed": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6406116042653734,
+          "gain": 0.0031821645298504286,
+          "fold_sd": 0.01364640409572641,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.005285497563022545,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": 0.0013705976997795133
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6811493303027567,
+          "gain": 0.001057135116807384,
+          "fold_sd": 0.028262741743634353,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.0015125102543067648,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.0030771485090482775
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6946965589073651,
+          "gain": -0.0024445685087477464,
+          "fold_sd": 0.03127216584589949,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.003948038716250601,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.07326502996327082
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7099749516538228,
+          "gain": -0.001633658782233871,
+          "fold_sd": 0.02536596475133165,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.0054681027340514055,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.02381820391299061
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7296756944100609,
+          "gain": -0.011951279893053446,
+          "fold_sd": 0.05410694724858861,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.014168530947054392,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.055503292568203244
+        }
+      },
+      "tests_failed_delta": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6378237303739298,
+          "gain": 0.00039429063840679124,
+          "fold_sd": 0.015915683303393206,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 3.227784771320241e-05,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": 0.01740063166676599
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6823339302478928,
+          "gain": 0.002241735061943473,
+          "fold_sd": 0.024559198211161537,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": -0.001858593109105855,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": 0.009451241849219721
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6973356050535636,
+          "gain": 0.00019447763745072955,
+          "fold_sd": 0.03192890979797171,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.010029291900152781,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.04001546491397641
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7110250275872348,
+          "gain": -0.0005835828488218731,
+          "fold_sd": 0.024967819576536914,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.0074565037282519064,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.07072548304775791
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7406595038867159,
+          "gain": -0.0009674704163984416,
+          "fold_sd": 0.050942299238875825,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.00820283370618946,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.04477892756349955
+        }
+      },
+      "script_fixed": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6416976790189546,
+          "gain": 0.004268239283431563,
+          "fold_sd": 0.022170336977453946,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.001920531938930381,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.014123115428162795
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.677308500324583,
+          "gain": -0.002783694861366315,
+          "fold_sd": 0.02399522954181071,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": -0.0027814807219032067,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.029232910835958664
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6965722021903155,
+          "gain": -0.0005689252257974342,
+          "fold_sd": 0.03146693496871573,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.005603667855323402,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.03102648366518461
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7147499748676851,
+          "gain": 0.0031413644316283795,
+          "fold_sd": 0.024540332091873437,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.010273405136702607,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": 0.0018228217280349956
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7476961925038371,
+          "gain": 0.006069218200722815,
+          "fold_sd": 0.05120985288328249,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": 0.00521998508575694,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.002445907808090342
+        }
+      },
+      "script_still_crashing": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6354061333302703,
+          "gain": -0.0020233064052527228,
+          "fold_sd": 0.01720692925755507,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": -0.0032035763855265964,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.0005959120433823989
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6804783210968688,
+          "gain": 0.0003861259109194659,
+          "fold_sd": 0.026847671534376488,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": -0.0028712059064808226,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.027987398344201025
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.7013542808777683,
+          "gain": 0.004213153461655406,
+          "fold_sd": 0.02785995211237188,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.004361946001018802,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.05924995167214381
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7141586948829675,
+          "gain": 0.0025500844469107387,
+          "fold_sd": 0.01999338360760461,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.001988400994200501,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.004253250698748323
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7454394216962916,
+          "gain": 0.0038124473931773206,
+          "fold_sd": 0.05250555629958024,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.00521998508575694,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": 0.015616180620884268
+        }
+      },
+      "success_marker": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6398673020286526,
+          "gain": 0.002437862293129589,
+          "fold_sd": 0.01469573903247501,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.005834220974145543,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.012335379298015606
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6807037401155549,
+          "gain": 0.0006115449296055786,
+          "fold_sd": 0.029871165937154588,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.00266611977030351,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.016338193274232554
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6957839823198416,
+          "gain": -0.0013571450962712728,
+          "fold_sd": 0.03257540012166862,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": -0.0009233316352522669,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.08718345254204522
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7089386372664064,
+          "gain": -0.0026699731696503415,
+          "fold_sd": 0.024338580617330553,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.007622203811101902,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.05407704459837159
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7298024459078082,
+          "gain": -0.011824528395306122,
+          "fold_sd": 0.05828862008930653,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.022371364653243853,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.01335841956726247
+        }
+      },
+      "exception_changed": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6377185495855482,
+          "gain": 0.000289109850025171,
+          "fold_sd": 0.023269328209572487,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.00803718408056553,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.006257076455515161
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6847605838744468,
+          "gain": 0.0046683886884975045,
+          "fold_sd": 0.02195661933156996,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.007242104183757148,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.018536156494981304
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.7007790581031446,
+          "gain": 0.0036379306870316652,
+          "fold_sd": 0.023533674667677466,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.01025216505348947,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.013821766866421809
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7106119479608305,
+          "gain": -0.0009966624752262288,
+          "fold_sd": 0.018381762171899074,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.003314001657000798,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.0069267225665329835
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7416923305441402,
+          "gain": 6.535624102588233e-05,
+          "fold_sd": 0.05028190298536728,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.011931394481730084,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.005832549388523067
+        }
+      },
+      "same_exception": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6415195992233254,
+          "gain": 0.004090159487802336,
+          "fold_sd": 0.01576888877927611,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.002219102030276643,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.009177045468088903
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6851689620331671,
+          "gain": 0.005076766847217806,
+          "fold_sd": 0.026814870757961948,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.0011407916324855938,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": 0.02080738515642172
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.699557753467477,
+          "gain": 0.002416626051364057,
+          "fold_sd": 0.03002186940325977,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.006017575140091602,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.025517108061086397
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7126985715282009,
+          "gain": 0.0010899610921442093,
+          "fold_sd": 0.0225705800829669,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.000662800331400204,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.07753068416575526
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7474525919691043,
+          "gain": 0.0058256176659899905,
+          "fold_sd": 0.04783181729483886,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": 0.001491424310216205,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": 0.04176857949200374
+        }
+      },
+      "edit_span": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6388506475590386,
+          "gain": 0.0014212078235156245,
+          "fold_sd": 0.023453841689147697,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.0033649656240922754,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.02341934330492819
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6828738965457901,
+          "gain": 0.0027817013598407936,
+          "fold_sd": 0.023009486430378815,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.00533223954060702,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.1057952963587076
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6992863524373286,
+          "gain": 0.0021452250212157242,
+          "fold_sd": 0.032395695870216096,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.011875955170657093,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.07510148849797021
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7113182184908995,
+          "gain": -0.0002903919451572312,
+          "fold_sd": 0.03586290573433644,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.007622203811101902,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.11374407582938387
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7442441946823787,
+          "gain": 0.0026172203792643733,
+          "fold_sd": 0.05037725186202565,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": 0.02460850111856827,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.010912511759172183
+        }
+      },
+      "edit_size": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6363360220812779,
+          "gain": -0.001093417654245088,
+          "fold_sd": 0.021911530021791418,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": -0.003921758497143379,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.010786007985221377
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6782241820254317,
+          "gain": -0.0018680131605176564,
+          "fold_sd": 0.02809906781968144,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": -0.00442216981132082,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.07802769433658144
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.698292599232576,
+          "gain": 0.0011514718164631343,
+          "fold_sd": 0.026851716345084507,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.004457463066734557,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.038855596365745204
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.707417403317559,
+          "gain": -0.004191207118497742,
+          "fold_sd": 0.031776893552813594,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.016072908036454003,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.13245837890387652
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7379858394811111,
+          "gain": -0.0036411348220032336,
+          "fold_sd": 0.04652725585989317,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.010439970171513768,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.034807149576669805
+        }
+      },
+      "edit_unviewed": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6404733900603566,
+          "gain": 0.003043950324833622,
+          "fold_sd": 0.019088915809334795,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.0008392240405410423,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": 0.011858649663309698
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6834482976008124,
+          "gain": 0.0033561024148630603,
+          "fold_sd": 0.02436566790033447,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.0014099671862182195,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.0036632720345812775
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6962011599431859,
+          "gain": -0.0009399674729270169,
+          "fold_sd": 0.02790437171372443,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": -0.004457463066734668,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.030156582254011202
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.71196874309736,
+          "gain": 0.0003601326613033029,
+          "fold_sd": 0.027352654489620366,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.004639602319801206,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.027949933163203322
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7415655790463931,
+          "gain": -6.139525672121948e-05,
+          "fold_sd": 0.05534054875001181,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": 0.007457121551081247,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": -0.0005644402634054635
+        }
+      },
+      "fail_streak": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.639092539281435,
+          "gain": 0.001663099545911928,
+          "fold_sd": 0.02014915797664525,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.0020254349439979835,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": 0.03104701746022287
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6859378231985648,
+          "gain": 0.005845628012615456,
+          "fold_sd": 0.02774649261101725,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.007588187038556127,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.0037365374752729164
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6973012717503341,
+          "gain": 0.00016014433422117946,
+          "fold_sd": 0.031870209482982026,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.002451604686704023,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.014111734003479592
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7113093551222923,
+          "gain": -0.0002992553137644016,
+          "fold_sd": 0.020039721516811358,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.003314001657000798,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.007169765463604316
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.739895033915928,
+          "gain": -0.0017319403871862704,
+          "fold_sd": 0.04076453731564459,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": 0.004474272930648726,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": 0.025211665098777036
+        }
+      },
+      "steps_since_success": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6403542461970905,
+          "gain": 0.002924806461567453,
+          "fold_sd": 0.01858302245492529,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.011555469481295044,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": 0.024313211370001794
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6868375909641562,
+          "gain": 0.006745395778206875,
+          "fold_sd": 0.024033766838486938,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.008305988515176277,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": 0.0038098029159645552
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.7061851539064954,
+          "gain": 0.009044026490382495,
+          "fold_sd": 0.031156686952928978,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.015219052470708094,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.023680649526387
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7217287114131499,
+          "gain": 0.01012010097709315,
+          "fold_sd": 0.027420035656305512,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.009776304888152398,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": 0.0012152144853566638
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7435906322721196,
+          "gain": 0.001963657969005328,
+          "fold_sd": 0.04680965288144489,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.046979865771812124,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": 0.040827845719661304
+        }
+      },
+      "context_ratio": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6403763423535503,
+          "gain": 0.002946902618027325,
+          "fold_sd": 0.020808421137388265,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": 0.00292114521803688,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.00864072462904475
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.6827008537979612,
+          "gain": 0.0026086586120118715,
+          "fold_sd": 0.027552852361871633,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": 0.002384126333059844,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.07062788482672724
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.7002579475999156,
+          "gain": 0.00311682018380266,
+          "fold_sd": 0.03261671260522159,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": 0.008883087111563936,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.04900444616276821
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7092822094232071,
+          "gain": -0.0023264010128496437,
+          "fold_sd": 0.02399832951416105,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.013918806959403507,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.017620610037671625
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7382987572411744,
+          "gain": -0.0033282170619398643,
+          "fold_sd": 0.054423815616284586,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.0022371364653244186,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": 0.01919096895578548
+        }
+      }
+    },
+    "sample": 0.3,
+    "ranked": [
+      "steps_since_success",
+      "same_exception",
+      "context_ratio",
+      "exception_changed",
+      "fail_streak",
+      "edit_span",
+      "edit_unviewed",
+      "tests_failed_delta",
+      "script_still_crashing",
+      "tests_all_passed",
+      "success_marker",
+      "script_fixed",
+      "tests_passed",
+      "edit_size",
+      "tests_failed"
+    ],
+    "finalists": [
+      "steps_since_success",
+      "same_exception",
+      "context_ratio",
+      "exception_changed",
+      "fail_streak",
+      "edit_span",
+      "edit_unviewed",
+      "tests_failed_delta"
+    ],
+    "top_shuffled": {
+      "channel": "steps_since_success",
+      "result": {
+        "5": {
+          "auroc_baseline": 0.637429439735523,
+          "auroc_candidate": 0.6343459803651222,
+          "gain": -0.0030834593704007762,
+          "fold_sd": 0.01736795861825187,
+          "same_issue_baseline": 0.5254268745360059,
+          "same_issue_change": -0.0011216552080306474,
+          "early_stop_recall_baseline": 0.06572909838507836,
+          "early_stop_recall_change": -0.015374530719265832,
+          "gain_95": [
+            -0.007893530898921006,
+            0.0015520537923889822
+          ],
+          "same_issue_change_95": [
+            -0.010854865028570105,
+            0.007852408256471346
+          ]
+        },
+        "10": {
+          "auroc_baseline": 0.6800921951859493,
+          "auroc_candidate": 0.677039036849109,
+          "gain": -0.003053158336840278,
+          "fold_sd": 0.02141648433668822,
+          "same_issue_baseline": 0.5735361977030353,
+          "same_issue_change": -0.004127358490566113,
+          "early_stop_recall_baseline": 0.22595061909297384,
+          "early_stop_recall_change": -0.024250860868928137,
+          "gain_95": [
+            -0.008323891964103722,
+            0.0016878805306399958
+          ],
+          "same_issue_change_95": [
+            -0.010742671391827502,
+            0.0028220579417428445
+          ]
+        },
+        "15": {
+          "auroc_baseline": 0.6971411274161129,
+          "auroc_candidate": 0.6899654670411485,
+          "gain": -0.007175660374964421,
+          "fold_sd": 0.027658785927132418,
+          "same_issue_baseline": 0.6368759551706572,
+          "same_issue_change": -0.007577687213448869,
+          "early_stop_recall_baseline": 0.14585346994007345,
+          "early_stop_recall_change": -0.03904890779045041,
+          "gain_95": [
+            -0.015792545941076576,
+            0.0008544822419048559
+          ],
+          "same_issue_change_95": [
+            -0.018854779430308104,
+            0.003207562851565357
+          ]
+        },
+        "20": {
+          "auroc_baseline": 0.7116086104360567,
+          "auroc_candidate": 0.7052841304417293,
+          "gain": -0.006324479994327392,
+          "fold_sd": 0.026377843014544836,
+          "same_issue_baseline": 0.6944490472245236,
+          "same_issue_change": -0.015575807787903906,
+          "early_stop_recall_baseline": 0.2843601895734597,
+          "early_stop_recall_change": -0.05018835824523027,
+          "gain_95": [
+            -0.016522934859082117,
+            0.002793335583798647
+          ],
+          "same_issue_change_95": [
+            -0.030204808032038455,
+            -0.0033768844099498515
+          ]
+        },
+        "30": {
+          "auroc_baseline": 0.7416269743031143,
+          "auroc_candidate": 0.7339159281081349,
+          "gain": -0.007711046194979421,
+          "fold_sd": 0.05107608202140207,
+          "same_issue_baseline": 0.7106636838180462,
+          "same_issue_change": -0.0007457121551081025,
+          "early_stop_recall_baseline": 0.35691439322671686,
+          "early_stop_recall_change": 0.006773283160865451,
+          "gain_95": [
+            -0.022401949015624877,
+            0.006755920969779531
+          ],
+          "same_issue_change_95": [
+            -0.03082181527457449,
+            0.02611537821073227
+          ]
+        }
+      },
+      "passes": false
+    }
+  },
+  "stage_b": {
+    "seeds": [
+      1,
+      2
+    ],
+    "raw_proxy_seed": 1,
+    "results": {
+      "steps_since_success": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6577252768531382,
+            "gain": 0.00016836703456080127,
+            "fold_sd": 0.02723928801120062,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": -0.0011754089907654586,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.016904957737605655,
+            "gain_95": [
+              -0.002337697812132962,
+              0.0028144817268413833
+            ],
+            "same_issue_change_95": [
+              -0.004587485066820629,
+              0.002518167213736176
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7088146090921956,
+            "gain": 0.0025171535114077437,
+            "fold_sd": 0.028694622656382597,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": 0.00035001265582484953,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.018913142042878417,
+            "gain_95": [
+              -0.0005035132218777855,
+              0.005544553302648986
+            ],
+            "same_issue_change_95": [
+              -0.004400554017130319,
+              0.004602136830663214
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7272161486067126,
+            "gain": 0.0012689035095309054,
+            "fold_sd": 0.020424232880536693,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": 1.9051247856727294e-05,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.013667649950835782,
+            "gain_95": [
+              -0.001888688345271161,
+              0.004428094632185442
+            ],
+            "same_issue_change_95": [
+              -0.0060253840250390515,
+              0.005799432769921126
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7492317937892603,
+            "gain": 0.0040017311394526245,
+            "fold_sd": 0.0177208966383697,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0002869630479890861,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.008603608301178428,
+            "gain_95": [
+              1.1948128979538787e-05,
+              0.007797385618082421
+            ],
+            "same_issue_change_95": [
+              -0.008004721050866826,
+              0.006470559022242511
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7702037659334409,
+            "gain": 0.004121882875156191,
+            "fold_sd": 0.018051904189102123,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.000540707554456954,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.00837945879458793,
+            "gain_95": [
+              -0.001152370859668507,
+              0.009613815806360834
+            ],
+            "same_issue_change_95": [
+              -0.009336498330594759,
+              0.008484149777049204
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6569373627776562,
+            "gain": -0.0006195470409210979,
+            "fold_sd": 0.027564872248223588,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": -0.000342192846763234,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": -0.011077472306319235,
+            "gain_95": [
+              -0.0019400749439483528,
+              0.0005741158853736937
+            ],
+            "same_issue_change_95": [
+              -0.0023048754999456912,
+              0.0014380488676232993
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7057709754027993,
+            "gain": -0.0005264801779886197,
+            "fold_sd": 0.02865430741374011,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0007257324558627709,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.0005505537923440607,
+            "gain_95": [
+              -0.0018831342097675023,
+              0.0009674191847293274
+            ],
+            "same_issue_change_95": [
+              -0.002388156817134701,
+              0.0008501813687130669
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7251763250522004,
+            "gain": -0.0007709200449813047,
+            "fold_sd": 0.019671289107171905,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.0011716517431892282,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.009523809523809532,
+            "gain_95": [
+              -0.002200538977135151,
+              0.0008817995547533775
+            ],
+            "same_issue_change_95": [
+              -0.003514035849865327,
+              0.0014089042533202282
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7452826116184381,
+            "gain": 5.254896863055025e-05,
+            "fold_sd": 0.01526108010409067,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0007725928215089883,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.0036673966697952365,
+            "gain_95": [
+              -0.001988326639638964,
+              0.0020497635789358793
+            ],
+            "same_issue_change_95": [
+              -0.003800901237067296,
+              0.001853012625624933
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7659898737635019,
+            "gain": -9.200929478281328e-05,
+            "fold_sd": 0.020816497535021728,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": 0.0013903908543179688,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.002972529725297296,
+            "gain_95": [
+              -0.0030173467355921494,
+              0.00253728275003902
+            ],
+            "same_issue_change_95": [
+              -0.005139216864716478,
+              0.007288597909332222
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6498195257713891,
+            "gain": -0.0017700210157756135,
+            "fold_sd": 0.021590323978926247,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": 0.0036328692635823057,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": -0.0011024972437568906,
+            "gain_95": [
+              -0.00534364384865213,
+              0.0021937623977031744
+            ],
+            "same_issue_change_95": [
+              -0.0013188091237494287,
+              0.008510108257978538
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.6939084917023699,
+            "gain": 0.0021820772340754857,
+            "fold_sd": 0.023690097626696775,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": 0.0004904132126811733,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": 0.013472375153831206,
+            "gain_95": [
+              -0.0022724181883701984,
+              0.005955112009125418
+            ],
+            "same_issue_change_95": [
+              -0.0057468458088548915,
+              0.0065703070686443385
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.7028477278371692,
+            "gain": 0.0061618959377593985,
+            "fold_sd": 0.017174603043017937,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": 0.00903029148409229,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": 0.015142576204523098,
+            "gain_95": [
+              0.0008266184267676141,
+              0.011598775833646694
+            ],
+            "same_issue_change_95": [
+              -0.0004932318475055374,
+              0.01980430489094291
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.721375536811707,
+            "gain": 0.007923493319777597,
+            "fold_sd": 0.011417776559227048,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": 0.008917928568275224,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": 0.0325025202488963,
+            "gain_95": [
+              0.0009130171316771435,
+              0.014373368816937557
+            ],
+            "same_issue_change_95": [
+              -0.004559172209564102,
+              0.02248583459450442
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.7380209239437306,
+            "gain": 0.004069392430896879,
+            "fold_sd": 0.011799797733937153,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": 0.004171172562953851,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": 0.06775317753177529,
+            "gain_95": [
+              -0.006227043883407818,
+              0.013424804415757286
+            ],
+            "same_issue_change_95": [
+              -0.019736007087564133,
+              0.02944781744940681
+            ]
+          }
+        },
+        "raw_early_mean_gain": 0.00219131738535309,
+        "summary_only": false
+      },
+      "same_exception": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6575160488254583,
+            "gain": -4.0860993119118394e-05,
+            "fold_sd": 0.026810983561336203,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.0005261800965640218,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.0023537441156397092,
+            "gain_95": [
+              -0.001800785034221948,
+              0.001593628543232324
+            ],
+            "same_issue_change_95": [
+              -0.0016587592965455894,
+              0.0027161512562641054
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7066947056511845,
+            "gain": 0.0003972500703966486,
+            "fold_sd": 0.02764209010979372,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": 0.0002847560589761544,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.002504479996545572,
+            "gain_95": [
+              -0.0012460391179150126,
+              0.002209749250050063
+            ],
+            "same_issue_change_95": [
+              -0.0013803652348066144,
+              0.0020033333507353365
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7269785222487727,
+            "gain": 0.0010312771515909591,
+            "fold_sd": 0.019746555247214963,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.0009096970851590891,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.00514117151285292,
+            "gain_95": [
+              -0.0009045796386639423,
+              0.0035105525593700686
+            ],
+            "same_issue_change_95": [
+              -0.0034046465737826103,
+              0.0014105843289253038
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7453642131493683,
+            "gain": 0.00013415049956072567,
+            "fold_sd": 0.014169905358593053,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0011037040307271262,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": -0.009055514999826209,
+            "gain_95": [
+              -0.0020436371349463814,
+              0.0027174877846673213
+            ],
+            "same_issue_change_95": [
+              -0.005160573217959601,
+              0.00269538006875518
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7620203117353754,
+            "gain": -0.0040615713229092965,
+            "fold_sd": 0.021712204447596525,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.004866367990112808,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": -0.009455719557195569,
+            "gain_95": [
+              -0.0076583722071362674,
+              -0.0005414746571276499
+            ],
+            "same_issue_change_95": [
+              -0.011335003767318295,
+              0.0016272214332417436
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6569359937465145,
+            "gain": -0.0006209160720628826,
+            "fold_sd": 0.026867673615606057,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.0008507945436647679,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.0017412456468858806,
+            "gain_95": [
+              -0.0015508716107248868,
+              0.0003073988770625827
+            ],
+            "same_issue_change_95": [
+              -0.0006324556805343509,
+              0.0021207308824473655
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7058558851030817,
+            "gain": -0.00044157047770621016,
+            "fold_sd": 0.027696628532975574,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0005497373916344972,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.003799900684413937,
+            "gain_95": [
+              -0.001486979597645803,
+              0.0007384756439259495
+            ],
+            "same_issue_change_95": [
+              -0.001896597229290313,
+              0.0006407871165386136
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7258482462946775,
+            "gain": -9.899880250424653e-05,
+            "fold_sd": 0.019793643295011525,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.00019051247856738396,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.006897036100575925,
+            "gain_95": [
+              -0.0012222869571656178,
+              0.0011697180456745754
+            ],
+            "same_issue_change_95": [
+              -0.0021796713110023166,
+              0.0018008246170321532
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7452700741885725,
+            "gain": 4.001153876492802e-05,
+            "fold_sd": 0.015607600080166945,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0003752593704471896,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.008429798032467767,
+            "gain_95": [
+              -0.0014817747226065867,
+              0.0017221729776014756
+            ],
+            "same_issue_change_95": [
+              -0.002704636971698873,
+              0.0019193669144780836
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7660716456730324,
+            "gain": -1.0237385252298559e-05,
+            "fold_sd": 0.021925827570763674,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -7.724393635100135e-05,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": -0.012018245182451842,
+            "gain_95": [
+              -0.0013606105266907114,
+              0.0013879171853790864
+            ],
+            "same_issue_change_95": [
+              -0.0038679111399113814,
+              0.003272017215063717
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6508480369951808,
+            "gain": -0.000741509791983952,
+            "fold_sd": 0.02030442043434835,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": 0.00036328692635823057,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": -0.006754983112542218,
+            "gain_95": [
+              -0.0030271790405188596,
+              0.0013060212971448325
+            ],
+            "same_issue_change_95": [
+              -0.0024928818545855045,
+              0.00367995269514276
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.690811722327499,
+            "gain": -0.0009146921407954256,
+            "fold_sd": 0.022474610906203892,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": -0.0024085616655065145,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": -0.029514001338601353,
+            "gain_95": [
+              -0.0037111926716995535,
+              0.0017690771473293757
+            ],
+            "same_issue_change_95": [
+              -0.005805520028637182,
+              0.001585099650220553
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.6960813779510803,
+            "gain": -0.0006044539483295308,
+            "fold_sd": 0.01618847257678719,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": -0.006020194322728045,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": -0.03607248209018121,
+            "gain_95": [
+              -0.0042336202308075445,
+              0.0029115674114759734
+            ],
+            "same_issue_change_95": [
+              -0.012391024204359261,
+              0.0008500052491818781
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.7131787816392641,
+            "gain": -0.00027326185266529635,
+            "fold_sd": 0.01912285883492719,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": -0.01015407708268945,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": -0.0011123857197483378,
+            "gain_95": [
+              -0.0049073914981397045,
+              0.00389895974813359
+            ],
+            "same_issue_change_95": [
+              -0.019720544703312283,
+              -0.0007771011176503417
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.7330152240728364,
+            "gain": -0.000936307439997397,
+            "fold_sd": 0.01883537524552917,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": -0.011895566198053431,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": 0.011941369413694114,
+            "gain_95": [
+              -0.0068200140660126,
+              0.00542314550387628
+            ],
+            "same_issue_change_95": [
+              -0.023109316948536764,
+              -0.0008287832005185697
+            ]
+          }
+        },
+        "raw_early_mean_gain": -0.0007535519603696361,
+        "summary_only": false
+      },
+      "context_ratio": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6562941733710672,
+            "gain": -0.0012627364475102376,
+            "fold_sd": 0.02830137868041957,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.0005800871888623771,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": -0.0008399979000052495,
+            "gain_95": [
+              -0.003373897602160472,
+              0.000896268242481264
+            ],
+            "same_issue_change_95": [
+              -0.003129204870641131,
+              0.005055634952194362
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7048503837616573,
+            "gain": -0.0014470718191306187,
+            "fold_sd": 0.028665602257551836,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": 0.0008107637790293332,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": -0.006325971025757271,
+            "gain_95": [
+              -0.003692269694835089,
+              0.0011834539476090111
+            ],
+            "same_issue_change_95": [
+              -0.0017476239927958965,
+              0.003656141170458649
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7260252514764464,
+            "gain": 7.800637926463905e-05,
+            "fold_sd": 0.020100399253761433,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": 0.0005715374357019853,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.003371260008428148,
+            "gain_95": [
+              -0.002003632115528209,
+              0.0027106998636577005
+            ],
+            "same_issue_change_95": [
+              -0.003135174882557523,
+              0.004696646892229566
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7451885087365773,
+            "gain": -4.155391323035218e-05,
+            "fold_sd": 0.015323098292550864,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": 2.2074080614553626e-05,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.0012166718809747123,
+            "gain_95": [
+              -0.002688392313977268,
+              0.002810038083038567
+            ],
+            "same_issue_change_95": [
+              -0.0037346487750367433,
+              0.004003868282017665
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7652554526475785,
+            "gain": -0.0008264304107061249,
+            "fold_sd": 0.020355335488896793,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.00023173180905294855,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.01394013940139402,
+            "gain_95": [
+              -0.0038295852802981757,
+              0.0024606605300238533
+            ],
+            "same_issue_change_95": [
+              -0.007527286432078295,
+              0.005995396191418186
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6562201128930023,
+            "gain": -0.00133679692557509,
+            "fold_sd": 0.028399649555476743,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 9.140767824500351e-05,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": -0.003981240046899884,
+            "gain_95": [
+              -0.0031322258459953152,
+              0.0004512420110838966
+            ],
+            "same_issue_change_95": [
+              -0.0024811735533941475,
+              0.00261126992977385
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7054417124163969,
+            "gain": -0.0008557431643910762,
+            "fold_sd": 0.027524412323293914,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0008799753211415351,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": -0.00553792344063736,
+            "gain_95": [
+              -0.0024008606019502885,
+              0.000996286485455594
+            ],
+            "same_issue_change_95": [
+              -0.0030029320519265393,
+              0.0009509957009269431
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7248308367706185,
+            "gain": -0.0011164083265631786,
+            "fold_sd": 0.01875528000542448,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.002776719375119141,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.008905745188931023,
+            "gain_95": [
+              -0.0031147737152635705,
+              0.0009600005481854423
+            ],
+            "same_issue_change_95": [
+              -0.0062317838511097385,
+              0.00033985814224248733
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7444038640611399,
+            "gain": -0.0008261985886677259,
+            "fold_sd": 0.015444784553634149,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0008167409827380956,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.0010080995585219077,
+            "gain_95": [
+              -0.003067521132094464,
+              0.001538451077115408
+            ],
+            "same_issue_change_95": [
+              -0.0049119911549884085,
+              0.0027576529332156274
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7641876806485187,
+            "gain": -0.0018942024097660104,
+            "fold_sd": 0.021696164080934596,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.0013903908543179133,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.010326978269782683,
+            "gain_95": [
+              -0.004906622464491933,
+              0.0011580289739395759
+            ],
+            "same_issue_change_95": [
+              -0.008876382725747884,
+              0.005533543287366568
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6520589958942683,
+            "gain": 0.0004694491071035589,
+            "fold_sd": 0.0223667190294221,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": 0.0007195424928515548,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": -0.0026599933500166244,
+            "gain_95": [
+              -0.003089279810486073,
+              0.0040423383157071205
+            ],
+            "same_issue_change_95": [
+              -0.00393209563387358,
+              0.006328727351124843
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.6921019017750595,
+            "gain": 0.0003754873067650655,
+            "fold_sd": 0.02388477440597874,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": -0.00019774726317778324,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": -0.014832566876092995,
+            "gain_95": [
+              -0.003596446652988619,
+              0.004035884062794856
+            ],
+            "same_issue_change_95": [
+              -0.0047670996424994585,
+              0.005267089051094523
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.6968230660661883,
+            "gain": 0.000137234166778466,
+            "fold_sd": 0.017032148565227112,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": 0.0002857687178510204,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": -0.015030200870908839,
+            "gain_95": [
+              -0.00458923435100835,
+              0.005346252852492222
+            ],
+            "same_issue_change_95": [
+              -0.006884282019636576,
+              0.008472889455290669
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.7118887612837095,
+            "gain": -0.001563282208219885,
+            "fold_sd": 0.01645476165536325,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": -0.005341927508719202,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": 0.0186324608057844,
+            "gain_95": [
+              -0.00684489602450287,
+              0.00364102960248259
+            ],
+            "same_issue_change_95": [
+              -0.014671921785327174,
+              0.004084519369123701
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.7313272000586011,
+            "gain": -0.0026243314542326868,
+            "fold_sd": 0.021504522051519186,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": -0.013131469179669453,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": -0.03936039360393606,
+            "gain_95": [
+              -0.010820645256498363,
+              0.004981275502652896
+            ],
+            "same_issue_change_95": [
+              -0.030703695033792812,
+              0.0021256929082238466
+            ]
+          }
+        },
+        "raw_early_mean_gain": 0.00032739019354903015,
+        "summary_only": false
+      },
+      "exception_changed": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6563034483939363,
+            "gain": -0.0012534614246411668,
+            "fold_sd": 0.027588168810449558,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": -0.0005250082032531855,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": -0.0002887492781268059,
+            "gain_95": [
+              -0.003040216050199335,
+              0.0006943189481359706
+            ],
+            "same_issue_change_95": [
+              -0.0033712592875751123,
+              0.0018386992676840974
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7068184336984533,
+            "gain": 0.0005209781176654382,
+            "fold_sd": 0.02661650857085471,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0005971967347971896,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.006854934473303542,
+            "gain_95": [
+              -0.0012991046951924504,
+              0.0029821469523155847
+            ],
+            "same_issue_change_95": [
+              -0.002592507006476155,
+              0.0020975959849821152
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7269899675237157,
+            "gain": 0.0010427224265339152,
+            "fold_sd": 0.018595907409025034,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.0006286911792722782,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.013161960949571568,
+            "gain_95": [
+              -0.0012481931446094662,
+              0.0036778044467367706
+            ],
+            "same_issue_change_95": [
+              -0.0034943617403413478,
+              0.0025047722659377195
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7438937981194902,
+            "gain": -0.001336264530317488,
+            "fold_sd": 0.013344802185353583,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.001765926449163402,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": -0.02966941286891231,
+            "gain_95": [
+              -0.003993779354096274,
+              0.0015380243164282122
+            ],
+            "same_issue_change_95": [
+              -0.005161285541882362,
+              0.0020014699222247615
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7646970700476236,
+            "gain": -0.001384813010661179,
+            "fold_sd": 0.02050258812973243,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.0014676347906689147,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.008558835588355879,
+            "gain_95": [
+              -0.0051972044821383175,
+              0.0019333806906164967
+            ],
+            "same_issue_change_95": [
+              -0.007542949709787659,
+              0.004876553762475337
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6571010654344581,
+            "gain": -0.00045584438411927497,
+            "fold_sd": 0.02656056742288953,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": -0.000355083673182377,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.009196227009432475,
+            "gain_95": [
+              -0.0018770702343309255,
+              0.000736731311898521
+            ],
+            "same_issue_change_95": [
+              -0.002059603518254813,
+              0.0013483780635824725
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7066047621976652,
+            "gain": 0.00030730661687727867,
+            "fold_sd": 0.027577558815583623,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": 0.00027882364108078317,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.004566357924736086,
+            "gain_95": [
+              -0.0010348629830558274,
+              0.001804821709792756
+            ],
+            "same_issue_change_95": [
+              -0.001075293370906491,
+              0.001649099824230178
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7261522427749972,
+            "gain": 0.00020499767781551048,
+            "fold_sd": 0.019932658193174985,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.00024766622213762135,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.0007585335018963357,
+            "gain_95": [
+              -0.0013116813455221088,
+              0.00180314940709914
+            ],
+            "same_issue_change_95": [
+              -0.002475168516352699,
+              0.0016417380794536485
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7453171391591036,
+            "gain": 8.707650929601352e-05,
+            "fold_sd": 0.015818723198831836,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0013685929981016032,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.0017207216602356523,
+            "gain_95": [
+              -0.0015935301834027096,
+              0.002064775940064986
+            ],
+            "same_issue_change_95": [
+              -0.004096846527485226,
+              0.0010903111221249328
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7669643011566593,
+            "gain": 0.0008824180983745267,
+            "fold_sd": 0.023401165723681755,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": 0.0017766105360729756,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": -0.007585075850758516,
+            "gain_95": [
+              -0.0012780885104915498,
+              0.003256794340540991
+            ],
+            "same_issue_change_95": [
+              -0.0014475637503085308,
+              0.004978738146260142
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6527795138754104,
+            "gain": 0.0011899670882457025,
+            "fold_sd": 0.022620426201774943,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": 0.0001429709839216864,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": 0.0014874962812592984,
+            "gain_95": [
+              -0.001176907995088583,
+              0.0038926519182785678
+            ],
+            "same_issue_change_95": [
+              -0.003206431597758047,
+              0.00408362927620899
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.6903226256211183,
+            "gain": -0.0014037888471760684,
+            "fold_sd": 0.025010597199452932,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": -0.0022503638549642435,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": -0.022691452382494537,
+            "gain_95": [
+              -0.004358221514175661,
+              0.001780427374600193
+            ],
+            "same_issue_change_95": [
+              -0.005946561174805326,
+              0.0017924307338201709
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.6976539154650004,
+            "gain": 0.0009680835655906384,
+            "fold_sd": 0.017834445059058745,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": -0.0017717660506763044,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": -0.011012782694198628,
+            "gain_95": [
+              -0.0038882809168730853,
+              0.0053773795910437155
+            ],
+            "same_issue_change_95": [
+              -0.009276201738678713,
+              0.005226508418829303
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.7165327155032213,
+            "gain": 0.0030806720112919184,
+            "fold_sd": 0.01877686055148114,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": 0.0013244448368725514,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": -0.00942051656411863,
+            "gain_95": [
+              -0.002848487134230343,
+              0.00806935729023925
+            ],
+            "same_issue_change_95": [
+              -0.009132858282959547,
+              0.0110159185213765
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.73687605362406,
+            "gain": 0.00292452211122618,
+            "fold_sd": 0.022011421007013574,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": 0.00355322107214584,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": 0.00522755227552274,
+            "gain_95": [
+              -0.003982733682515213,
+              0.01004148821739695
+            ],
+            "same_issue_change_95": [
+              -0.010905291895089018,
+              0.018503613654208172
+            ]
+          }
+        },
+        "raw_early_mean_gain": 0.0002514206022200908,
+        "summary_only": false
+      },
+      "fail_streak": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6565012605364793,
+            "gain": -0.0010556492820981145,
+            "fold_sd": 0.028214321473725882,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": -0.000457038391224851,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.001916245209386977,
+            "gain_95": [
+              -0.002923140062761659,
+              0.0008363022836914989
+            ],
+            "same_issue_change_95": [
+              -0.0032384642250982655,
+              0.00328079251000152
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7075199445631952,
+            "gain": 0.0012224889824073437,
+            "fold_sd": 0.027588680335934736,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0005774220084794335,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.0054947427510417535,
+            "gain_95": [
+              -0.001126683077622209,
+              0.003835925579805765
+            ],
+            "same_issue_change_95": [
+              -0.003809149418803634,
+              0.0022140059557822596
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7273326475912344,
+            "gain": 0.0013854024940526677,
+            "fold_sd": 0.018399338772925634,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": 0.0030386740331491136,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.009116448939457789,
+            "gain_95": [
+              -0.001062297688648324,
+              0.0036973735620133125
+            ],
+            "same_issue_change_95": [
+              -0.0007002515716753282,
+              0.006402136747047626
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7439285511534985,
+            "gain": -0.0013015114963090824,
+            "fold_sd": 0.01502821156891122,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.002030815416537879,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": -0.02122223380957347,
+            "gain_95": [
+              -0.004394963243612837,
+              0.0018604115463224614
+            ],
+            "same_issue_change_95": [
+              -0.00717402979172365,
+              0.0027212318276979754
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7640923648690581,
+            "gain": -0.0019895181892266023,
+            "fold_sd": 0.021204240098763778,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": 0.0009269272362119607,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.00012812628126279701,
+            "gain_95": [
+              -0.00587048629703084,
+              0.0018813789660276556
+            ],
+            "same_issue_change_95": [
+              -0.006882270298730374,
+              0.010075838965149318
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6565216551473052,
+            "gain": -0.0010352546712721344,
+            "fold_sd": 0.027644211654912994,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.001018375287113904,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.0024674938312654222,
+            "gain_95": [
+              -0.0022466421344449023,
+              0.00017644209139135836
+            ],
+            "same_issue_change_95": [
+              -0.0008262909811650607,
+              0.002695293632598739
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7059000615845006,
+            "gain": -0.00039739399628735406,
+            "fold_sd": 0.028466147523943088,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0002353192431817086,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": -0.010320184813351452,
+            "gain_95": [
+              -0.0014263748437019468,
+              0.0008936760046012972
+            ],
+            "same_issue_change_95": [
+              -0.0019443588961591276,
+              0.0015713698199547473
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7252264695047053,
+            "gain": -0.0007207755924765191,
+            "fold_sd": 0.019705918348658574,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.0015098113926462209,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.0028796179238657,
+            "gain_95": [
+              -0.002155531567654885,
+              0.0008324988288952727
+            ],
+            "same_issue_change_95": [
+              -0.0036120580259165007,
+              0.0007626776189256638
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7448451996318723,
+            "gain": -0.00038486301793533295,
+            "fold_sd": 0.015376936872496682,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0008388150633525937,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.0011645288003614973,
+            "gain_95": [
+              -0.002277666348348642,
+              0.0015189809201701125
+            ],
+            "same_issue_change_95": [
+              -0.0039086617823607785,
+              0.0020364943676979158
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7639676404518387,
+            "gain": -0.0021142426064459374,
+            "fold_sd": 0.020191834848828562,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.003012513517688886,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": -0.007456949569495691,
+            "gain_95": [
+              -0.004787531070361227,
+              0.0006145817954631137
+            ],
+            "same_issue_change_95": [
+              -0.0085309716874226,
+              0.0019258195821079582
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6514961563723383,
+            "gain": -9.339041482647747e-05,
+            "fold_sd": 0.023166004446620852,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": 0.002967233863029106,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": 0.0019249951875120325,
+            "gain_95": [
+              -0.0035323297673804017,
+              0.003945629242447928
+            ],
+            "same_issue_change_95": [
+              -0.0009961994694296123,
+              0.007395375396422802
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.6926008073596635,
+            "gain": 0.0008743928913690358,
+            "fold_sd": 0.023728228276041954,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": 0.0006921154211225744,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": -0.022173284107347174,
+            "gain_95": [
+              -0.002902347641272618,
+              0.004341704825528019
+            ],
+            "same_issue_change_95": [
+              -0.003475907207538334,
+              0.005396494667950869
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.6946663108945922,
+            "gain": -0.002019521004817615,
+            "fold_sd": 0.017321848999065272,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": -0.0014478948371118294,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": -0.006349206349206354,
+            "gain_95": [
+              -0.006148681016007909,
+              0.0022890407529048834
+            ],
+            "same_issue_change_95": [
+              -0.0077342341994431655,
+              0.005407994166419655
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.7112359309968003,
+            "gain": -0.0022161124951290967,
+            "fold_sd": 0.016684873983335912,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": -0.0030903712860358423,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": 0.003928112072861256,
+            "gain_95": [
+              -0.006905122033048464,
+              0.0028013059412997023
+            ],
+            "same_issue_change_95": [
+              -0.013362172289483009,
+              0.005749158093369374
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.7290779638565617,
+            "gain": -0.004873567656272115,
+            "fold_sd": 0.019865940728494125,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": -0.007878881507801694,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": 0.003331283312833111,
+            "gain_95": [
+              -0.01197601863531247,
+              0.002139159117072502
+            ],
+            "same_issue_change_95": [
+              -0.019332255391934082,
+              0.004330010708262006
+            ]
+          }
+        },
+        "raw_early_mean_gain": -0.00041283950942501885,
+        "summary_only": false
+      },
+      "edit_span": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.658372156157512,
+            "gain": 0.0008152463389346498,
+            "fold_sd": 0.02800057539338754,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.0019043266301035922,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": -0.010517473706315734,
+            "gain_95": [
+              -0.0013011006724838001,
+              0.0030123827769618274
+            ],
+            "same_issue_change_95": [
+              -0.0008400949110437719,
+              0.005086579641042997
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7071691854778829,
+            "gain": 0.0008717298970949416,
+            "fold_sd": 0.02770995639509489,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.00046470606846799045,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.009078739987477602,
+            "gain_95": [
+              -0.0015477911010485137,
+              0.0035402661490534903
+            ],
+            "same_issue_change_95": [
+              -0.0029508341000871697,
+              0.0023547848710341844
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.726072492223917,
+            "gain": 0.00012524712673522842,
+            "fold_sd": 0.018398955982874245,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.001833682606210696,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.005169265346256502,
+            "gain_95": [
+              -0.002541990446589011,
+              0.0031172361362347255
+            ],
+            "same_issue_change_95": [
+              -0.006045078090559691,
+              0.002599701303151252
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7449962621321506,
+            "gain": -0.00023380051765697907,
+            "fold_sd": 0.01466706208998272,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.002339852545141463,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": -0.007108839990266624,
+            "gain_95": [
+              -0.0032094815417772664,
+              0.002769657299283109
+            ],
+            "same_issue_change_95": [
+              -0.006527945661756361,
+              0.0021993757411493636
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7654253868841417,
+            "gain": -0.0006564961741429842,
+            "fold_sd": 0.018977927071904894,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": 0.00617951490807972,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.006995694956949572,
+            "gain_95": [
+              -0.004407088389935877,
+              0.003084028720648464
+            ],
+            "same_issue_change_95": [
+              -0.000988540198681144,
+              0.013744420653059178
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6573583964649616,
+            "gain": -0.00019851335361581457,
+            "fold_sd": 0.02746980042769777,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.0014836169315146086,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.0010587473531316147,
+            "gain_95": [
+              -0.0020378862955171715,
+              0.001321688764532472
+            ],
+            "same_issue_change_95": [
+              -0.000716677315872885,
+              0.0038251956554982034
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7053918388075846,
+            "gain": -0.0009056167732033882,
+            "fold_sd": 0.028329849238907523,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0012497627032841407,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": -0.01743420342422869,
+            "gain_95": [
+              -0.002380562932109878,
+              0.0006157032085902415
+            ],
+            "same_issue_change_95": [
+              -0.0034802282891558526,
+              0.0007513266505908027
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.724453277164375,
+            "gain": -0.0014939679328067612,
+            "fold_sd": 0.019552194540522785,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.002348066298342555,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.011153251861216469,
+            "gain_95": [
+              -0.002972530690655166,
+              -4.741128337993904e-05
+            ],
+            "same_issue_change_95": [
+              -0.00477765269070377,
+              -5.9869530090409636e-05
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7433130264852394,
+            "gain": -0.00191703616456812,
+            "fold_sd": 0.016749608786276224,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.003862964107544886,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": -0.0006604790211005851,
+            "gain_95": [
+              -0.0039014809350484446,
+              -9.341968758450303e-05
+            ],
+            "same_issue_change_95": [
+              -0.007477980716311702,
+              -0.0003758441627776334
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7640082402685069,
+            "gain": -0.002073642789777841,
+            "fold_sd": 0.023823595316948117,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.0005407075544570095,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.0018193931939319008,
+            "gain_95": [
+              -0.004312861240359442,
+              -4.0592409055551144e-05
+            ],
+            "same_issue_change_95": [
+              -0.006861169655853275,
+              0.005696021404140561
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6511377181509673,
+            "gain": -0.00045182863619741553,
+            "fold_sd": 0.022091515293932017,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": 0.0035391177987156297,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": -0.008049979875050312,
+            "gain_95": [
+              -0.0033862204113247417,
+              0.002779895648195748
+            ],
+            "same_issue_change_95": [
+              -0.00012533994948426552,
+              0.007884422569416268
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.6919326566168813,
+            "gain": 0.00020624214858688816,
+            "fold_sd": 0.02401426692868093,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": 0.0027763715750174223,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": -0.015242783427251327,
+            "gain_95": [
+              -0.002666030646385356,
+              0.0033191151852346138
+            ],
+            "same_issue_change_95": [
+              -0.0032467696338506907,
+              0.009765906076906508
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.6984476052345577,
+            "gain": 0.0017617733351479314,
+            "fold_sd": 0.017478215920390425,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": 0.006515526767003288,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": -0.017277707543194278,
+            "gain_95": [
+              -0.002477977272108378,
+              0.006097180657742209
+            ],
+            "same_issue_change_95": [
+              -0.0008324637289453457,
+              0.014816106365994501
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.7108142404061015,
+            "gain": -0.002637803085827839,
+            "fold_sd": 0.01677143591089158,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": 0.002295704383912467,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": -0.01181909827232594,
+            "gain_95": [
+              -0.007790889375351167,
+              0.002761016711114512
+            ],
+            "same_issue_change_95": [
+              -0.009528823031793665,
+              0.013592556633476305
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.7291435212739223,
+            "gain": -0.00480801023891142,
+            "fold_sd": 0.021043599163585905,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": -0.011432102579947534,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": -0.004253792537925405,
+            "gain_95": [
+              -0.011702140422334787,
+              0.0020486393631333863
+            ],
+            "same_issue_change_95": [
+              -0.026655553567420286,
+              0.003510601356477562
+            ]
+          }
+        },
+        "raw_early_mean_gain": 0.0005053956158458014,
+        "summary_only": false
+      },
+      "edit_unviewed": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6563080310213076,
+            "gain": -0.001248878797269759,
+            "fold_sd": 0.027581341612771912,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": -0.00011132986452910831,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.003237491906270231,
+            "gain_95": [
+              -0.004388044508849148,
+              0.001177257840638232
+            ],
+            "same_issue_change_95": [
+              -0.002690373925559396,
+              0.002718053315039373
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7062928587193413,
+            "gain": -4.596861446604095e-06,
+            "fold_sd": 0.028529716888888126,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": 3.954945263562326e-06,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.0011442882742837557,
+            "gain_95": [
+              -0.001708661889909742,
+              0.001832556632203505
+            ],
+            "same_issue_change_95": [
+              -0.0020156574787498645,
+              0.002335894871598219
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7253469011581924,
+            "gain": -0.0006003439389892784,
+            "fold_sd": 0.019503514237810042,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.0022337588112021356,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.00012642225031605364,
+            "gain_95": [
+              -0.0031074842285646444,
+              0.0015234353636826468
+            ],
+            "same_issue_change_95": [
+              -0.00609690203856119,
+              0.0021027878093304755
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7433995708302461,
+            "gain": -0.001830491819561464,
+            "fold_sd": 0.016026381603291465,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.0002869630479890306,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.00022595334932387634,
+            "gain_95": [
+              -0.004278802436590957,
+              0.0005377300815544882
+            ],
+            "same_issue_change_95": [
+              -0.0033485474124013343,
+              0.003178221724812062
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7633510764388041,
+            "gain": -0.002730806619480719,
+            "fold_sd": 0.019912375534398296,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": 0.0008496832998609594,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": -0.0032800328003280144,
+            "gain_95": [
+              -0.006192413128114693,
+              0.0007820673712669129
+            ],
+            "same_issue_change_95": [
+              -0.004489935893154014,
+              0.005917745274740044
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6574883285355169,
+            "gain": -6.858128306047595e-05,
+            "fold_sd": 0.02746367501626921,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.00027070735480244634,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.005949985125037187,
+            "gain_95": [
+              -0.0013476610707884487,
+              0.0009990601489979667
+            ],
+            "same_issue_change_95": [
+              -0.0013476164432300278,
+              0.0018106710612426176
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7066856090965323,
+            "gain": 0.00038815351574444934,
+            "fold_sd": 0.02768568675233666,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -9.49186863253848e-05,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": -0.004285683442364574,
+            "gain_95": [
+              -0.0006008700968036865,
+              0.0014170197328728408
+            ],
+            "same_issue_change_95": [
+              -0.0014732941894111742,
+              0.0013835981921414566
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.72592276043272,
+            "gain": -2.448466446175468e-05,
+            "fold_sd": 0.0200660325647177,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.0006382168032006419,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.00436859109425481,
+            "gain_95": [
+              -0.0011265818519857486,
+              0.0010075459646842462
+            ],
+            "same_issue_change_95": [
+              -0.0028854162179598798,
+              0.0015121613444727135
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7454491249225723,
+            "gain": 0.0002190622727646918,
+            "fold_sd": 0.01628728585875156,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": 2.2074080614553626e-05,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.008951228838599778,
+            "gain_95": [
+              -0.0008438837245120206,
+              0.0013805324930345724
+            ],
+            "same_issue_change_95": [
+              -0.0024467514295139687,
+              0.0022777872482300423
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7664846701196542,
+            "gain": 0.0004027870613693696,
+            "fold_sd": 0.02409245966269702,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": 0.002008342345125924,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": -0.006534440344403453,
+            "gain_95": [
+              -0.0015484773084939048,
+              0.0021464463219514848
+            ],
+            "same_issue_change_95": [
+              -0.002098164606987506,
+              0.005929757172416402
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6507324335031561,
+            "gain": -0.0008571132840086149,
+            "fold_sd": 0.019565285560013895,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": -0.0002742230347348995,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": -0.0041649895875260304,
+            "gain_95": [
+              -0.003159947477963246,
+              0.0016021703415212358
+            ],
+            "same_issue_change_95": [
+              -0.004286139279757237,
+              0.0041079749915777924
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.6908165822007257,
+            "gain": -0.0009098322675686887,
+            "fold_sd": 0.02251454041465463,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": -0.0017757704233373195,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": -0.006541874473735332,
+            "gain_95": [
+              -0.0035195128757298743,
+              0.0015497845249036327
+            ],
+            "same_issue_change_95": [
+              -0.005262236439983784,
+              0.0027268856231547926
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.694933747974617,
+            "gain": -0.0017520839247927578,
+            "fold_sd": 0.018368214893305625,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": -0.0013145361021146273,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": 0.0008709088355105948,
+            "gain_95": [
+              -0.005361587953733066,
+              0.001517760260839282
+            ],
+            "same_issue_change_95": [
+              -0.007518310988535862,
+              0.005294642681655141
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.7121816681164084,
+            "gain": -0.0012703753755209934,
+            "fold_sd": 0.019216485320176273,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": -8.829632245810348e-05,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": -0.0019814370633016998,
+            "gain_95": [
+              -0.005454792136685813,
+              0.0028659550804347386
+            ],
+            "same_issue_change_95": [
+              -0.0084511413269085,
+              0.008476886038056752
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.7309435206634944,
+            "gain": -0.0030080108493393265,
+            "fold_sd": 0.02012997539505463,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": -0.007415417889695686,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": -0.02229397293972943,
+            "gain_95": [
+              -0.009257397223951058,
+              0.002869225792070493
+            ],
+            "same_issue_change_95": [
+              -0.019079287578049393,
+              0.007153839592463852
+            ]
+          }
+        },
+        "raw_early_mean_gain": -0.0011730098254566872,
+        "summary_only": false
+      },
+      "tests_failed_delta": {
+        "summary": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6572806372616053,
+            "gain": -0.0002762725569719904,
+            "fold_sd": 0.027197251301477633,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.0013324426944170686,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.001172497068757326,
+            "gain_95": [
+              -0.0019288719246537786,
+              0.0013237428656752283
+            ],
+            "same_issue_change_95": [
+              -0.0011737582107409078,
+              0.0038841888919875917
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7065720968651579,
+            "gain": 0.0002746412843699364,
+            "fold_sd": 0.026710889929468136,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": -0.0007652819084983942,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": 0.0054947427510417535,
+            "gain_95": [
+              -0.0012847496208388542,
+              0.002185782318130536
+            ],
+            "same_issue_change_95": [
+              -0.0024736097512815373,
+              0.0010940671454201395
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.7261172502061435,
+            "gain": 0.00017000510896175713,
+            "fold_sd": 0.018189838426175754,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": -0.0005334349399885863,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": 0.012052254530130646,
+            "gain_95": [
+              -0.0018397779635165978,
+              0.002351520871820256
+            ],
+            "same_issue_change_95": [
+              -0.003635574239579842,
+              0.002601613514780442
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7447708860457847,
+            "gain": -0.00045917660402300386,
+            "fold_sd": 0.01528159328679478,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.002980000882963185,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": 0.008881704731115492,
+            "gain_95": [
+              -0.0029707134982657328,
+              0.002062235713984326
+            ],
+            "same_issue_change_95": [
+              -0.007054702637429355,
+              0.0007053870623932339
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7640310995231541,
+            "gain": -0.0020507835351306625,
+            "fold_sd": 0.020488800581509883,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": 0.00038621968175495125,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": 0.00837945879458793,
+            "gain_95": [
+              -0.005854518537729057,
+              0.0010499634432824725
+            ],
+            "same_issue_change_95": [
+              -0.005616047643432438,
+              0.0056800454545454186
+            ]
+          }
+        },
+        "shuffled": {
+          "5": {
+            "auroc_baseline": 0.6575569098185774,
+            "auroc_candidate": 0.6573274038566812,
+            "gain": -0.00022950596189619255,
+            "fold_sd": 0.027324651314673827,
+            "same_issue_baseline": 0.5473737870904233,
+            "same_issue_change": 0.0003222706604790737,
+            "early_stop_recall_baseline": 0.02857742855642861,
+            "early_stop_recall_change": 0.004173739565651084,
+            "gain_95": [
+              -0.0011722624289683223,
+              0.0005638347873796716
+            ],
+            "same_issue_change_95": [
+              -0.0010520944382629474,
+              0.0014385443749194294
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.7062974555807879,
+            "auroc_candidate": 0.7059027128893622,
+            "gain": -0.00039474269142564244,
+            "fold_sd": 0.028036444819196038,
+            "same_issue_baseline": 0.6122136619629184,
+            "same_issue_change": 2.966208947668969e-05,
+            "early_stop_recall_baseline": 0.28325452857482136,
+            "early_stop_recall_change": -0.0001727227583824542,
+            "gain_95": [
+              -0.001165585396665371,
+              0.0005624132002006772
+            ],
+            "same_issue_change_95": [
+              -0.0010376036460456942,
+              0.0012478496015161723
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.7259472450971818,
+            "auroc_candidate": 0.725906829030939,
+            "gain": -4.0416066242832116e-05,
+            "fold_sd": 0.020371249263948957,
+            "same_issue_baseline": 0.6633501619356068,
+            "same_issue_change": 0.0009287483330158164,
+            "early_stop_recall_baseline": 0.11913190054782974,
+            "early_stop_recall_change": -0.0003933136676499485,
+            "gain_95": [
+              -0.0009007648624184183,
+              0.0008528542189282877
+            ],
+            "same_issue_change_95": [
+              -0.0005634194342733226,
+              0.0026533671882108005
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7452300626498076,
+            "auroc_candidate": 0.7447569415374593,
+            "gain": -0.0004731211123482626,
+            "fold_sd": 0.01617204022894474,
+            "same_issue_baseline": 0.6999249481259106,
+            "same_issue_change": -0.00011037040307271262,
+            "early_stop_recall_baseline": 0.28075572704835405,
+            "early_stop_recall_change": -0.012045051621649816,
+            "gain_95": [
+              -0.0015004267052639922,
+              0.0006103196767202542
+            ],
+            "same_issue_change_95": [
+              -0.001875449623398999,
+              0.0018847468835423234
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7660818830582847,
+            "auroc_candidate": 0.7660412196553728,
+            "gain": -4.066340291203341e-05,
+            "fold_sd": 0.02171751099019196,
+            "same_issue_baseline": 0.7403058859879499,
+            "same_issue_change": -0.000540707554456954,
+            "early_stop_recall_baseline": 0.5007431324313243,
+            "early_stop_recall_change": -0.0028187781877818674,
+            "gain_95": [
+              -0.0014305199784664213,
+              0.001269087252419425
+            ],
+            "same_issue_change_95": [
+              -0.0039523565842648975,
+              0.003658319854223718
+            ]
+          }
+        },
+        "shuffled_passes": false,
+        "auroc_rule": false,
+        "same_issue_rule": true,
+        "passes": false,
+        "raw": {
+          "5": {
+            "auroc_baseline": 0.6515895467871647,
+            "auroc_candidate": 0.6513538615706053,
+            "gain": -0.00023568521655947805,
+            "fold_sd": 0.020937200556433548,
+            "same_issue_baseline": 0.5483616931514554,
+            "same_issue_change": 0.001279707495429716,
+            "early_stop_recall_baseline": 0.01646745883135292,
+            "early_stop_recall_change": -0.00528498678753303,
+            "gain_95": [
+              -0.0018311696347843825,
+              0.0013978845747507514
+            ],
+            "same_issue_change_95": [
+              -0.0010384594292761923,
+              0.003762280733444363
+            ]
+          },
+          "10": {
+            "auroc_baseline": 0.6917264144682944,
+            "auroc_candidate": 0.691714533641714,
+            "gain": -1.1880826580434878e-05,
+            "fold_sd": 0.02354514482286479,
+            "same_issue_baseline": 0.6029709548819844,
+            "same_issue_change": 0.0002966208947668969,
+            "early_stop_recall_baseline": 0.18876438456722153,
+            "early_stop_recall_change": -0.014703024807306148,
+            "gain_95": [
+              -0.0021337642048782552,
+              0.0019872525653606213
+            ],
+            "same_issue_change_95": [
+              -0.0027245232040007394,
+              0.0033427662295711837
+            ]
+          },
+          "15": {
+            "auroc_baseline": 0.6966858318994098,
+            "auroc_candidate": 0.6979756148020516,
+            "gain": 0.0012897829026418117,
+            "fold_sd": 0.019957444251132255,
+            "same_issue_baseline": 0.6225757287102305,
+            "same_issue_change": 0.0005715374357020409,
+            "early_stop_recall_baseline": 0.0725944655148195,
+            "early_stop_recall_change": -0.0014889731703891101,
+            "gain_95": [
+              -0.0016129590983603032,
+              0.003843480358031639
+            ],
+            "same_issue_change_95": [
+              -0.006447308433806778,
+              0.006132757630188248
+            ]
+          },
+          "20": {
+            "auroc_baseline": 0.7134520434919294,
+            "auroc_candidate": 0.7162128216272433,
+            "gain": 0.002760778135313946,
+            "fold_sd": 0.021299104682565663,
+            "same_issue_baseline": 0.6386914485011699,
+            "same_issue_change": 0.000706370579665383,
+            "early_stop_recall_baseline": 0.13445962387457852,
+            "early_stop_recall_change": -0.003128584836792181,
+            "gain_95": [
+              -0.0009219187096168506,
+              0.006293804692574323
+            ],
+            "same_issue_change_95": [
+              -0.005990660905522243,
+              0.007489244077903652
+            ]
+          },
+          "30": {
+            "auroc_baseline": 0.7339515315128338,
+            "auroc_candidate": 0.7384461251560406,
+            "gain": 0.004494593643206812,
+            "fold_sd": 0.02585618792063413,
+            "same_issue_baseline": 0.6486945774756682,
+            "same_issue_change": -0.0009269272362120162,
+            "early_stop_recall_baseline": 0.2689626896268963,
+            "early_stop_recall_change": -0.024651496514965177,
+            "gain_95": [
+              -0.0006864440790666557,
+              0.009437677416491349
+            ],
+            "same_issue_change_95": [
+              -0.011686219341892014,
+              0.009360586448157786
+            ]
+          }
+        },
+        "raw_early_mean_gain": 0.0003474056198339663,
+        "summary_only": false
+      }
+    },
+    "passing": [],
+    "complete": true
+  },
+  "stage_c": {
+    "skipped": "0 channel(s) passed; stage C needs 2 or more",
+    "final_set": []
+  }
+}

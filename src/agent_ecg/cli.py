@@ -1,4 +1,4 @@
-"""``agent-ecg prepare | baselines | evaluate | opentslm-export | compare | replay | demo``."""
+"""``agent-ecg prepare | baselines | evaluate | opentslm-export | compare | replay | demo | channels``."""
 
 from __future__ import annotations
 
@@ -21,6 +21,19 @@ def _prepare(args: argparse.Namespace) -> None:
     print(f"{len(table)} checkpoints, {table['run_id'].nunique()} runs -> {args.data}")
     share = metrics.describe_matches(table.sample(2000, random_state=0))
     print(f"descriptions rebuilt from the signals match the targets for {share:.1%} of a 2,000-checkpoint sample")
+
+
+def _channels(args: argparse.Namespace) -> None:
+    from agent_ecg import channels
+
+    channels.run(
+        args.data,
+        stage=args.stage,
+        sample=args.sample or None,
+        raw=args.raw,
+        workers=args.workers,
+        deadline=args.deadline,
+    )
 
 
 def _cv_markdown(result: dict, folds: int) -> str:
@@ -259,6 +272,16 @@ def main() -> None:
     compare.add_argument("b", type=Path)
     compare.add_argument("--split", default="test", choices=("validation", "test"))
     compare.set_defaults(run=_compare)
+
+    hunt = commands.add_parser(
+        "channels", help="screen and confirm new per-step channels on train+validation (results/channels.md)"
+    )
+    hunt.add_argument("--stage", default="all", choices=("all", "0", "A", "B", "C"))
+    hunt.add_argument("--sample", type=float, default=0.3, help="share of repositories for screening; 0 = all")
+    hunt.add_argument("--raw", type=Path, help="folder with the release's parquet shards (default: download them)")
+    hunt.add_argument("--workers", type=int, default=4, help="shards read in parallel")
+    hunt.add_argument("--deadline", default="2026-11-22T09:00:00+01:00", help="start no new fit after this time")
+    hunt.set_defaults(run=_channels)
 
     args = parser.parse_args()
     args.run(args)

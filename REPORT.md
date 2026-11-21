@@ -165,6 +165,12 @@ Mean ± sd of the fold AUROCs / same-issue pairs:
   error line +0.001 / +0.002 / −0.007; whether a run command runs the tests or the agent's own script
   −0.003 / +0.002 / −0.006; phrases in the thoughts (changing approach, doubt, success, finding the
   cause, apologising) −0.003 / +0.002 / −0.002. File identity, for comparison: −0.001 / +0.006 / +0.010.
+- **Fifteen more channels, from the raw step text, did not help either** ([results/channels.md](results/channels.md),
+  `agent-ecg channels`; train + validation only). Test results, scripts fixed or still crashing,
+  exception types and edit sizes, plus three re-expressions of the signals (failure streak, steps since
+  a success, context growth): 8 of 15 passed screening, none passed confirmation (AUROC gain with a
+  repository-bootstrap interval above 0). Gains were +0.001 to +0.006; a test summary appears in only
+  2-3 % of runs by step 15. The 19 series stay as they are.
 - **Adding the issue to the behaviour adds little.** issue+signals+thoughts is the best model on test
   at 5-20 steps by 0.01-0.02, within the intervals. It is the bar for a full-context TSLM.
 - **The test split is a hard draw for the signals.** Cross-validation puts them at 0.711 ± 0.015 at 10
@@ -240,4 +246,5 @@ uv run agent-ecg prepare         # ~5 min, 1.1 GB download
 uv run agent-ecg baselines       # ~21 min, peak 5.8 GB RAM, on a laptop CPU
 uv run agent-ecg baselines --cv 5   # ~10 min, peak 4.0 GB
 uv run agent-ecg replay --top 3  # the live monitor on test runs
+uv run agent-ecg channels        # the channel hunt, ~70 min on 5 CPU threads
 ```
