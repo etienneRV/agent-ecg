@@ -1,7 +1,9 @@
 """Predict with a fine-tuned OpenTSLM-SP and write a file ``agent-ecg evaluate`` scores.
 
     python opentslm/predict.py runs/llama1b-outcome --split validation
-    python opentslm/predict.py runs/llama1b-outcome --split test --threshold-from runs/llama1b-outcome/predictions.validation.parquet
+    python opentslm/predict.py runs/llama1b-outcome --split test \
+        --threshold-from runs/llama1b-outcome/predictions.validation.parquet \
+        --calibrate-from runs/llama1b-outcome/predictions.validation.parquet
     uv run agent-ecg evaluate runs/llama1b-outcome/predictions.test.parquet
 
 - **Will it pass?** ``p_resolved`` compares the model's likelihood of answering "resolved" and
@@ -10,6 +12,13 @@
   (``--threshold-from``), or at 0.5.
 - **How will it end?** ``pred_ending`` is the most likely of the six endings, scored the same way.
 - **Status report:** ``pred_status`` is the greedy continuation (skip with ``--tasks outcome,ending``).
+- **The monitor** (``--calibrate-from``): an isotonic map per checkpoint, fitted on validation
+  predictions, turns ``p_resolved`` (inflated by ``--resolved-share``) into ``p_calibrated``; the same
+  fit gives ``health`` (0 to 100) and the critical threshold. It is saved as ``monitor.json`` in the run
+  folder, for ``opentslm/replay.py``.
+
+The samples come from the folder the run trained on (``config.json``), so a model trained on
+``data/opentslm-none`` is scored on ECG-only prompts too.
 """
 
 from __future__ import annotations
@@ -26,29 +35,38 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from common import candidate_logprobs, embed_prompts, generate, load_model, model_sample, p_resolved, pick_device
 
 from agent_ecg import opentslm_samples as samples
+from agent_ecg.monitor import Monitor
+
+
+def _validation_gold(data: Path) -> pd.DataFrame:
+    return pd.read_parquet(data / "validation.parquet", columns=["run_id", "k", "resolved"])
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("run", type=Path, help="the training run folder (config.json, best_model.pt)")
     parser.add_argument("--split", default="test", choices=("validation", "test"))
-    parser.add_argument("--data", type=Path, default=Path("data/opentslm"))
+    parser.add_argument("--data", type=Path, help="the exported samples; default: the folder the run trained on")
     parser.add_argument("--tasks", default="outcome,ending,status")
     parser.add_argument("--max", type=int, help="only this many checkpoints (score with `evaluate --subset`)")
     parser.add_argument("--batch-size", type=int, default=16, help="checkpoints per status-generation batch")
     parser.add_argument("--max-new-tokens", type=int, default=160, help="status reports are at most 116 tokens")
     parser.add_argument("--threshold-from", type=Path, help="validation predictions to choose the decision threshold")
+    parser.add_argument(
+        "--calibrate-from", type=Path, help="validation predictions to fit the monitor on (calibration, health)"
+    )
     parser.add_argument("--device", default="auto")
     args = parser.parse_args()
 
     config = json.loads((args.run / "config.json").read_text())
+    data = args.data or Path(config["data"])
     device = pick_device(args.device)
     model = load_model(config["llm"], device, init_from=config.get("init_from"), lora=not config.get("no_lora", False))
     model.load_from_file(str(args.run / "best_model.pt"))
     model.eval()
-    prompts = samples.post_prompts(args.data)
+    prompts = samples.post_prompts(data)
     tasks = [t for t in args.tasks.split(",") if t]
-    table = samples.load(args.data, args.split, cap=args.max)
+    table = samples.load(data, args.split, cap=args.max)
     rows = table.to_dict("records")
     out = pd.DataFrame({"run_id": table["run_id"], "k": table["k"]})
     started = time.perf_counter()
@@ -70,12 +88,17 @@ def main() -> None:
             out["p_resolved"] = probabilities
             cut = 0.5
             if args.threshold_from:
-                val = pd.read_parquet(args.threshold_from).merge(
-                    samples.load(args.data, "validation")[["run_id", "k", "resolved"]], on=["run_id", "k"]
-                )
+                val = pd.read_parquet(args.threshold_from).merge(_validation_gold(data), on=["run_id", "k"])
                 cut = samples.threshold(val["resolved"].to_numpy(bool), val["p_resolved"].to_numpy())
             out["pred_resolved"] = out["p_resolved"] >= cut
             print(f"decision threshold {cut:.4f}")
+            if args.calibrate_from:
+                monitor = Monitor.fit_predictions(pd.read_parquet(args.calibrate_from), _validation_gold(data))
+                monitor.to_json(args.run / "monitor.json")
+                pairs = list(zip(out["p_resolved"], out["k"], strict=True))
+                out["p_calibrated"] = [monitor.calibrate(p, k) for p, k in pairs]
+                out["health"] = [monitor.health(p, k) for p, k in pairs]
+                print(f"monitor -> {args.run / 'monitor.json'}; critical alerts on validation:\n{monitor.summary()}")
         if endings:
             out["pred_ending"] = endings
 

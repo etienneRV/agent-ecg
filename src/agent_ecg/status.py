@@ -1,6 +1,6 @@
 """Read and write the status report of the TimeNet task.
 
-The report has two parts. The *description* (first three sentences) counts what the agent did so far;
+The report has two parts. The *description* (first four sentences) counts what the agent did so far;
 it is a fixed function of the inputs. The *prediction* (last sentence) says how many more steps the run
 will take, how it will end, and whether the agent will resolve the issue:
 
@@ -72,6 +72,8 @@ def describe(signals: Mapping[str, Sequence]) -> str:
     k = len(signals["action_kind"])
     actions, replies = Counter(signals["action_kind"]), Counter(signals["observation_kind"])
     repeats = int(sum(bool(value) for value in signals["repeated_action"]))
+    same_file = int(sum(bool(value) for value in signals["same_file_edit"]))
+    own = Counter(signals["edit_target"])["own_script"]
     return (
         f"In its first {k} steps the agent edited files {_count(actions['edit'], 'time')}, "
         f"created {_count(actions['create'], 'file')}, ran code {_count(actions['run'], 'time')}, "
@@ -81,6 +83,8 @@ def describe(signals: Mapping[str, Sequence]) -> str:
         f"{_count(replies['traceback'], 'reply', 'replies')} showed a Python traceback, "
         f"{_count(replies['command_error'], 'reply', 'replies')} a command error "
         f"and {_count(replies['timeout'], 'command')} timed out. "
+        f"{_count(same_file, 'edit')} changed the same file as the edit before, "
+        f"and {_count(own, 'edit')} changed a file the agent had created. "
         f"The conversation holds {int(signals['context_chars'][-1]):,} characters."
     )
 

@@ -35,15 +35,29 @@ def pick_device(name: str = "auto") -> str:
 
 
 def load_model(llm_id: str, device: str, *, init_from: str | None = None, lora: bool = True) -> OpenTSLMSP:
-    """A fresh OpenTSLM-SP on ``llm_id``, or a pretrained one from the Hub (``init_from``), with LoRA."""
+    """An OpenTSLM-SP on ``llm_id`` with LoRA, fresh or starting from a pretrained one on the Hub.
+
+    ``init_from`` (e.g. ``OpenTSLM/llama-3.2-1b-ecg-sp``) loads that checkpoint's encoder, projector
+    and LoRA weights, as ``OpenTSLM.load_pretrained`` does, but onto ``llm_id``. OpenTSLM's loader always
+    uses the gated ``meta-llama/...`` id; ``unsloth/Llama-3.2-1B`` holds the same weights without the
+    gate, so ``--llm unsloth/Llama-3.2-1B --init-from OpenTSLM/llama-3.2-1b-ecg-sp`` needs no approval.
+
+    Raises:
+        ValueError: If ``init_from`` is not an SP checkpoint or was trained on another base model.
+    """
     if init_from:
-        model = OpenTSLM.load_pretrained(init_from, device=device, enable_lora=lora)
-        if not isinstance(model, OpenTSLMSP):
+        if not init_from.endswith("-sp"):
             raise ValueError(f"{init_from} is not an OpenTSLM-SP model (its id should end in -sp)")
-    else:
-        model = OpenTSLMSP(llm_id=llm_id, device=device)
-        if lora:
-            model.enable_lora(**LORA)
+        base = OpenTSLM._get_base_llm_id(init_from)
+        if base.split("/")[-1].lower() != llm_id.split("/")[-1].lower():
+            raise ValueError(f"{init_from} was trained on {base}; pass --llm {base} or an ungated copy of it")
+    model = OpenTSLMSP(llm_id=llm_id, device=device)
+    if lora:
+        model.enable_lora(**LORA)
+    if init_from:
+        from huggingface_hub import hf_hub_download
+
+        model.load_from_file(hf_hub_download(init_from, "model_checkpoint.pt"))
     return model
 
 

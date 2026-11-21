@@ -54,7 +54,7 @@ def weights(table: pd.DataFrame, chosen: list[tuple[int, str]], resolved_share: 
     """Sampling weight of each item.
 
     Each checkpoint counts 1 / (checkpoints of its run in the table), so long runs, which fail more
-    often, do not count up to four times. With ``resolved_share``, resolved runs are reweighted to make
+    often, do not count up to five times. With ``resolved_share``, resolved runs are reweighted to make
     up that share of the total weight; the model then sees successes often enough to learn them, at the
     cost of calibration (its probabilities overstate success).
     """
