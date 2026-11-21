@@ -40,12 +40,13 @@ revision and converts it:
 
 - **Checkpoints, never whole runs.** The end of a run gives its outcome away (every submitted run ends
   with `submit`; 36 % of failed runs end at the context limit vs 5 % of resolved ones). So each run is
-  cut after k = 5, 10, 20 and 30 steps, *only if it goes on after them*. No input shows the outcome,
+  cut after k = 5, 10, 15, 20 and 30 steps, *only if it goes on after them*. No input shows the outcome,
   the exit status, the run's length, the patch or the test log.
-- **Inputs per checkpoint:** seven per-step signals on an ordinal axis (thought, command and reply
+- **Inputs per checkpoint:** nine per-step signals on an ordinal axis (thought, command and reply
   length; conversation length; repeated command; command kind: edit/create/run/read/search/submit/other;
-  reply kind: linter rejection/timeout/traceback/command error/silent success/output), the agent's
-  thoughts as text, and the issue text.
+  reply kind: linter rejection/timeout/traceback/command error/silent success/output; whether an edit
+  changes the same file as the edit before; the kind of file an edit changes: source, test, or a file
+  the agent created), the agent's thoughts as text, and the issue text.
 - **Three tasks per checkpoint:** *Will it pass?* (resolved / unresolved), *How will it end?* (6
   endings), and a rule-made *status report* (what happened so far + how many more steps, how it ends,
   whether it resolves).
@@ -56,10 +57,11 @@ revision and converts it:
 | --- | --- | --- | --- |
 | 5 steps | 76,182 | 16.6 % | 60,985 / 7,557 / 7,640 |
 | 10 steps | 59,708 | 13.8 % | 48,056 / 5,649 / 6,003 |
+| 15 steps | 43,550 | 9.2 % | 35,124 / 4,075 / 4,351 |
 | 20 steps | 34,059 | 6.4 % | 27,587 / 3,107 / 3,365 |
 | 30 steps | 22,479 | 4.2 % | 18,288 / 2,030 / 2,161 |
 
-192,428 checkpoints and 577,284 tasks in all; test holds 143 repositories and 7,640 runs.
+235,978 checkpoints and 707,934 tasks in all; test holds 143 repositories and 7,640 runs.
 
 ## 4. How we evaluate
 
@@ -71,26 +73,31 @@ on the held-out **test** split. Three choices matter:
    (its chance level is the resolved rate), the **Brier score** (is the probability calibrated?) and
    **balanced accuracy** at a threshold chosen on validation.
 2. **Per checkpoint.** The resolved rate falls from 17 % at 5 steps to 4 % at 30, so a pooled score
-   mixes four different problems. We report k = 5, 10, 20, 30 separately (and pooled for reference).
-3. **Score the status report by its prediction only.** Its first three sentences restate counts the
+   mixes five different problems. We report k = 5, 10, 15, 20, 30 separately (and pooled for reference).
+3. **Score the status report by its prediction only.** Its first four sentences restate counts the
    model can read off its input; only the last sentence predicts. A word-overlap score on the full
    text stays high when the prediction is wrong, so we parse the last sentence and score its three
    facts: remaining steps (absolute error), ending (accuracy, macro-F1), pass/fail (balanced accuracy).
    We print word overlap on the full text next to it to show the gap.
+4. **Same-issue pairs.** AUROC over all runs also rewards judging the issue: some issues are harder
+   than others, and each has 22 runs on average. So we also report, among pairs of runs on the same
+   issue with one resolved and one not, the share where the model scores the resolved run higher
+   (0.5 is chance). The issue is fixed within a pair, so only what the model reads from the run counts.
 
 ## 5. Baselines
 
 All baselines run on a laptop CPU, train on train, tune on validation (by mean per-checkpoint
 AUROC), and are scored on test. Each
-checkpoint is weighted by 1 / (checkpoints of its run) so long, failing runs do not count four times.
+checkpoint is weighted by 1 / (checkpoints of its run) so long, failing runs do not count five times.
 
 | Baseline | Inputs | Model |
 | --- | --- | --- |
 | majority | none | resolved rate of the checkpoint; most common ending; median remaining steps |
-| signals | the 7 per-step signals, summarised (kind shares overall and in the last 5 steps, lengths, conversation size) | gradient-boosted trees |
+| signals | the 9 per-step signals, summarised (kind shares overall and in the last 5 steps, lengths, conversation size) | gradient-boosted trees |
 | thoughts | the agent's thoughts so far | TF-IDF of words and word pairs + logistic regression |
 | signals+thoughts | both | logistic regression |
 | issue | the issue text only (never the agent) | TF-IDF + logistic regression |
+| issue+signals+thoughts | everything a full-context TSLM reads | logistic regression |
 
 **Why the issue-only baseline.** Some issues are simply harder than others, and each is attempted 22
 times on average. A model could score well by judging the issue ("issues like this usually fail")
@@ -100,69 +107,116 @@ agent-based baselines beat the issue-only one, the monitor really learns from th
 ### Results on test (143 repositories never seen in training)
 
 **Will it pass?** AUROC per checkpoint, with 95 % intervals from resampling test repositories
-(chance = 0.5). Average precision is in parentheses; its chance level is the resolved rate (16 / 14 / 7 / 6 %).
+(chance = 0.5). Average precision is in parentheses; its chance level is the resolved rate (16 / 14 / 9 / 7 / 6 %).
 
-| Baseline | 5 steps | 10 steps | 20 steps | 30 steps |
-| --- | --- | --- | --- | --- |
-| majority | 0.50 (0.16) | 0.50 (0.14) | 0.50 (0.07) | 0.50 (0.06) |
-| issue only | 0.61 [0.54, 0.69] (0.25) | 0.62 [0.55, 0.70] (0.23) | 0.62 [0.50, 0.70] (0.11) | 0.62 [0.46, 0.72] (0.10) |
-| signals | 0.61 [0.56, 0.66] (0.24) | 0.63 [0.58, 0.67] (0.21) | 0.65 [0.56, 0.73] (0.12) | 0.67 [0.58, 0.77] (0.11) |
-| thoughts | **0.68** [0.63, 0.73] (0.28) | **0.70** [0.65, 0.75] (0.26) | 0.70 [0.61, 0.77] (0.17) | **0.70** [0.60, 0.79] (0.13) |
-| signals+thoughts | 0.68 [0.63, 0.73] (0.29) | 0.69 [0.64, 0.74] (0.25) | **0.71** [0.63, 0.78] (0.16) | 0.70 [0.62, 0.77] (0.15) |
+| Baseline | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+| --- | --- | --- | --- | --- | --- |
+| majority | 0.50 (0.16) | 0.50 (0.14) | 0.50 (0.09) | 0.50 (0.07) | 0.50 (0.06) |
+| issue only | 0.61 [0.54, 0.69] (0.25) | 0.62 [0.55, 0.69] (0.23) | 0.61 [0.52, 0.70] (0.15) | 0.62 [0.50, 0.70] (0.12) | 0.61 [0.46, 0.72] (0.10) |
+| signals | 0.61 [0.57, 0.66] (0.24) | 0.65 [0.60, 0.68] (0.23) | 0.67 [0.61, 0.73] (0.19) | 0.71 [0.61, 0.79] (0.19) | **0.73** [0.63, 0.82] (0.18) |
+| thoughts | 0.68 [0.63, 0.73] (0.28) | 0.70 [0.65, 0.75] (0.26) | 0.71 [0.64, 0.76] (0.22) | 0.70 [0.61, 0.77] (0.17) | 0.70 [0.60, 0.79] (0.13) |
+| signals+thoughts | 0.67 [0.62, 0.73] (0.28) | 0.69 [0.64, 0.73] (0.24) | 0.71 [0.64, 0.77] (0.21) | 0.71 [0.63, 0.78] (0.16) | 0.70 [0.62, 0.77] (0.15) |
+| issue+signals+thoughts | **0.69** [0.64, 0.75] (0.31) | **0.71** [0.65, 0.75] (0.29) | **0.72** [0.64, 0.77] (0.24) | **0.72** [0.64, 0.78] (0.16) | 0.70 [0.62, 0.77] (0.14) |
+
+**Same-issue pairs** (share of resolved/unresolved pairs on the same issue where the resolved run
+scores higher; 0.5 = chance; 27,526 / 17,091 / 6,964 / 3,203 / 1,223 pairs):
+
+| Baseline | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+| --- | --- | --- | --- | --- | --- |
+| issue only | 0.500 | 0.500 | 0.500 | 0.500 | 0.500 |
+| signals | 0.543 | **0.610** | **0.593** | **0.601** | **0.651** |
+| thoughts | 0.544 | 0.562 | 0.576 | 0.572 | 0.576 |
+| signals+thoughts | 0.549 | 0.579 | 0.583 | 0.555 | 0.590 |
+| issue+signals+thoughts | **0.571** | 0.605 | 0.593 | 0.570 | 0.601 |
+
+**Repository cross-validation** (`agent-ecg baselines --cv 5`): five folds over all 1,276
+repositories, so every checkpoint is predicted once by a model that never saw its repository.
+Mean ± sd of the fold AUROCs / same-issue pairs:
+
+| Baseline | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+| --- | --- | --- | --- | --- | --- |
+| issue only | 0.616 ± 0.024 / 0.500 | 0.609 ± 0.029 / 0.500 | 0.602 ± 0.036 / 0.500 | 0.601 ± 0.037 / 0.500 | 0.603 ± 0.033 / 0.500 |
+| signals | 0.663 ± 0.024 / 0.551 | 0.711 ± 0.015 / **0.615** | 0.729 ± 0.020 / **0.662** | 0.747 ± 0.018 / **0.686** | **0.775** ± 0.016 / **0.735** |
+| thoughts | **0.700** ± 0.019 / 0.546 | **0.728** ± 0.019 / 0.593 | **0.735** ± 0.018 / 0.626 | **0.748** ± 0.020 / 0.649 | 0.769 ± 0.021 / 0.689 |
 
 **What this shows:**
-- **The agent's behaviour carries signal beyond the issue.** Thoughts beat the issue-only model at
-  every checkpoint, and the gain holds up in a paired test that resamples the same test repositories
-  for both models (1,000 resamples; `agent-ecg compare`, saved in `results/compare_*.txt`):
+- **The agent's behaviour carries signal beyond the issue.** In a paired test that resamples the same
+  test repositories for both models (1,000 resamples; `agent-ecg compare`, saved in `results/compare_*.txt`):
 
-  | AUROC gain over issue-only | 5 steps | 10 steps | 20 steps | 30 steps |
-  | --- | --- | --- | --- | --- |
-  | thoughts | **+0.07** [+0.01, +0.13] | **+0.09** [+0.01, +0.15] | **+0.09** [+0.01, +0.17] | **+0.09** [+0.003, +0.19] |
-  | signals | -0.01 [-0.08, +0.07] | +0.01 [-0.06, +0.08] | +0.04 [-0.07, +0.13] | +0.06 [-0.05, +0.19] |
+  | AUROC gain | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+  | --- | --- | --- | --- | --- | --- |
+  | thoughts over issue only | **+0.07** [+0.01, +0.13] | **+0.09** [+0.01, +0.15] | **+0.10** [+0.02, +0.18] | **+0.09** [+0.01, +0.17] | **+0.09** [+0.01, +0.17] |
+  | signals over issue only | -0.00 [-0.07, +0.08] | +0.03 [-0.05, +0.10] | +0.06 [-0.02, +0.14] | +0.10 [-0.00, +0.20] | **+0.12** [+0.01, +0.23] |
+  | signals over thoughts | **-0.07** [-0.11, -0.03] | **-0.06** [-0.09, -0.02] | -0.04 [-0.08, +0.01] | +0.01 [-0.05, +0.07] | +0.03 [-0.04, +0.11] |
 
-  The thoughts often restate the issue, so part of their score may still be issue difficulty; the
-  gain is what watching the agent adds on top.
-- **The step signals trend upward as the run goes on** (0.61 at 5 steps to 0.67 at 30) while the
-  issue-only model stays flat at 0.61-0.62, which is the ECG idea: the longer you watch, the more the trace
-  says. With this test set the trend is not yet significant (the intervals above include 0).
-- **Combining signals and thoughts in a linear model adds nothing yet.** A model that reads the trace
-  as a sequence, such as a TSLM, is the obvious next step.
-- **The intervals are wide** (test has 143 repositories, and only 127 resolved runs at 30 steps), so
-  differences under about 0.05 are not reliable.
-- **Pooled scores mislead.** The majority baseline has a pooled AUROC of 0.60 although it knows
-  nothing about any run, because the resolved rate differs by checkpoint. Hence per-checkpoint scores.
+- **The step signals are the ECG: the longer you watch, the more they say.** Their AUROC climbs from
+  0.61 at 5 steps to 0.73 at 30 (cross-validated: 0.66 to 0.78) while the issue-only model stays flat
+  at 0.60-0.62. By step 30 their gain over the issue is significant.
+- **Within an issue, the signals beat the words.** The thoughts are strong across issues, but much of
+  that is the issue showing through: they often restate it. On pairs of runs on the same issue the
+  signals pick the resolved run 61 % of the time at step 10 and 65 % at step 30, against 56-58 % for
+  the thoughts (cross-validated: 62 % and 74 % vs 59 % and 69 %).
+- **The file-identity channels help a little.** On test the signals model rose from 0.63 / 0.65 / 0.67
+  to 0.65 / 0.71 / 0.73 at 10 / 20 / 30 steps, but training also gained the 15-step checkpoints and
+  the test split is noisy. The controlled comparison (cross-validation, same checkpoints, with and
+  without the two channels) puts their gain at +0.006 / +0.010 at 10 / 20 steps.
+- **Adding the issue to the behaviour adds little.** issue+signals+thoughts is the best model on test
+  at 5-20 steps by 0.01-0.02, within the intervals. It is the bar for a full-context TSLM.
+- **The test split is a hard draw for the signals.** Cross-validation puts them at 0.711 ± 0.015 at 10
+  steps; the single test split gives 0.645. Differences under about 0.05 on test are not reliable.
+- **Pooled scores mislead.** The majority baseline has a pooled AUROC of 0.6 although it knows nothing
+  about any run, because the resolved rate differs by checkpoint. Hence per-checkpoint scores.
 
-**How will it end?** (signals baseline vs majority, test) Macro-F1 over the six endings is 0.13 / 0.17
-/ 0.22 / 0.20 at 5 / 10 / 20 / 30 steps, against 0.13 / 0.12 / 0.07 / 0.04 for always guessing
-`submitted`. It mostly separates `submitted` from `context_limit`; `early_exit` (3 % of test
-checkpoints) is predicted only 3 times.
+**How will it end?** (signals baseline vs majority, test) Macro-F1 over the six endings is 0.13 / 0.18
+/ 0.22 / 0.22 / 0.20 at 5 / 10 / 15 / 20 / 30 steps, against 0.08 / 0.10 / 0.12 / 0.14 / 0.15 for
+always guessing the most common training ending (`context_limit`). It mostly separates `submitted`
+from `context_limit`; `early_exit` (3 % of test checkpoints) is predicted 19 times.
 
 **Status report.** The signals baseline predicts the remaining steps with a median error of 6 steps
-(majority: 9). The table below shows why only the last sentence is scored: the majority baseline,
-which predicts "will not resolve" for every run, gets 0.96 word-overlap F1 on the full text.
+(majority: 10). The table below shows why only the last sentence is scored: the majority baseline,
+which predicts "will not resolve" for every run, gets 0.97 word-overlap F1 on the full text.
 
 | Baseline | Word-overlap F1, full text | Word-overlap F1, last sentence | Pass/fail balanced accuracy | Remaining steps, median error |
 | --- | --- | --- | --- | --- |
-| majority | 0.963 | 0.877 | 0.500 | 9 |
-| signals | 0.968 | 0.897 | 0.597 | 6 |
+| majority | 0.968 | 0.874 | 0.500 | 10 |
+| signals | 0.974 | 0.897 | 0.614 | 6 |
+
+**The live monitor on the signals model** (`results/monitor.signals.md`, fitted on validation): the
+critical zone is health 12-15 or less, where 95.0 / 96.6 / 99.0 / 98.9 / 99.3 % of validation runs
+failed at 5 / 10 / 15 / 20 / 30 steps; it flags 14-17 % of the failing runs. `agent-ecg replay` picks
+test runs from it: the top one (`results/replay.signals.falling.jsonl`) starts at health 94, falls to
+31 at step 8 and turns critical at step 15, while the agent alternates `read` and `search` with
+repeated commands; it ran into the context limit and did not resolve its issue.
 
 Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per baseline in `results/`.
 
-## 6. Next: fine-tuning OpenTSLM
+## 6. Fine-tuning OpenTSLM, and the live monitor
 
-- **Input:** the seven step signals as time series, the agent's thoughts and the issue as text.
-- **Targets:** the three tasks above; the status report teaches the model to describe the trace before
-  it predicts.
-- **Data pipeline: done.** `agent-ecg opentslm-export` writes every checkpoint in OpenTSLM's sample
-  format (issue cut to 512 tokens, latest thoughts up to 1,024, 15 per-step series; about 1,400 tokens
-  per sample), and `opentslm/agent_ecg_dataset.py` plugs it into OpenTSLM's trainer.
-- **Training and prediction scripts: ready** (`opentslm/train.py`, `opentslm/predict.py`, steps in
-  `GPU.md`). Pass/fail probabilities come from the model's likelihood of "resolved" vs "unresolved".
-  Each answer counts equally in the loss (a status report would otherwise dominate it), and the
-  best checkpoint is chosen by validation pass/fail AUROC. Two runs: all three tasks vs pass/fail only.
-- **Plan:** a 20-step smoke test on the GPU, then the full fine-tune on Nebius GPUs;
-  scored with the same script, against the baselines above.
-- **Bar to clear:** AUROC above the thoughts baseline (0.68 / 0.70 / 0.70 / 0.70 at 5 / 10 / 20 / 30 steps), and clearly above the issue-only model (0.61-0.62), so the gain comes from watching the agent.
+- **Inputs:** the nine step signals as 19 labelled series (four z-normalised lengths, fifteen 0/1
+  indicators), with, by export, nothing else (`--context none`, the ECG alone, 443-558 tokens), the
+  agent's thoughts (`thoughts`), or the issue and the thoughts (`full`, 994-1,839 tokens).
+- **No counts in the series labels.** An earlier export labelled each 0/1 series with its count ("2
+  of 5 steps"), so the model could answer from the text and never read the series. The labels now
+  say only what a 1 means.
+- **Runs, in order** (`GPU.md`), all starting from OpenTSLM's ECG model (`OpenTSLM/llama-3.2-1b-ecg-sp`,
+  the last stage of its curriculum, which reads 12 labelled leads at once):
+  1. **C: the ECG alone, pass/fail.** Whatever it gets right, it read from the trace; this is the
+     demo's model.
+  2. **B: thoughts beside the ECG, pass/fail.** Against the thoughts baseline, it shows what the
+     series add to the text.
+  3. **A: everything, all three tasks**, against the issue+signals+thoughts baseline.
+- **Training:** each answer counts equally in the loss, resolved runs get 30 % of the sampling
+  weight, and the best checkpoint is chosen by validation pass/fail AUROC.
+- **The monitor** (`src/agent_ecg/monitor.py`), fitted on validation predictions only: an isotonic
+  map per checkpoint gives calibrated probabilities (the reweighting inflates the raw ones); health
+  from 0 to 100 is the percentile of a run's score among validation runs still going at the same
+  step; the alarm goes on when health is at most 15 in a zone where at least 95 % of validation runs
+  failed, two steps in a row, and holds until health is back to 30. `agent-ecg replay` and `opentslm/replay.py` replay test runs step by
+  step and write one JSON line per step for the terminal ECG.
+- **Bar to clear:** for C, the signals baseline on the same inputs (0.61 / 0.65 / 0.67 / 0.71 / 0.73
+  on test; same-issue pairs 0.61 at 10 steps); for B, the thoughts baseline (0.68 / 0.70 / 0.71 /
+  0.70 / 0.70); for A, issue+signals+thoughts (0.69 / 0.71 / 0.72 / 0.72 / 0.70). And always clearly
+  above the issue-only model (0.61-0.62), so the gain comes from watching the agent.
 
 ## 7. Limitations
 
@@ -171,12 +225,14 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
 - Signals and kinds come from fixed text rules (listed in the dataset card); the status report is a
   template, not an expert's assessment.
 - The label is the release's test result, which can miss correct fixes or accept incomplete ones.
-- No baseline yet combines the issue with the agent's behaviour, or reads the steps as a sequence.
+- No baseline reads the steps as a sequence; that is the TSLM's job.
 
 ## 8. Reproduce
 
 ```bash
 git clone https://github.com/etienneRV/agent-ecg && cd agent-ecg && uv sync
-uv run agent-ecg prepare     # ~10 min, 1.1 GB download
-uv run agent-ecg baselines   # ~9 min, peak 2.3 GB RAM, on a laptop CPU
+uv run agent-ecg prepare         # ~5 min, 1.1 GB download
+uv run agent-ecg baselines       # ~21 min, peak 5.8 GB RAM, on a laptop CPU
+uv run agent-ecg baselines --cv 5   # ~10 min, peak 4.0 GB
+uv run agent-ecg replay --top 3  # the live monitor on test runs
 ```

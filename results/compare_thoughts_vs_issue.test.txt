@@ -1,5 +1,6 @@
 AUROC of thoughts.test minus issue.test (test, paired repository bootstrap)
-  k=5: +0.068 [+0.008, +0.130]  share of resamples not better: 0.015
-  k=10: +0.085 [+0.013, +0.153]  share of resamples not better: 0.011
-  k=20: +0.086 [+0.012, +0.171]  share of resamples not better: 0.017
-  k=30: +0.087 [+0.003, +0.189]  share of resamples not better: 0.020
+  k=5: +0.067 [+0.008, +0.129]  share of resamples not better: 0.016
+  k=10: +0.085 [+0.014, +0.152]  share of resamples not better: 0.011
+  k=15: +0.098 [+0.023, +0.184]  share of resamples not better: 0.005
+  k=20: +0.086 [+0.009, +0.166]  share of resamples not better: 0.012
+  k=30: +0.087 [+0.007, +0.165]  share of resamples not better: 0.015

@@ -19,7 +19,9 @@ Until #832 is merged, the connector is installed from its PR branch (see `pyproj
 
 ```bash
 uv run agent-ecg prepare      # build the TimeNet release (1.1 GB download, ~5 min) and flatten it into data/
-uv run agent-ecg baselines    # fit the five CPU baselines, score them on test, write results/
+uv run agent-ecg baselines    # fit the six CPU baselines, score them on test, write results/ and data/models/
+uv run agent-ecg baselines --cv 5   # repository cross-validation over all checkpoints: steadier AUROCs
+uv run agent-ecg replay --top 3     # the live monitor on test runs, step by step (signals model)
 uv run agent-ecg evaluate my_predictions.parquet          # score any model on test
 uv run agent-ecg evaluate my_predictions.csv --split validation --json report.json
 uv run agent-ecg compare mine.parquet data/predictions/thoughts.test.parquet   # paired AUROC gain per checkpoint
@@ -29,19 +31,29 @@ uv run agent-ecg compare mine.parquet data/predictions/thoughts.test.parquet   #
 
 | File | One row per | Holds |
 | --- | --- | --- |
-| `checkpoints.parquet` | checkpoint (first k steps of a run still going) | ids, `split`, `k`, the 7 per-step signals as lists, targets `resolved`, `ending`, `status`, `remaining` |
+| `checkpoints.parquet` | checkpoint (first k steps of a run still going) | ids, `split`, `k`, the 9 per-step signals as lists, targets `resolved`, `ending`, `status`, `remaining` |
 | `thoughts.parquet` | run | the agent's thoughts, step by step; a checkpoint at k sees the first k |
 | `issues.parquet` | issue annotation | the issue text (`issue_id` links it to checkpoints) |
 
 ## Training data for OpenTSLM
 
 ```bash
-uv run agent-ecg opentslm-export   # after prepare; writes data/opentslm/{train,validation,test}.parquet
+uv run agent-ecg opentslm-export                     # issue + thoughts + series -> data/opentslm/
+uv run agent-ecg opentslm-export --context thoughts  # thoughts + series        -> data/opentslm-thoughts/
+uv run agent-ecg opentslm-export --context none      # the series alone (ECG)   -> data/opentslm-none/
 ```
 
 Each row is one checkpoint in [OpenTSLM](https://github.com/OpenTSLM/OpenTSLM)'s sample format:
-`pre_prompt` (setting, issue, the agent's thoughts so far), 15 labelled per-step `time_series`, and
-the three tasks' answers. `post_prompts.json` holds each task's question. To train, copy
+`pre_prompt` (the setting, then the issue and the agent's thoughts so far, as the context asks), 19
+labelled per-step `time_series`, and the three tasks' answers. `post_prompts.json` holds each task's
+question and `meta.json` the context.
+
+**The series** are four lengths (thought, command, reply, whole conversation), z-normalised with
+their mean and standard deviation in the label, and fifteen 0/1 indicators: a repeated command, five
+command kinds, five reply kinds, an edit of the same file as the edit before, and the kind of file an
+edit changes (source, test, a file the agent created). An indicator's label says what a 1 means and
+nothing else. With a count in the label ("2 of 5 steps"), the model could answer from the text and
+never learn to read the series. To train, copy
 [`opentslm/agent_ecg_dataset.py`](opentslm/agent_ecg_dataset.py) into an OpenTSLM checkout; its
 docstring explains the options (tasks, one checkpoint per run, sample caps).
 
@@ -51,18 +63,49 @@ docstring explains the options (tasks, one checkpoint per run, sample caps).
 | --- | --- | --- |
 | Issue | first 512 tokens | about 80 % of issues fit whole; the start states the problem |
 | Thoughts | latest steps first, up to 1,024 tokens, each step at most 256 | recent behaviour matters most for a monitor; the time series still cover every step |
-| Time series | all steps | 4 values make one token, so 15 series x 30 steps cost about 120 tokens |
+| Time series | all steps | 4 values make one token, so 19 series x 30 steps cost about 150 tokens |
 
-Measured on the export: a full sample is 1,340-1,460 tokens at the median and at most 2,341. At 30
-steps the thoughts budget drops the oldest 15 steps' thoughts for the median checkpoint; raise
+Measured on the exports (the whole prompt with the pass/fail question, one token per four series
+values), median / 99th percentile:
+
+| Context | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+| --- | --- | --- | --- | --- | --- |
+| none (the ECG alone) | 443 / 445 | 463 / 464 | 482 / 483 | 501 / 502 | 558 / 558 |
+| thoughts | 753 / 1,151 | 1,117 / 1,529 | 1,458 / 1,581 | 1,557 / 1,620 | 1,635 / 1,708 |
+| full (issue and thoughts) | 994 / 1,496 | 1,389 / 1,966 | 1,649 / 2,085 | 1,747 / 2,128 | 1,839 / 2,213 |
+
+At 30 steps the thoughts budget drops the oldest 15 steps' thoughts for the median checkpoint; raise
 `THOUGHT_TOKENS` in `opentslm_data.py` if the GPU has memory to spare.
 
 ## Fine-tuning OpenTSLM
 
-See **[GPU.md](GPU.md)**: setup, a 20-step smoke test, the full run, and scoring.
-`opentslm/train.py` fine-tunes OpenTSLM-SP (encoder, projector and LoRA) on all three tasks;
-`opentslm/predict.py` writes a predictions file for `agent-ecg evaluate`, with pass/fail
-probabilities from the model's likelihood of "resolved" vs "unresolved".
+See **[GPU.md](GPU.md)**: setup, a 20-step smoke test, the recommended runs, scoring and the replay.
+`opentslm/train.py` fine-tunes OpenTSLM-SP (encoder, projector and LoRA) on any export and any subset
+of the three tasks; `opentslm/predict.py` writes a predictions file for `agent-ecg evaluate`, with
+pass/fail probabilities from the model's likelihood of "resolved" vs "unresolved", calibrated on
+validation (`--calibrate-from`); `opentslm/replay.py` replays runs step by step for the demo.
+
+## The live monitor
+
+`src/agent_ecg/monitor.py` turns any model's pass/fail scores into what a monitor shows, fitted on
+validation predictions only:
+
+- **Health, 0 to 100:** the percentile of a run's score among validation runs still going at the same
+  step. 96 % of the runs still going at step 30 fail, so an absolute probability would sit near zero
+  for every long run; the percentile shows whether this run looks worse than runs of its age.
+- **Calibrated probability:** an isotonic map per checkpoint. Training gives resolved runs 30 % of the
+  weight, which inflates the raw scores; the map gives honest probabilities back (Brier score).
+- **Critical:** health at or below 15 where validation runs failed at least 95 % of the time, for two
+  steps in a row. The alarm then holds until health is back to 30, so it does not flicker, and the
+  recommendation quotes the measured failure rate.
+- **States:** `stable` (health 60 or more), `watch` (30 to 60), `low` (under 30), `critical`.
+
+`agent-ecg replay` (signals model) and `opentslm/replay.py` (a fine-tuned TSLM) score every prefix of
+a test run, from step 5 to its last visible step, and write one JSON line per step: `step`,
+`health`, `state`, `score`, `p_calibrated`, `action`, `reply`, `events` (repeated command, edit
+rejected, traceback, same file again, ...), the rule-made `status` description, and a
+`recommendation` once the state is critical. A terminal ECG display can read it line by line.
+Between checkpoints (step 7, 12, ...) health is interpolated from the two nearest fitted ones.
 
 ## Scoring a model
 
@@ -70,15 +113,21 @@ A predictions file has one row per checkpoint of the split, keyed by `run_id` an
 
 | Column | Task | Scored by |
 | --- | --- | --- |
-| `p_resolved` | Will it pass? (probability) | AUROC with a 95 % repository-bootstrap interval, average precision, Brier score |
+| `p_resolved` | Will it pass? (probability) | AUROC with a 95 % repository-bootstrap interval, same-issue pairs, average precision, Brier score |
+| `p_calibrated` | the same, calibrated on validation (optional) | Brier score |
 | `pred_resolved` | Will it pass? (yes/no; default `p_resolved >= 0.5`) | balanced accuracy |
 | `pred_ending` | How will it end? (6 labels) | accuracy, macro-F1 |
 | `pred_status` | Status report (text) | the **last sentence only**: parse rate, remaining-steps error, ending, pass/fail |
 
-Every score is reported per checkpoint (k = 5, 10, 20, 30) and pooled. Why: most runs fail (83 % at
-5 steps, 96 % at 30), so accuracy rewards always saying "fail", and the first three sentences of a
+Every score is reported per checkpoint (k = 5, 10, 15, 20, 30) and pooled. Why: most runs fail (83 %
+at 5 steps, 96 % at 30), so accuracy rewards always saying "fail", and the first four sentences of a
 status report restate counts the model can read off its input. The report also prints word-overlap
 F1 on the full text next to the prediction-only score, to show the gap.
+
+**Same-issue pairs** answer the objection that a monitor only learns which issues are hard. Among
+pairs of runs on the same issue, one resolved and one not, it is the share where the model scores the
+resolved run higher (ties count half; 0.5 is chance). The issue is the same within a pair, so only
+what the model reads from the run itself counts.
 
 ## Layout
 
@@ -86,12 +135,13 @@ F1 on the full text next to the prediction-only score, to show the gap.
 src/agent_ecg/
   data.py        build the release, flatten it, load it
   status.py      read and write the status report's sentences
-  metrics.py     the evaluation (all tasks)
-  baselines.py   majority, signals, thoughts, signals+thoughts, issue
-  opentslm_data.py  checkpoints -> OpenTSLM samples (trimming, series, prompts)
-  cli.py         agent-ecg prepare | baselines | evaluate | compare | opentslm-export
-opentslm/        train.py, predict.py, common.py (GPU only), and a dataset class for OpenTSLM's own trainer
-tests/           metric, parser and converter tests (uv run pytest)
+  metrics.py     the evaluation (all tasks), including same-issue pairs
+  baselines.py   majority, signals, thoughts, signals+thoughts, issue, issue+signals+thoughts; repository CV
+  monitor.py     calibration, health, critical alerts, step-by-step replay
+  opentslm_data.py  checkpoints -> OpenTSLM samples (trimming, series, prompts, contexts)
+  cli.py         agent-ecg prepare | baselines | evaluate | compare | opentslm-export | replay
+opentslm/        train.py, predict.py, replay.py, common.py (GPU only), and a dataset class for OpenTSLM's own trainer
+tests/           metric, parser, converter, monitor and baseline tests (uv run pytest)
 results/         baseline scores (Markdown + JSON)
 ```
 
