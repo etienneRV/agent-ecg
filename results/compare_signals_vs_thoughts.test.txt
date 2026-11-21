@@ -1,0 +1,6 @@
+AUROC of signals.test minus thoughts.test (test, paired repository bootstrap)
+  k=5: -0.069 [-0.109, -0.030]  share of resamples not better: 0.999
+  k=10: -0.059 [-0.094, -0.021]  share of resamples not better: 0.999
+  k=15: -0.036 [-0.082, +0.008]  share of resamples not better: 0.949
+  k=20: +0.011 [-0.047, +0.070]  share of resamples not better: 0.336
+  k=30: +0.028 [-0.037, +0.111]  share of resamples not better: 0.205
