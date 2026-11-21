@@ -44,7 +44,22 @@ uv run --no-sync python opentslm/predict.py $R --split test --tasks outcome --ma
 uv run --no-sync agent-ecg evaluate $R/predictions.test.parquet --subset
 ```
 
-If memory runs out: `--batch-size 4 --grad-accum 4`, or add `--gradient-checkpointing`.
+If memory runs out: `--batch-size 4 --grad-accum 4` (the same effective batch), or add
+`--gradient-checkpointing` (about 30 % slower).
+
+**Attention.** OpenTSLM loads Llama with eager attention, which keeps a [batch, heads, length, length]
+matrix per layer for the backward pass, so memory grows with the square of the prompt length.
+`opentslm/common.py` switches the loaded model to PyTorch's SDPA (`ATTENTION = "sdpa"`): the same
+attention, computed without that matrix. The OpenTSLM package itself is unchanged. Measured on one
+L40S (46 GB), from `OpenTSLM/llama-3.2-1b-ecg-sp`:
+
+| Run | Prompt tokens (p99) | Eager attention | SDPA |
+| --- | --- | --- | --- |
+| C, ECG only | ~560 | batch 8: 21.9 GB, 1.2 s/step | - |
+| A, issue + thoughts + ECG | ~2,300 | out of memory at batch 8 and 4; 4 x 4 with checkpointing: 7.8 s/step (~17 h) | out of memory at batch 8; 4 x 4: 27.1 GB, 3.1 s/step (~8 h) |
+
+So train A with `--batch-size 4 --grad-accum 4`, and B too (its prompts reach ~1,700 tokens, so batch 8
+would need an estimated ~40 GB); C fits the default.
 
 Not on a Mac: OpenTSLM loads Llama in bfloat16, which has no fast CPU path there, and Apple's MPS
 backend grew past 30 GB on this smoke test. The scripts were checked on a Mac CPU in float32 instead
@@ -63,10 +78,10 @@ uv run --no-sync python opentslm/train.py --name ecg-only --data data/opentslm-n
     --init-from OpenTSLM/llama-3.2-1b-ecg-sp 2>&1 | tee runs/ecg-only.log
 # B: the agent's thoughts beside the ECG, pass/fail
 uv run --no-sync python opentslm/train.py --name thoughts-outcome --data data/opentslm-thoughts --tasks outcome \
-    --init-from OpenTSLM/llama-3.2-1b-ecg-sp 2>&1 | tee runs/thoughts-outcome.log
+    --init-from OpenTSLM/llama-3.2-1b-ecg-sp --batch-size 4 --grad-accum 4 2>&1 | tee runs/thoughts-outcome.log
 # A: issue, thoughts and ECG; all three tasks
 uv run --no-sync python opentslm/train.py --name full-multi --data data/opentslm \
-    --init-from OpenTSLM/llama-3.2-1b-ecg-sp 2>&1 | tee runs/full-multi.log
+    --init-from OpenTSLM/llama-3.2-1b-ecg-sp --batch-size 4 --grad-accum 4 2>&1 | tee runs/full-multi.log
 ```
 
 Why this order:

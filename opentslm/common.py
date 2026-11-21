@@ -22,6 +22,7 @@ from opentslm.model.llm.OpenTSLMSP import OpenTSLMSP
 from agent_ecg.opentslm_samples import OUTCOMES, answer
 
 LORA = {"lora_r": 16, "lora_alpha": 32, "lora_dropout": 0.0}  # OpenTSLM's curriculum settings
+ATTENTION = "sdpa"  # replaces OpenTSLM's "eager"; same math, far less memory on long prompts
 
 
 def pick_device(name: str = "auto") -> str:
@@ -52,6 +53,10 @@ def load_model(llm_id: str, device: str, *, init_from: str | None = None, lora: 
         if base.split("/")[-1].lower() != llm_id.split("/")[-1].lower():
             raise ValueError(f"{init_from} was trained on {base}; pass --llm {base} or an ungated copy of it")
     model = OpenTSLMSP(llm_id=llm_id, device=device)
+    # OpenTSLM loads Llama with eager attention, which keeps a [batch, heads, length, length] matrix per
+    # layer for the backward pass: the 1,400-2,300-token prompts with issue and thoughts run out of
+    # memory on a 46 GB GPU. PyTorch's SDPA computes the same attention without that matrix.
+    model.llm.set_attn_implementation(ATTENTION)
     if lora:
         model.enable_lora(**LORA)
     if init_from:
