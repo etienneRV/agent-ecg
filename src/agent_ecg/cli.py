@@ -1,4 +1,4 @@
-"""``agent-ecg prepare | baselines | evaluate | opentslm-export | compare | replay``."""
+"""``agent-ecg prepare | baselines | evaluate | opentslm-export | compare | replay | demo``."""
 
 from __future__ import annotations
 
@@ -111,6 +111,26 @@ def _replay(args: argparse.Namespace) -> None:
         print(f"\nwrote {args.out} ({len(chosen)} runs)")
 
 
+def _demo(args: argparse.Namespace) -> None:
+    from agent_ecg import demo
+
+    replays = demo.load_replay(args.replay)
+    if not replays:
+        raise SystemExit(f"{args.replay} holds no replay")
+    run_id = args.run_id or next(iter(replays))
+    if run_id not in replays:
+        raise SystemExit(f"{run_id} is not in {args.replay}, which holds {sorted(replays)}")
+    monitor = replays[run_id]
+    run = demo.fetch_run(run_id)
+    if args.at is not None or args.svg is not None:
+        step = args.at or demo.first_alarm(monitor) or max(monitor)
+        print(demo.render(run, monitor, step, svg=args.svg, width=args.width, height=args.height))
+        if args.svg:
+            print(f"wrote {args.svg} (step {step})")
+        return
+    demo.play(run, monitor, pace=args.pace)
+
+
 def _pick(chosen: list, pick: str) -> list:
     """Order replays for a demo: ``falling`` runs start stable and turn critical mid-run (ideally near
     step 15, after a long fall); ``resolved`` runs never alert and keep the highest lowest health."""
@@ -206,6 +226,16 @@ def main() -> None:
     replay.add_argument("--top", type=int, default=5, help="picked runs to list and write")
     replay.add_argument("--out", type=Path, help="write the replays as JSONL, one line per step")
     replay.set_defaults(run=_replay)
+
+    show = commands.add_parser("demo", help="play a replayed run in the terminal: the agent's steps beside the ECG")
+    show.add_argument("replay", type=Path, help="a JSONL file from `agent-ecg replay --out` or opentslm/replay.py")
+    show.add_argument("--run-id", help="the run to play; default: the first in the file")
+    show.add_argument("--pace", type=float, default=2.0, help="seconds per step")
+    show.add_argument("--at", type=int, help="print the frame at this step instead of playing")
+    show.add_argument("--svg", type=Path, help="save that frame as an SVG image (default step: the first alarm)")
+    show.add_argument("--width", type=int, default=150, help="frame width for --at/--svg")
+    show.add_argument("--height", type=int, default=44, help="frame height for --at/--svg")
+    show.set_defaults(run=_demo)
 
     evaluate = commands.add_parser("evaluate", help="score a predictions file (.parquet or .csv)")
     evaluate.add_argument("predictions", type=Path)
