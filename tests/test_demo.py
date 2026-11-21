@@ -70,7 +70,7 @@ def test_the_end_card_compares_the_alarm_with_what_happened() -> None:
 def test_a_frame_renders_the_agent_and_the_monitor(tmp_path) -> None:
     run, monitor = _run(steps=40), _monitor(critical_from=8)
     text = demo.render(run, monitor, 9, svg=tmp_path / "frame.svg", width=140, height=44)
-    assert "replay of a recorded run" in text and "HEALTH  10" in text and "CRITICAL" in text
+    assert "replay, one step at a time" in text and "HEALTH  10" in text and "CRITICAL" in text
     assert "Stop the agent" in text and "step  9" in text
     assert (tmp_path / "frame.svg").read_text().startswith("<svg")
     assert "warming up" in demo.render(run, monitor, 3, width=140, height=44)
