@@ -107,6 +107,24 @@ rejected, traceback, same file again, ...), the rule-made `status` description, 
 `recommendation` once the state is critical. A terminal ECG display can read it line by line.
 Between checkpoints (step 7, 12, ...) health is interpolated from the two nearest fitted ones.
 
+## The terminal ECG (demo)
+
+```bash
+uv run agent-ecg replay --top 3 --out results/replay.signals.falling.jsonl        # test runs that fall to critical
+uv run agent-ecg demo results/replay.signals.falling.jsonl                         # play the first one, 2 s per step
+uv run agent-ecg demo results/replay.signals.falling.jsonl --at 15 --svg ecg.svg   # one frame as an image
+```
+
+The left pane shows the agent's real thought, command and reply at each step, read from the run's
+raw trajectory on Hugging Face (one ~90 MB shard, downloaded once). The right pane shows the monitor:
+a heartbeat whose beats shrink with health, the health line, the chance of failure, the state, and the
+recommendation once the alarm is on. The end card says what really happened to the run. Every number
+on the right comes from the replay file, computed one step at a time, so the screen is what a live
+monitor would have shown; it is still a replay of a recorded run, and the header says so. For a
+fine-tuned TSLM, pass the JSONL that `opentslm/replay.py --out` writes.
+[`results/demo.falling.step15.svg`](results/demo.falling.step15.svg) is the frame at the alarm of a
+test run (`bids-standard__pybids-997`): the agent loops between opening and searching the same file.
+
 ## Scoring a model
 
 A predictions file has one row per checkpoint of the split, keyed by `run_id` and `k`, with any of:
