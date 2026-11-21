@@ -2,7 +2,8 @@
 
 Copy this file into an OpenTSLM checkout at
 ``src/opentslm/time_series_datasets/agent_ecg/AgentECGQADataset.py`` and point ``AGENT_ECG_DATA`` at
-the folder that ``agent-ecg opentslm-export`` wrote (``data/opentslm`` by default).
+the folder that ``agent-ecg opentslm-export`` wrote: ``data/opentslm`` by default, ``data/opentslm-none``
+for the ECG alone, ``data/opentslm-thoughts`` for thoughts and ECG.
 
 Each checkpoint gives one sample per task (outcome, ending, status). Environment variables choose the
 training set, because OpenTSLM's trainer builds datasets as ``Dataset(split, EOS_TOKEN)``:

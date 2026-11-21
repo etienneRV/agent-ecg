@@ -1,7 +1,7 @@
 """Build the TimeNet release once and flatten it into three small tables.
 
 ``checkpoints.parquet``
-    One row per checkpoint (the first k steps of a run that is still going): ids, split, the seven
+    One row per checkpoint (the first k steps of a run that is still going): ids, split, the nine
     per-step signals as lists, and the three targets (``resolved``, ``ending``, ``status``).
 ``thoughts.parquet``
     One row per run: the agent's thoughts for the steps of its latest checkpoint. A checkpoint at k
@@ -27,8 +27,10 @@ SIGNALS = (
     "repeated_action",
     "action_kind",
     "observation_kind",
+    "same_file_edit",
+    "edit_target",
 )
-CHECKPOINTS = (5, 10, 20, 30)
+CHECKPOINTS = (5, 10, 15, 20, 30)
 
 
 def build(registry: Path) -> Path:
@@ -88,7 +90,7 @@ def export(release: Path, out: Path) -> None:
             if label_set is None:
                 row["status"] = target
                 row["remaining"] = parse_status(target).remaining
-            elif label_set.name == "run_outcome":
+            elif _label_set_name(label_set) == "run_outcome":
                 row["resolved"] = target == "resolved"
             else:
                 row["ending"] = target
@@ -98,6 +100,13 @@ def export(release: Path, out: Path) -> None:
         out / "thoughts.parquet", index=False
     )
     pd.DataFrame(issues.values()).to_parquet(out / "issues.parquet", index=False)
+
+
+def _label_set_name(label_set) -> str | None:
+    """A label set's name: since the connector API update it is the set's ``name`` annotation."""
+    from timenet.types.text import read_value
+
+    return next((read_value(a.value) for a in label_set.annotations if a.key == "name"), None)
 
 
 def load_checkpoints(data: Path) -> pd.DataFrame:

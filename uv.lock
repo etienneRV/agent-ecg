@@ -41,7 +41,7 @@ requires-dist = [
     { name = "scikit-learn", specifier = "==1.9.1" },
     { name = "scipy", specifier = ">=1.14" },
     { name = "timenet", specifier = ">=0.12.0" },
-    { name = "timenet-connectors", git = "https://github.com/etienneRV/TimeNet?subdirectory=packages%2Ftimenet-connectors&branch=feature%2Fnebius-swe-agent-trajectories" },
+    { name = "timenet-connectors", git = "https://github.com/etienneRV/TimeNet?subdirectory=packages%2Ftimenet-connectors&branch=feature%2Fswe-agent-file-identity" },
     { name = "tokenizers", specifier = ">=0.23.3" },
 ]
 
@@ -1554,7 +1554,7 @@ wheels = [
 [[package]]
 name = "timenet"
 version = "0.12.0"
-source = { git = "https://github.com/etienneRV/TimeNet?subdirectory=packages%2Ftimenet&branch=feature%2Fnebius-swe-agent-trajectories#b8385e7dfb01f5044bf4463303124e5a8bd310c9" }
+source = { git = "https://github.com/etienneRV/TimeNet?subdirectory=packages%2Ftimenet&branch=feature%2Fswe-agent-file-identity#26de62a3fae302a903aaeb98176ea6db486e17b8" }
 dependencies = [
     { name = "cachetools" },
     { name = "duckdb" },
@@ -1577,7 +1577,7 @@ build = [
 [[package]]
 name = "timenet-connectors"
 version = "0.12.0"
-source = { git = "https://github.com/etienneRV/TimeNet?subdirectory=packages%2Ftimenet-connectors&branch=feature%2Fnebius-swe-agent-trajectories#b8385e7dfb01f5044bf4463303124e5a8bd310c9" }
+source = { git = "https://github.com/etienneRV/TimeNet?subdirectory=packages%2Ftimenet-connectors&branch=feature%2Fswe-agent-file-identity#26de62a3fae302a903aaeb98176ea6db486e17b8" }
 dependencies = [
     { name = "aiofiles" },
     { name = "httpx" },

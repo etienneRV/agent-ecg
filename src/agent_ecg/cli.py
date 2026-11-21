@@ -1,4 +1,4 @@
-"""``agent-ecg prepare | baselines | evaluate``."""
+"""``agent-ecg prepare | baselines | evaluate | opentslm-export | compare | replay``."""
 
 from __future__ import annotations
 
@@ -23,12 +23,39 @@ def _prepare(args: argparse.Namespace) -> None:
     print(f"descriptions rebuilt from the signals match the targets for {share:.1%} of a 2,000-checkpoint sample")
 
 
+def _cv_markdown(result: dict, folds: int) -> str:
+    ks = sorted(next(iter(result.values())))
+    lines = [
+        f"Repository {folds}-fold cross-validation over the checkpoints of all splits. "
+        "Each cell: AUROC (mean ± sd over folds) / same-issue pairs.",
+        "",
+        "| model | " + " | ".join(f"k={k}" for k in ks) + " |",
+        "|---" * (len(ks) + 1) + "|",
+    ]
+    for model, by_k in result.items():
+        cells = [
+            f"{by_k[k]['auroc_fold_mean']:.3f} ± {by_k[k]['auroc_fold_sd']:.3f} / {by_k[k]['same_issue_pairs']:.3f}"
+            for k in ks
+        ]
+        lines.append(f"| {model} | " + " | ".join(cells) + " |")
+    return "\n".join(lines) + "\n"
+
+
 def _baselines(args: argparse.Namespace) -> None:
     from agent_ecg import baselines
+    from agent_ecg.monitor import Monitor
 
     gold = data.load_checkpoints(args.data)
-    results = baselines.run(gold, data.load_thoughts(args.data), data.load_issues(args.data), args.data / "predictions")
+    thoughts, issues = data.load_thoughts(args.data), data.load_issues(args.data)
     RESULTS.mkdir(exist_ok=True)
+    if args.cv:
+        result = baselines.cross_validate(gold, thoughts, issues, folds=args.cv)
+        (RESULTS / f"cv{args.cv}.json").write_text(json.dumps(result, indent=2))
+        text = _cv_markdown(result, args.cv)
+        (RESULTS / f"cv{args.cv}.md").write_text(text)
+        print(text)
+        return
+    results = baselines.run(gold, thoughts, issues, args.data / "predictions")
     sections = []
     for name, by_split in results.items():
         report = metrics.evaluate(gold, by_split[args.split], args.split)
@@ -36,6 +63,73 @@ def _baselines(args: argparse.Namespace) -> None:
         sections.append((name, report))
     (RESULTS / f"baselines.{args.split}.md").write_text(metrics.concat_reports(sections))
     print(metrics.concat_reports(sections))
+    summary = Monitor.from_json(args.data / "models" / "signals.monitor.json").summary()
+    (RESULTS / "monitor.signals.md").write_text(
+        f"Critical alerts of the signals monitor (fitted on validation)\n\n{summary}\n"
+    )
+    print(f"critical alerts of the signals monitor, on validation:\n{summary}")
+
+
+def _replay(args: argparse.Namespace) -> None:
+    import numpy as np
+
+    from agent_ecg import baselines, monitor
+
+    models = args.data / "models"
+    if not (models / "signals.pkl").exists():
+        raise SystemExit("run `agent-ecg baselines` first: it saves the signals model and monitor the replay uses")
+    score = baselines.signals_scorer(models)
+    fitted = monitor.Monitor.from_json(models / "signals.monitor.json")
+    gold = data.load_checkpoints(args.data)
+    split = gold[gold["split"] == args.split]
+    longest = split.loc[split.groupby("run_id")["k"].idxmax()]
+    if args.run_id:
+        rows = longest[longest["run_id"].isin(args.run_id)].to_dict("records")
+        missing = set(args.run_id) - {row["run_id"] for row in rows}
+        if missing:
+            raise SystemExit(f"not in the {args.split} split: {sorted(missing)}")
+    else:
+        # Runs with at least 20 visible steps, so the line has room to move.
+        pool = longest[(longest["resolved"] == (args.pick == "resolved")) & (longest["k"] >= 20)]
+        rows = pool.sample(min(args.candidates, len(pool)), random_state=0).to_dict("records")
+    cuts = [monitor.prefixes(row) for row in rows]
+    scores = np.asarray(score([cut for run in cuts for cut in run]))
+    ends = np.cumsum([len(run) for run in cuts])
+    traces = [monitor.trace(run, scores[end - len(run) : end], fitted) for run, end in zip(cuts, ends, strict=True)]
+    chosen = list(zip(rows, traces, strict=True))
+    if not args.run_id:
+        chosen = _pick(chosen, args.pick)[: args.top]
+        print(f"{len(chosen)} {args.pick} {args.split} runs out of {len(rows)} candidates, best first")
+        for row, steps in chosen:
+            print(f"  {row['run_id']}  {monitor.sparkline([s['health'] for s in steps])}")
+    for row, steps in chosen[: 1 if not args.run_id else None]:
+        print()
+        print(monitor.render(row, steps))
+    if args.out:
+        lines = [json.dumps({"run_id": row["run_id"], **s}) for row, steps in chosen for s in steps]
+        args.out.write_text("\n".join(lines) + "\n")
+        print(f"\nwrote {args.out} ({len(chosen)} runs)")
+
+
+def _pick(chosen: list, pick: str) -> list:
+    """Order replays for a demo: ``falling`` runs start stable and turn critical mid-run (ideally near
+    step 15, after a long fall); ``resolved`` runs never alert and keep the highest lowest health."""
+
+    def falling(steps: list[dict]) -> tuple | None:
+        first = next((s["step"] for s in steps if s["state"] == "critical"), None)
+        if steps[0]["state"] != "stable" or first is None or first < 10:
+            return None
+        drop = steps[0]["health"] - min(s["health"] for s in steps)
+        return (drop >= 50, -abs(first - 15), drop)
+
+    def steady(steps: list[dict]) -> tuple | None:
+        if any(s["state"] == "critical" for s in steps):
+            return None
+        return (min(s["health"] for s in steps),)
+
+    rank = falling if pick == "falling" else steady
+    ranked = [(rank(steps), i) for i, (_, steps) in enumerate(chosen)]
+    return [chosen[i] for key, i in sorted((r for r in ranked if r[0] is not None), reverse=True)]
 
 
 def _evaluate(args: argparse.Namespace) -> None:
@@ -50,15 +144,21 @@ def _evaluate(args: argparse.Namespace) -> None:
 def _opentslm_export(args: argparse.Namespace) -> None:
     from agent_ecg import opentslm_data
 
-    stats = opentslm_data.export(args.data, args.out)
-    print(f"OpenTSLM samples -> {args.out}")
-    print("| k | issue cut | issue tokens p50 / p99 | thought tokens p50 / p99 | runs with early steps dropped |")
-    print("|---|---|---|---|---|")
+    out = args.out or Path("data/opentslm" if args.context == "full" else f"data/opentslm-{args.context}")
+    stats = opentslm_data.export(args.data, out, context=args.context)
+    print(f"OpenTSLM samples ({args.context} context) -> {out}")
+    print(
+        "| k | prompt tokens p50 / p99 | issue cut | issue tokens p50 / p99 | thought tokens p50 / p99 "
+        "| runs with early steps dropped |"
+    )
+    print("|---|---|---|---|---|---|")
     for k, group in stats.groupby("k"):
+        dropped = group.loc[group["steps_dropped"] > 0, "steps_dropped"]
         print(
-            f"| {k} | {group['issue_cut'].mean():.1%} | {group['issue_tokens'].median():.0f} / {group['issue_tokens'].quantile(0.99):.0f} "
+            f"| {k} | {group['prompt_tokens'].median():.0f} / {group['prompt_tokens'].quantile(0.99):.0f} "
+            f"| {group['issue_cut'].mean():.1%} | {group['issue_tokens'].median():.0f} / {group['issue_tokens'].quantile(0.99):.0f} "
             f"| {group['thought_tokens'].median():.0f} / {group['thought_tokens'].quantile(0.99):.0f} "
-            f"| {(group['steps_dropped'] > 0).mean():.1%} (median dropped when cut: {group.loc[group['steps_dropped'] > 0, 'steps_dropped'].median():.0f}) |"
+            f"| {(group['steps_dropped'] > 0).mean():.1%} (median dropped when cut: {dropped.median() if len(dropped) else 0:.0f}) |"
         )
 
 
@@ -84,9 +184,28 @@ def main() -> None:
     prepare.add_argument("--release", type=Path, help="use an already built release directory instead")
     prepare.set_defaults(run=_prepare)
 
-    run = commands.add_parser("baselines", help="fit the four baselines and score them")
+    run = commands.add_parser("baselines", help="fit the baselines and score them, or cross-validate them")
     run.add_argument("--split", default="test", choices=("validation", "test"))
+    run.add_argument(
+        "--cv", type=int, metavar="FOLDS", help="instead, repository cross-validation over all checkpoints"
+    )
     run.set_defaults(run=_baselines)
+
+    replay = commands.add_parser(
+        "replay", help="replay runs step by step with the signals model, as the live monitor (needs `baselines`)"
+    )
+    replay.add_argument("--run-id", action="append", help="a run to replay (repeatable); default: pick runs")
+    replay.add_argument(
+        "--pick",
+        default="falling",
+        choices=("falling", "resolved"),
+        help="without --run-id: failed runs that turn critical mid-run, or resolved runs that stay steady",
+    )
+    replay.add_argument("--split", default="test", choices=("validation", "test"))
+    replay.add_argument("--candidates", type=int, default=3000, help="runs to replay when picking")
+    replay.add_argument("--top", type=int, default=5, help="picked runs to list and write")
+    replay.add_argument("--out", type=Path, help="write the replays as JSONL, one line per step")
+    replay.set_defaults(run=_replay)
 
     evaluate = commands.add_parser("evaluate", help="score a predictions file (.parquet or .csv)")
     evaluate.add_argument("predictions", type=Path)
@@ -96,7 +215,13 @@ def main() -> None:
     evaluate.set_defaults(run=_evaluate)
 
     export = commands.add_parser("opentslm-export", help="write OpenTSLM training samples (needs `prepare` first)")
-    export.add_argument("--out", type=Path, default=Path("data/opentslm"))
+    export.add_argument(
+        "--context",
+        default="full",
+        choices=("full", "thoughts", "none"),
+        help="text beside the series: issue and thoughts, thoughts only, or none (the ECG-only variant)",
+    )
+    export.add_argument("--out", type=Path, help="default: data/opentslm (full) or data/opentslm-<context>")
     export.set_defaults(run=_opentslm_export)
 
     compare = commands.add_parser("compare", help="paired AUROC gain of predictions A over B, per checkpoint")

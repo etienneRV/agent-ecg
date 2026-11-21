@@ -49,8 +49,29 @@ def _auroc_interval(resolved: np.ndarray, score: np.ndarray, groups: np.ndarray,
     return [float(np.quantile(values, 0.025)), float(np.quantile(values, 0.975))] if values else [np.nan] * 2
 
 
+def same_issue_pairs(resolved: np.ndarray, score: np.ndarray, issues: np.ndarray) -> tuple[float, int]:
+    """Share of (resolved, unresolved) pairs of runs on the same issue where the resolved run scores higher.
+
+    AUROC across all runs also rewards telling easy issues from hard ones. Here the issue is the same
+    within each pair, so only what the model reads from the run itself counts. Ties count half.
+
+    Returns:
+        The share (NaN without such pairs) and the number of pairs.
+    """
+    frame = pd.DataFrame({"issue": issues, "resolved": resolved, "score": score})
+    wins, pairs = 0.0, 0
+    for _, group in frame.groupby("issue", sort=False):
+        good = group["score"].to_numpy()[group["resolved"].to_numpy(bool)]
+        bad = group["score"].to_numpy()[~group["resolved"].to_numpy(bool)]
+        if len(good) and len(bad):
+            diff = good[:, None] - bad[None, :]
+            wins += float((diff > 0).sum() + 0.5 * (diff == 0).sum())
+            pairs += diff.size
+    return (wins / pairs if pairs else float("nan")), int(pairs)
+
+
 def score_outcome(table: pd.DataFrame) -> dict:
-    """Pass/fail: AUROC (with interval), average precision, Brier score, balanced accuracy."""
+    """Pass/fail: AUROC (with interval), same-issue pairs, average precision, Brier score, balanced accuracy."""
     resolved = table["resolved"].to_numpy(bool)
     result: dict = {"n": len(table), "resolved_rate": float(resolved.mean())}
     if "p_resolved" in table:
@@ -58,8 +79,14 @@ def score_outcome(table: pd.DataFrame) -> dict:
         both = 0 < resolved.sum() < len(resolved)
         result["auroc"] = float(roc_auc_score(resolved, p)) if both else np.nan
         result["auroc_95"] = _auroc_interval(resolved, p, table["repository"].to_numpy()) if both else [np.nan] * 2
+        if "instance_id" in table:
+            result["same_issue_pairs"], result["n_pairs"] = same_issue_pairs(
+                resolved, p, table["instance_id"].to_numpy()
+            )
         result["auprc"] = float(average_precision_score(resolved, p)) if both else np.nan
         result["brier"] = float(brier_score_loss(resolved, p))
+        if "p_calibrated" in table:
+            result["brier_calibrated"] = float(brier_score_loss(resolved, table["p_calibrated"].to_numpy(float)))
     decision = table["pred_resolved"] if "pred_resolved" in table else table.get("p_resolved")
     if decision is not None:
         decision = decision.to_numpy(bool) if decision.dtype == bool else decision.to_numpy(float) >= 0.5

@@ -8,7 +8,8 @@ from agent_ecg.status import describe, parse_status, predict_sentence, split_sta
 DESCRIPTION = (
     "In its first 5 steps the agent edited files 0 times, created 0 files, ran code 0 times, read or "
     "searched the repository 4 times and repeated an earlier command 0 times. The linter rejected 0 "
-    "edits, 1 reply showed a Python traceback, 1 reply a command error and 0 commands timed out. The "
+    "edits, 1 reply showed a Python traceback, 1 reply a command error and 0 commands timed out. 0 edits "
+    "changed the same file as the edit before, and 0 edits changed a file the agent had created. The "
     "conversation holds 12,857 characters."
 )
 PREDICTION = (
@@ -44,8 +45,16 @@ def test_describe_rebuilds_the_description() -> None:
         "observation_kind": ["traceback", "output", "output", "output", "command_error"],
         "repeated_action": [False] * 5,
         "context_chars": [9000, 10000, 11000, 12000, 12857],
+        "same_file_edit": [False] * 5,
+        "edit_target": ["none"] * 5,
     }
     assert describe(signals) == DESCRIPTION
+    edits = signals | {
+        "action_kind": ["create", "edit", "edit", "edit", "read"],
+        "same_file_edit": [False, False, True, False, False],
+        "edit_target": ["none", "own_script", "own_script", "source", "none"],
+    }
+    assert "1 edit changed the same file as the edit before, and 2 edits changed a file the agent" in describe(edits)
 
 
 def test_word_overlap_rewards_a_copied_description_with_a_wrong_prediction() -> None:
@@ -130,3 +139,23 @@ def test_compare_needs_full_files() -> None:
     full = gold[["run_id", "k"]].assign(p_resolved=0.5)
     with pytest.raises(ValueError, match="cover 10 of the 200"):
         paired_auroc_gain(gold, full, full.iloc[:10], n=10)
+
+
+def test_same_issue_pairs_compare_runs_on_one_issue_only() -> None:
+    from agent_ecg.metrics import same_issue_pairs
+
+    resolved = np.array([True, False, True, False, False])
+    issues = np.array(["a", "a", "b", "b", "c"])
+    # Issue b looks easy (0.9 for both runs) and issue a hard (0.2, 0.1); only order within an issue counts.
+    score = np.array([0.2, 0.1, 0.9, 0.9, 0.5])
+    share, pairs = same_issue_pairs(resolved, score, issues)
+    assert (share, pairs) == (0.75, 2)  # a: the resolved run ranks higher; b: a tie counts half
+    assert np.isnan(same_issue_pairs(resolved[[0, 2]], score[[0, 2]], issues[[0, 2]])[0])
+
+
+def test_the_outcome_report_has_same_issue_pairs_and_calibrated_brier() -> None:
+    gold = _gold().assign(instance_id=lambda t: t["run_id"].str.split("-").str[0])
+    pred = gold[["run_id", "k"]].assign(p_resolved=gold["resolved"].astype(float) * 0.5 + 0.5, p_calibrated=0.3)
+    outcome = evaluate(gold, pred)["outcome"]["k=5"]
+    assert outcome["same_issue_pairs"] == 1.0 and outcome["n_pairs"] > 0
+    assert outcome["brier_calibrated"] > 0

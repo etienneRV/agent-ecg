@@ -12,7 +12,7 @@ reweighted to ``--resolved-share`` of the weight.
 
 The loss averages each answer's tokens first, then the answers (weighted by ``--task-weights``), so a
 3-token "unresolved" counts as much as a 110-token status report. Every ``--eval-every`` steps the
-script measures the validation loss and the pass/fail AUROC (mean over the 5/10/20/30-step
+script measures the validation loss and the pass/fail AUROC (mean over the 5/10/15/20/30-step
 checkpoints, from the likelihood of "resolved" vs "unresolved"); the best AUROC is saved to
 ``runs/<name>/best_model.pt`` with ``config.json`` (``--select loss`` uses the loss instead).
 """

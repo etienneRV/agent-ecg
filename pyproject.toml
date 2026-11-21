@@ -29,8 +29,9 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [tool.uv.sources]
-# Until OpenTSLM/TimeNet#832 is merged, the connector comes from its PR branch.
-timenet-connectors = { git = "https://github.com/etienneRV/TimeNet", branch = "feature/nebius-swe-agent-trajectories", subdirectory = "packages/timenet-connectors" }
+# Until OpenTSLM/TimeNet#832 is merged, the connector comes from its PR branch; this branch adds the
+# file-identity signals and the 15-step checkpoint on top of it (etienneRV/TimeNet, PR into #832).
+timenet-connectors = { git = "https://github.com/etienneRV/TimeNet", branch = "feature/swe-agent-file-identity", subdirectory = "packages/timenet-connectors" }
 
 [tool.ruff]
 line-length = 120
