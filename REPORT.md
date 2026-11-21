@@ -1,6 +1,6 @@
 # Agent ECG: warning early when a coding agent is going to fail
 
-*Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-20*
+*Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-21*
 
 > **Status:** dataset contributed to TimeNet ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832),
 > awaiting review) · evaluation and CPU baselines done (this report) · OpenTSLM fine-tune: next, on
@@ -11,10 +11,10 @@
 Coding agents work for dozens of steps on a task, and most of their runs fail. We want a monitor that
 reads an agent's steps *while it works*, like an ECG reads a heartbeat, and says early whether the run
 is heading for success. We turned 80,036 runs of SWE-agent on real GitHub issues into a TimeNet
-dataset of **checkpoints**: the first 5, 10, 20 or 30 steps of a run that is still going. A model sees
+dataset of **checkpoints**: the first 5, 10, 15, 20 or 30 steps of a run that is still going. A model sees
 per-step signals, the agent's own reasoning and the issue, and must predict whether the run will
 resolve the issue, how it will end, and write a short status report. On held-out repositories, a
-simple model of the agent's thoughts reaches AUROC 0.68-0.70 at every checkpoint, against 0.61-0.62 for a
+simple model of the agent's thoughts reaches AUROC 0.68-0.71 at every checkpoint, against 0.61-0.62 for a
 model that reads only the issue: the agent's behaviour carries signal beyond how hard the issue is.
 That is the bar our OpenTSLM model has to clear.
 
@@ -160,6 +160,11 @@ Mean ± sd of the fold AUROCs / same-issue pairs:
   to 0.65 / 0.71 / 0.73 at 10 / 20 / 30 steps, but training also gained the 15-step checkpoints and
   the test split is noisy. The controlled comparison (cross-validation, same checkpoints, with and
   without the two channels) puts their gain at +0.006 / +0.010 at 10 / 20 steps.
+- **Three other channels were tried and left out of the connector.** Under the same cross-validation
+  (signals model without them: 0.676 / 0.705 / 0.688 at 5 / 10 / 20 steps), none helped: a repeated
+  error line +0.001 / +0.002 / −0.007; whether a run command runs the tests or the agent's own script
+  −0.003 / +0.002 / −0.006; phrases in the thoughts (changing approach, doubt, success, finding the
+  cause, apologising) −0.003 / +0.002 / −0.002. File identity, for comparison: −0.001 / +0.006 / +0.010.
 - **Adding the issue to the behaviour adds little.** issue+signals+thoughts is the best model on test
   at 5-20 steps by 0.01-0.02, within the intervals. It is the bar for a full-context TSLM.
 - **The test split is a hard draw for the signals.** Cross-validation puts them at 0.711 ± 0.015 at 10
