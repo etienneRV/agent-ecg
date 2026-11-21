@@ -121,6 +121,7 @@ uv run --no-sync agent-ecg replay --top 3 --out results/replay.signals.jsonl   #
 uv run --no-sync python opentslm/replay.py runs/ecg-only --run-id <a run id printed above> \
     --out results/replay.ecg-only.jsonl
 uv run --no-sync agent-ecg replay --pick resolved --top 3   # contrast: resolved runs that stay steady
+uv run --no-sync agent-ecg demo results/replay.ecg-only.jsonl   # the terminal ECG, for the demo video
 ```
 
 Each JSON line is one step: `step`, `health` (0-100), `state` (`stable` / `watch` / `low` /
