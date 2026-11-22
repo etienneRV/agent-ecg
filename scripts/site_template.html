@@ -43,6 +43,7 @@ body { background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--sans); 
 .publication-title { font-weight: 800; font-size: clamp(2rem, 5.2vw, 3rem); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 1.2rem; text-wrap: balance; }
 .publication-title .beat { color: var(--alarm); }
 .publication-authors { font-size: 1.25rem; font-weight: 500; margin: 0; }
+.author-block { white-space: nowrap; }
 .publication-venue { color: var(--muted); font-size: 1.05rem; margin: 0.3rem 0 0; }
 .publication-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 1.6rem; }
 .button { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--button); color: var(--button-fg); text-decoration: none;
@@ -132,7 +133,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="hero section centered">
     <div class="container">
       <h1 class="publication-title">Agent <span class="beat">ECG</span>: Warning Early When a Coding Agent Is Going to Fail</h1>
-      <p class="publication-authors">Team RAMadan</p>
+      <p class="publication-authors"><span class="author-block">Maximilian Lohscheller,</span> <span class="author-block">Ziyad Mellal,</span> <span class="author-block">Etienne Ritter Vidal,</span> <span class="author-block">Barış Gürel</span></p>
       <p class="publication-venue">TimeNet Hackathon, Round 1 · 2026</p>
       <div class="publication-links">
         <a class="button" href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories" target="_blank" rel="noopener">
@@ -279,9 +280,9 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
         <h2 class="title">BibTeX</h2>
         <button class="copy-bibtex-btn" id="copy-bibtex" type="button">Copy</button>
       </div>
-<pre id="bibtex-code"><code>@misc{agentecg2026,
+<pre id="bibtex-code"><code>@misc{lohscheller2026agentecg,
   title  = {Agent ECG: Warning Early When a Coding Agent Is Going to Fail},
-  author = {{Team RAMadan}},
+  author = {Lohscheller, Maximilian and Mellal, Ziyad and Ritter Vidal, Etienne and G{\"u}rel, Bar{\i}{\c{s}}},
   year   = {2026},
   note   = {TimeNet Hackathon, Round 1. Dataset: OpenTSLM/TimeNet\#832}
 }</code></pre>
