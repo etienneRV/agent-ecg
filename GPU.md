@@ -8,8 +8,10 @@ at batch 4 x 4), 32 GB or more for A (issue + thoughts + ECG, 27.7 GB at batch 4
 
 - Your Hugging Face account needs access to [meta-llama/Llama-3.2-1B](https://huggingface.co/meta-llama/Llama-3.2-1B)
   (request it on the page; Meta approves it), and a **read** token from https://huggingface.co/settings/tokens.
-- Without that approval: `--llm unsloth/Llama-3.2-1B` is the same model, not gated, but then train
-  from scratch (no `--init-from`: the OpenTSLM checkpoints name the gated id).
+- Without that approval, add `--llm unsloth/Llama-3.2-1B` to every `train.py` command: the same
+  weights, not gated, and `--init-from OpenTSLM/llama-3.2-1b-ecg-sp` still works (`load_model` puts the
+  checkpoint on whichever copy of Llama 3.2 1B you name). `predict.py` and `replay.py` read the model
+  from the run's `config.json`.
 
 ## 1. Set up (~20 min, mostly the 1.1 GB download)
 
@@ -146,6 +148,54 @@ rejected, same file again, ...), the rule-made `status`, and a `recommendation` 
 save credits: ... failed 97 % of the time") once the state is critical. That is what the terminal ECG
 shows. The alarm goes on when health is at most 15 in a zone where at least 95 % of validation runs
 failed, two steps in a row, and holds until health is back to 30.
+
+## 6. Final runs: C2 and A2
+
+Two runs in parallel, one per problem found in runs A-C (details: `results/SUMMARY.md`). Everything not
+listed stays as in the original run. Each export records its settings in `meta.json`, and
+`opentslm/replay.py` rebuilds prompts from them.
+
+**C2 = C + 3 count channels.** C and B ignore simple counts: added to their own scores, the three channels
+raise AUROC by 0.03-0.07 on validation. Each channel has a fixed scale, capped at 1 and stated in its
+label, and uses only past steps:
+- steps since the last successful command (/30);
+- tracebacks so far (/10);
+- code runs so far (/10).
+
+The prompt grows from 558 to 650 tokens at 30 steps (median).
+
+```bash
+uv run --no-sync agent-ecg opentslm-export --context none --count-channels --out data/opentslm-none-counts
+uv run --no-sync python opentslm/train.py --name ecg-counts --data data/opentslm-none-counts --tasks outcome \
+    --init-from OpenTSLM/llama-3.2-1b-ecg-sp 2>&1 | tee runs/ecg-counts.log
+```
+
+**A2 = A against overfitting, keeping the early thoughts.** B and A overfit: B's training loss fell to 0
+while its validation loss doubled, and A peaked at step 2,500 of 7,500. A also lost the first thoughts of
+long runs (97 % of 30-step checkpoints), and a word-count model fed A's window falls from 0.70 to 0.63
+AUROC at 30 steps. The changes:
+- one epoch at the natural share of successes, so each run is seen about once;
+- LoRA dropout 0.1;
+- finer early stopping;
+- the first 512 thought tokens kept as well as the latest 1,536. 0 % of checkpoints lose their first step; the median prompt is 2,700 tokens at 30 steps, so plan about 40 % more time per step.
+
+```bash
+uv run --no-sync agent-ecg opentslm-export --head-thought-tokens 512 --thought-tokens 1536 --out data/opentslm-a2
+uv run --no-sync python opentslm/train.py --name full-multi-a2 --data data/opentslm-a2 \
+    --epochs 1 --resolved-share 0.17 --lora-dropout 0.1 --eval-every 250 --val-checkpoints 4000 \
+    --batch-size 4 --grad-accum 4 --init-from OpenTSLM/llama-3.2-1b-ecg-sp 2>&1 | tee runs/full-multi-a2.log
+```
+
+On an 80 GB GPU, the default batch (8 x 2) likely fits; the smoke test tells. Then score both as in section 4.
+
+**How we judge them** (fixed before the runs; test, paired repository bootstrap with `agent-ecg compare`):
+- **C2 beats C** if the 95 % interval of the gain is above zero at two of steps 5 / 10 / 15.
+- **A2 beats A** if the interval is above zero at two of steps 15 / 20 / 30 (where the thought window bites:
+  38 / 77 / 97 % of A's checkpoints lost early thoughts), with steps 5 / 10 not worse beyond noise.
+  The same test runs still going at step 30 should also no longer score lower as the run goes on
+  (A: 0.68 at step 5, 0.62 at step 30).
+- A winner replaces its original in the results and the demo. Otherwise we report "tried, no gain",
+  with the validation numbers. Test intervals are about ±0.05 wide, so a real +0.02 can miss the bar.
 
 ## Results
 

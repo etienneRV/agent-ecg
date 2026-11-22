@@ -177,21 +177,34 @@ def _evaluate(args: argparse.Namespace) -> None:
 def _opentslm_export(args: argparse.Namespace) -> None:
     from agent_ecg import opentslm_data
 
-    out = args.out or Path("data/opentslm" if args.context == "full" else f"data/opentslm-{args.context}")
-    stats = opentslm_data.export(args.data, out, context=args.context)
+    default = "data/opentslm" if args.context == "full" else f"data/opentslm-{args.context}"
+    custom = args.count_channels or args.head_thought_tokens or args.thought_tokens != opentslm_data.THOUGHT_TOKENS
+    if custom and args.out is None:
+        raise SystemExit("pass --out for an export with non-default settings, so it never overwrites runs A-C's data")
+    out = args.out or Path(default)
+    stats = opentslm_data.export(
+        args.data,
+        out,
+        context=args.context,
+        head_thought_tokens=args.head_thought_tokens,
+        thought_tokens=args.thought_tokens,
+        count_channels=args.count_channels,
+    )
+    print(json.dumps(opentslm_data.export_settings(out / "meta.json")))
     print(f"OpenTSLM samples ({args.context} context) -> {out}")
     print(
         "| k | prompt tokens p50 / p99 | issue cut | issue tokens p50 / p99 | thought tokens p50 / p99 "
-        "| runs with early steps dropped |"
+        "| runs with steps left out | runs that lose their first step |"
     )
-    print("|---|---|---|---|---|---|")
+    print("|---|---|---|---|---|---|---|")
     for k, group in stats.groupby("k"):
         dropped = group.loc[group["steps_dropped"] > 0, "steps_dropped"]
         print(
             f"| {k} | {group['prompt_tokens'].median():.0f} / {group['prompt_tokens'].quantile(0.99):.0f} "
             f"| {group['issue_cut'].mean():.1%} | {group['issue_tokens'].median():.0f} / {group['issue_tokens'].quantile(0.99):.0f} "
             f"| {group['thought_tokens'].median():.0f} / {group['thought_tokens'].quantile(0.99):.0f} "
-            f"| {(group['steps_dropped'] > 0).mean():.1%} (median dropped when cut: {dropped.median() if len(dropped) else 0:.0f}) |"
+            f"| {(group['steps_dropped'] > 0).mean():.1%} (median left out: {dropped.median() if len(dropped) else 0:.0f}) "
+            f"| {group['first_step_lost'].mean():.1%} |"
         )
 
 
@@ -265,6 +278,15 @@ def main() -> None:
         help="text beside the series: issue and thoughts, thoughts only, or none (the ECG-only variant)",
     )
     export.add_argument("--out", type=Path, help="default: data/opentslm (full) or data/opentslm-<context>")
+    export.add_argument(
+        "--count-channels", action="store_true", help="run C2: add 3 count channels (fixed scales) to the 19 series"
+    )
+    export.add_argument(
+        "--head-thought-tokens", type=int, default=0, help="also keep the earliest thoughts, up to this many tokens"
+    )
+    export.add_argument(
+        "--thought-tokens", type=int, default=1024, help="the latest thoughts kept, up to this many tokens"
+    )
     export.set_defaults(run=_opentslm_export)
 
     compare = commands.add_parser("compare", help="paired AUROC gain of predictions A over B, per checkpoint")

@@ -112,7 +112,8 @@ def test_export_writes_one_context(tmp_path, trim: Trimmer, context: str) -> Non
     _tables(tmp_path, trim)
     stats = opentslm_data.export(tmp_path, tmp_path / "out", tokenizer=trim.tokenizer, context=context)
     train = pd.read_parquet(tmp_path / "out" / "train.parquet")
-    assert json.loads((tmp_path / "out" / "meta.json").read_text()) == {"context": context}
+    meta = json.loads((tmp_path / "out" / "meta.json").read_text())
+    assert meta == {"context": context, "head_thought_tokens": 0, "thought_tokens": 1024, "count_channels": False}
     prompt = train["pre_prompt"][0]
     assert ("Issue:\nw7 w8 w9" in prompt) == (context == "full")
     assert ("Step 5: w6" in prompt) == (context != "none")
@@ -123,3 +124,73 @@ def test_export_writes_one_context(tmp_path, trim: Trimmer, context: str) -> Non
 def test_post_prompts_name_the_answers() -> None:
     assert POST_PROMPTS["outcome"].endswith("resolved or unresolved.\nAnswer:")
     assert "context_limit" in POST_PROMPTS["ending"] and "Will the agent's" not in POST_PROMPTS["ending"]
+
+
+def test_count_channels_are_causal_fixed_scale_and_match_the_hunt() -> None:
+    from agent_ecg import channels
+    from agent_ecg.opentslm_data import COUNT_CHANNELS, count_series
+
+    row = dict(ROW)
+    row["action_kind"] = ["search", "run", "edit", "run", "edit"]
+    row["observation_kind"] = ["output", "traceback", "edit_rejected", "output", "silent_success"]
+    out = dict(count_series(row))
+    labels = [label for label, _ in COUNT_CHANNELS.values()]
+    since, tracebacks, runs = (out[label] for label in labels)
+    assert since == [1 / 30, 2 / 30, 3 / 30, 0.0, 0.0]  # successes at steps 4 (output after a run) and 5
+    assert since == [min(v / 30, 1.0) for v in channels.steps_since_success(row)]  # Max's exact definition
+    assert tracebacks == [0.0, 0.1, 0.1, 0.1, 0.1] and runs == [0.0, 0.1, 0.1, 0.2, 0.2]
+    long = {**row, "observation_kind": ["traceback"] * 5, "action_kind": ["run"] * 5}
+    assert max(dict(count_series({k: v * 3 for k, v in long.items()}))[labels[1]]) == 1.0  # capped at 1
+    # Labels state the scale, never a run's total: the model has to read the series.
+    assert all("so far" in label or "since" in label for label in labels)
+    texts, values = time_series(pd.Series(row), count_channels=True)
+    assert len(texts) == 22 and texts[-3:] == [f"{label}:" for label in labels]
+    assert len(time_series(pd.Series(row))[0]) == 19  # runs A, B and C are unchanged
+    # Prefix-consistent: the first 3 steps give the first 3 values of the 5-step series.
+    short = {k: (v[:3] if isinstance(v, list) else v) for k, v in row.items()}
+    assert [v[:3] for v in values[-3:]] == time_series(pd.Series(short), count_channels=True)[1][-3:]
+
+
+def test_thoughts_keep_a_head_and_a_tail_without_repeats(trim: Trimmer, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(opentslm_data, "PER_THOUGHT_TOKENS", 3)
+    steps = trim.ids(["w1 w1", "w2 w2", "w3 w3 w3", "w4 w4", "w5 w5"])  # 2, 2, 3, 2, 2 tokens
+    text, used, dropped = trim.thoughts(steps, k=5, head_tokens=4, tail_tokens=4)
+    assert text.splitlines() == [
+        "Step 1: w1 w1",
+        "Step 2: w2 w2",
+        "(Thoughts of steps 3-3 are left out to fit the length limit.)",
+        "Step 4: w4 w4",
+        "Step 5: w5 w5",
+    ]
+    assert (used, dropped) == (8, 1)
+    # When the head and the tail meet, every step appears once and nothing is left out.
+    text, _, dropped = trim.thoughts(steps, k=5, head_tokens=4, tail_tokens=100)
+    assert [line.split(":")[0] for line in text.splitlines()] == [f"Step {i}" for i in range(1, 6)] and dropped == 0
+    # No head: the same text runs A, B and C were trained on.
+    monkeypatch.setattr(opentslm_data, "THOUGHT_TOKENS", 4)
+    assert (
+        trim.thoughts(steps, k=5)[0].splitlines()[0] == "(Thoughts of steps 1-3 are left out to fit the length limit.)"
+    )
+
+
+def test_an_export_records_its_settings_for_the_replay(tmp_path, trim: Trimmer) -> None:
+    import json
+
+    from agent_ecg.opentslm_data import export_settings
+
+    _tables(tmp_path, trim)
+    stats = opentslm_data.export(
+        tmp_path, tmp_path / "c2", tokenizer=trim.tokenizer, context="full", head_thought_tokens=2,
+        thought_tokens=3, count_channels=True,
+    )  # fmt: skip
+    meta = json.loads((tmp_path / "c2" / "meta.json").read_text())
+    assert meta == {"context": "full", "head_thought_tokens": 2, "thought_tokens": 3, "count_channels": True}
+    assert export_settings(tmp_path / "c2" / "meta.json") == meta
+    train = pd.read_parquet(tmp_path / "c2" / "train.parquet")
+    assert len(train["time_series"][0]) == 22
+    assert "Step 1: w1 w2" in train["pre_prompt"][0] and not stats["first_step_lost"].any()
+    (tmp_path / "old").mkdir()
+    (tmp_path / "old" / "meta.json").write_text(json.dumps({"context": "none"}))
+    assert export_settings(tmp_path / "old" / "meta.json") == {
+        "context": "none", "head_thought_tokens": 0, "thought_tokens": 1024, "count_channels": False,
+    }  # fmt: skip
