@@ -82,6 +82,8 @@ Gaps with 95 % intervals (bold: the interval excludes zero):
 - **The TSLM reads the ECG less well than trees do:** ecg is below the signals baseline on same-issue pairs,
   significantly at 10 and 30 steps.
 - Why the baselines win, in four points: [REPORT.md, section 6](../REPORT.md#why-the-baselines-win).
+- Figures (`uv run python scripts/paper_figures.py`): [figures/results.png](figures/results.png) (four panels, PDF and SVG
+  alongside) and [figures/social.png](figures/social.png) (16:9, for posts).
 
 ## ecg-full's other two tasks (full test split, 23,520 checkpoints)
 
