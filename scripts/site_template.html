@@ -194,12 +194,6 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
       <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of $n_ckpt checkpoints from $n_runs SWE-agent runs, where each checkpoint holds the first $k_first to $k_last steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on $test_runs runs from $test_repos repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within $gap_lo&ndash;$gap_hi AUROC of the best baseline, though every TSLM stays below the baseline with the same inputs. Replayed as a live monitor on $mon_total unseen runs, the alarms of our full model are right $a_right of the time and fire at a median step of $a_median.</p>
-      <div class="stats">
-        <div class="stat"><b>$n_runs</b><span>SWE-agent runs on real GitHub issues</span></div>
-        <div class="stat"><b>$fail_first</b><span>of runs still going at step $k_first fail ($fail_last at step $k_last)</span></div>
-        <div class="stat tslm"><b>$a_right</b><span>of $mon_name's alarms were right</span></div>
-        <div class="stat alarm"><b>step $a_median</b><span>median alarm (signals baseline: step $s_median)</span></div>
-      </div>
     </div>
   </section>
 

@@ -201,12 +201,6 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
       <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of 235,978 checkpoints from 76,182 SWE-agent runs, where each checkpoint holds the first 5 to 30 steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on 7,640 runs from 143 repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within 0.03&ndash;0.04 AUROC of the best baseline, though every TSLM stays below the baseline with the same inputs. Replayed as a live monitor on 600 unseen runs, the alarms of our full model are right 96&nbsp;% of the time and fire at a median step of 6.</p>
-      <div class="stats">
-        <div class="stat"><b>76,182</b><span>SWE-agent runs on real GitHub issues</span></div>
-        <div class="stat"><b>83&nbsp;%</b><span>of runs still going at step 5 fail (96&nbsp;% at step 30)</span></div>
-        <div class="stat tslm"><b>96&nbsp;%</b><span>of ecg-full's alarms were right</span></div>
-        <div class="stat alarm"><b>step 6</b><span>median alarm (signals baseline: step 9)</span></div>
-      </div>
     </div>
   </section>
 
