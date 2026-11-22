@@ -55,7 +55,7 @@ body { background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--sans); 
 .teaser { padding-top: 1rem; }
 .subtitle { font-size: 1.1rem; color: var(--fg2); text-align: center; max-width: 820px; margin: 1.2rem auto 0; }
 
-.demo { margin: 0 0 2.5rem; }
+.demo { margin: 0; }
 .demo video { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border); background: #000000; }
 
 /* section titles with the template's short gradient rule */
@@ -151,11 +151,6 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <!-- teaser -->
   <section class="section teaser">
     <div class="container">
-      <figure class="demo">
-        <video src="demo.mp4" autoplay muted loop playsinline controls preload="metadata"
-          aria-label="Terminal demo: the agent's steps on the left, the monitor's heartbeat and health on the right"></video>
-        <figcaption class="subtitle">A recorded test run, replayed step by step. On the left is what the agent does; on the right is the monitor (TSLM&nbsp;A), which reads only the steps so far. It sounds the alarm at step 12, and the run indeed failed.</figcaption>
-      </figure>
       <figure class="chart"><img class="light" src="figures/light/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><img class="dark" src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>An unseen test run on <code>scverse__scanpy-2859</code>. TSLM A's health falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at step 12. The run went on to fail (it ran out of context). The CPU signals monitor (grey, dashed) never alarms on this run. Below it are the 19 series the model reads, one row each.</figcaption></figure>
     </div>
   </section>
@@ -174,8 +169,20 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- data -->
+  <!-- demo -->
   <section class="section">
+    <div class="container">
+      <h2 class="title centered">Demo</h2>
+      <figure class="demo">
+        <video src="demo.mp4" autoplay muted loop playsinline controls preload="metadata"
+          aria-label="Terminal demo: the agent's steps on the left, the monitor's heartbeat and health on the right"></video>
+        <figcaption class="subtitle">A recorded test run, replayed step by step. On the left is what the agent does; on the right is the monitor (TSLM&nbsp;A), which reads only the steps so far. It sounds the alarm at step 12, and the run indeed failed.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- data -->
+  <section class="section light">
     <div class="narrow content">
       <h2 class="title">The Agent ECG</h2>
       <p>Our TimeNet connector for <a href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories">nebius/SWE-agent-trajectories</a> (<a href="https://github.com/OpenTSLM/TimeNet/pull/832">TimeNet PR #832</a>) cuts every run into <strong>checkpoints</strong>: the first 5, 10, 15, 20 or 30 steps of a run that is still going. A checkpoint never contains the end of the run, so no input gives the outcome away. The "ECG" is 19 series with one value per step. It is a multichannel event trace, not a waveform:</p>
@@ -194,7 +201,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- pass/fail results -->
-  <section class="section light">
+  <section class="section">
     <div class="container content">
       <h2 class="title">Predicting Pass or Fail from the First Steps</h2>
       <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a CPU baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
@@ -213,7 +220,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- live monitor -->
-  <section class="section">
+  <section class="section light">
     <div class="container content">
       <h2 class="title">As a Live Monitor</h2>
       <p>A monitor turns each prediction into a health score from 0 to 100 and sounds the alarm after 2 critical steps in a row. We replayed 600 unseen test runs step by step through two monitors: TSLM&nbsp;A, and the CPU model of the signals. The runs were all 239 resolved test runs with at least 20 steps, plus 361 random failing ones; neither monitor chose them.</p>
@@ -229,7 +236,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- other tasks -->
-  <section class="section light">
+  <section class="section">
     <div class="narrow content">
       <h2 class="title">A's Other Two Tasks</h2>
       <p>Besides pass or fail, TSLM&nbsp;A learns to predict how a run will end (one of six endings) and to write a short status report whose last sentence forecasts the rest of the run. Scores on the full test split (23,520 checkpoints), pooled over checkpoints:</p>
@@ -243,7 +250,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- limitations -->
-  <section class="section">
+  <section class="section light">
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
@@ -256,7 +263,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- training -->
-  <section class="section light">
+  <section class="section">
     <div class="container content">
       <h2 class="title">Training</h2>
       <p>All three models are OpenTSLM-SP on <code>meta-llama/Llama-3.2-1B</code>, fine-tuned from <code>OpenTSLM/llama-3.2-1b-ecg-sp</code> on one L40S each. C reads the ECG only, B reads the agent's thoughts and the ECG, and A reads the issue, the thoughts and the ECG and learns three tasks: pass or fail, how the run will end, and a short status report. Training took 2.8&nbsp;h (C), 5.3&nbsp;h (B) and 7.1&nbsp;h (A), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on A's long prompts; switching to PyTorch SDPA (the same math) made A fit and cut its training time by more than half.</p>
@@ -265,7 +272,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- BibTeX -->
-  <section class="section" id="BibTeX">
+  <section class="section light" id="BibTeX">
     <div class="narrow">
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>
