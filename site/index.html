@@ -55,6 +55,9 @@ body { background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--sans); 
 .teaser { padding-top: 1rem; }
 .subtitle { font-size: 1.1rem; color: var(--fg2); text-align: center; max-width: 820px; margin: 1.2rem auto 0; }
 
+.demo { margin: 0 0 2.5rem; }
+.demo video { display: block; width: 100%; max-width: 100%; height: auto; border-radius: 12px; border: 1px solid var(--border); background: #000000; }
+
 /* section titles with the template's short gradient rule */
 h2.title { color: var(--fg); font-weight: 700; font-size: 1.9rem; line-height: 1.2; margin: 0 0 1.6rem; text-wrap: balance; }
 h2.title::after { content: ""; display: block; width: 60px; height: 4px; border-radius: 2px; margin-top: 0.7rem;
@@ -148,6 +151,11 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <!-- teaser -->
   <section class="section teaser">
     <div class="container">
+      <figure class="demo">
+        <video src="demo.mp4" autoplay muted loop playsinline controls preload="metadata"
+          aria-label="Terminal demo: the agent's steps on the left, the monitor's heartbeat and health on the right"></video>
+        <figcaption class="subtitle">A recorded test run, replayed step by step. On the left is what the agent does; on the right is the monitor (TSLM&nbsp;A), which reads only the steps so far. It sounds the alarm at step 12, and the run indeed failed.</figcaption>
+      </figure>
       <figure class="chart"><img class="light" src="figures/light/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><img class="dark" src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>An unseen test run on <code>scverse__scanpy-2859</code>. TSLM A's health falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at step 12. The run went on to fail (it ran out of context). The CPU signals monitor (grey, dashed) never alarms on this run. Below it are the 19 series the model reads, one row each.</figcaption></figure>
     </div>
   </section>
