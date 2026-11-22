@@ -106,6 +106,7 @@ def setup(t: Theme) -> None:
             "font.family": "sans-serif",
             "font.sans-serif": FONT,
             "svg.fonttype": "path",  # text as outlines: the SVG looks the same without the font installed
+            "svg.hashsalt": "agent-ecg",  # stable element ids across reruns
             "figure.facecolor": t.bg,
             "axes.facecolor": t.bg,
             "savefig.facecolor": t.bg,
@@ -150,7 +151,7 @@ def style_axis(ax: plt.Axes, t: Theme) -> None:
 def save(fig: plt.Figure, out: Path, name: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     fig.savefig(out / f"{name}.png", dpi=DPI)
-    fig.savefig(out / f"{name}.svg")
+    fig.savefig(out / f"{name}.svg", metadata={"Date": None})  # no timestamp: reruns give the same file
     plt.close(fig)
     print(f"  {out.relative_to(ROOT) / name}.{{png,svg}}")
 

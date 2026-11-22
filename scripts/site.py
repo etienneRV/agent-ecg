@@ -146,11 +146,42 @@ def compute() -> dict:
     return {"h_c": c, "h_b": b, "h_a": a, "gpu_hours": total, "gpu": gpu, "base": cfg["init_from"], "llm": cfg["llm"]}
 
 
+def other_tasks() -> dict:
+    """A's ending and status-report scores (full test split if present, else the 4,000-checkpoint subset)."""
+    base = RESULTS / "opentslm"
+    path = next(
+        p
+        for p in (base / "full-multi.alltasks", base / "full-multi.alltasks-4000")
+        if (p / "report.test.json").exists()
+    )
+    a = json.loads((path / "report.test.json").read_text())
+    models = [
+        ("TSLM A", "tslm", a),
+        ("CPU signals", "cpu", json.loads((RESULTS / "signals.test.json").read_text())),
+        ("majority", "cpu", json.loads((RESULTS / "majority.test.json").read_text())),
+    ]
+    rows = []
+    for name, kind, r in models:
+        e, st = r["ending"]["all (pooled)"], r["status"]["all (pooled)"]
+        rows.append(
+            f'<tr class="{kind}"><th>{name}</th><td>{e["accuracy"]:.3f}</td><td>{e["macro_f1"]:.3f}</td>'
+            f"<td>{100 * st['parse_rate']:.1f}&nbsp;%</td><td>{st['remaining_mae']:.1f} ({st['remaining_median_ae']:.0f})</td>"
+            f"<td>{st['resolved_balanced_accuracy']:.3f}</td></tr>"
+        )
+    full = path.name == "full-multi.alltasks"
+    return {
+        "task_rows": "".join(rows),
+        "task_scope": f"the full test split ({a['checkpoints']:,} checkpoints)"
+        if full
+        else f"a {a['checkpoints']:,}-checkpoint test subset",
+    }
+
+
 def main() -> None:
     missing = [n for n in FIGS for d in ("figures", "figures/light") if not (ROOT / d / f"{n}.svg").exists()]
     if missing:
         raise SystemExit("figures missing; run: uv run python scripts/charts.py --theme both")
-    values = {**data_numbers(), **auroc_table(), **monitor(), **showcase(), **compute()}
+    values = {**data_numbers(), **auroc_table(), **monitor(), **showcase(), **compute(), **other_tasks()}
     values["fig_hero"] = figure(
         "hero_ecg",
         "Health of one agent run over 30 steps, with the 19 input series below",

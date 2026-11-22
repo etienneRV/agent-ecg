@@ -233,8 +233,22 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- limitations -->
+  <!-- other tasks -->
   <section class="section light">
+    <div class="narrow content">
+      <h2 class="title">A's Other Two Tasks</h2>
+      <p>Besides pass or fail, TSLM&nbsp;A learns to predict how a run will end (one of six endings) and to write a short status report whose last sentence forecasts the rest of the run. Scores on the full test split (23,520 checkpoints), pooled over checkpoints:</p>
+      <div class="table"><table>
+        <thead><tr><th>Model</th><th>Ending accuracy</th><th>Ending macro-F1</th><th>Report format followed</th><th>Remaining steps, mean (median) error</th><th>Pass/fail balanced accuracy</th></tr></thead>
+        <tbody><tr class="tslm"><th>TSLM A</th><td>0.662</td><td>0.222</td><td>99.7&nbsp;%</td><td>17.8 (9)</td><td>0.568</td></tr><tr class="cpu"><th>CPU signals</th><td>0.655</td><td>0.225</td><td>100.0&nbsp;%</td><td>14.3 (6)</td><td>0.614</td></tr><tr class="cpu"><th>majority</th><td>0.494</td><td>0.110</td><td>100.0&nbsp;%</td><td>16.7 (10)</td><td>0.500</td></tr></tbody>
+      </table></div>
+      <p class="note">The majority baseline always predicts the most common ending, the median remaining steps, and "will not resolve".</p>
+      <p style="margin-top:1.2rem">A is about level with the CPU signals model on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the CPU signals model.</p>
+    </div>
+  </section>
+
+  <!-- limitations -->
+  <section class="section">
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
@@ -247,7 +261,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- training -->
-  <section class="section">
+  <section class="section light">
     <div class="container content">
       <h2 class="title">Training</h2>
       <p>All three models are OpenTSLM-SP on <code>meta-llama/Llama-3.2-1B</code>, fine-tuned from <code>OpenTSLM/llama-3.2-1b-ecg-sp</code> on one L40S each. C reads the ECG only, B reads the agent's thoughts and the ECG, and A reads the issue, the thoughts and the ECG and learns three tasks: pass or fail, how the run will end, and a short status report. Training took 2.8&nbsp;h (C), 5.3&nbsp;h (B) and 7.1&nbsp;h (A), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on A's long prompts; switching to PyTorch SDPA (the same math) made A fit and cut its training time by more than half.</p>
@@ -256,7 +270,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- BibTeX -->
-  <section class="section light" id="BibTeX">
+  <section class="section" id="BibTeX">
     <div class="narrow">
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>
