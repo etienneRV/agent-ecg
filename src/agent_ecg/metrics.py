@@ -58,16 +58,27 @@ def same_issue_pairs(resolved: np.ndarray, score: np.ndarray, issues: np.ndarray
     Returns:
         The share (NaN without such pairs) and the number of pairs.
     """
+    _, wins, pairs = _same_issue_counts(resolved, score, issues)
+    total = int(pairs.sum())
+    return (float(wins.sum()) / total if total else float("nan")), total
+
+
+def _same_issue_counts(
+    resolved: np.ndarray, score: np.ndarray, issues: np.ndarray
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Each issue with both a resolved and an unresolved run: its id, the wins of resolved over unresolved
+    runs (ties count half) and its number of such pairs, in order of first appearance."""
     frame = pd.DataFrame({"issue": issues, "resolved": resolved, "score": score})
-    wins, pairs = 0.0, 0
-    for _, group in frame.groupby("issue", sort=False):
+    ids, wins, pairs = [], [], []
+    for issue, group in frame.groupby("issue", sort=False):
         good = group["score"].to_numpy()[group["resolved"].to_numpy(bool)]
         bad = group["score"].to_numpy()[~group["resolved"].to_numpy(bool)]
         if len(good) and len(bad):
             diff = good[:, None] - bad[None, :]
-            wins += float((diff > 0).sum() + 0.5 * (diff == 0).sum())
-            pairs += diff.size
-    return (wins / pairs if pairs else float("nan")), int(pairs)
+            ids.append(issue)
+            wins.append(float((diff > 0).sum() + 0.5 * (diff == 0).sum()))
+            pairs.append(diff.size)
+    return np.array(ids, dtype=object), np.array(wins, dtype=float), np.array(pairs, dtype=int)
 
 
 def score_outcome(table: pd.DataFrame) -> dict:
@@ -232,15 +243,7 @@ def concat_reports(reports: Iterable[tuple[str, dict]]) -> str:
 def paired_auroc_gain(gold: pd.DataFrame, a: pd.DataFrame, b: pd.DataFrame, split: str = "test", n: int = 1000) -> dict:
     """AUROC of model ``a`` minus model ``b`` per checkpoint, with a 95 % interval from resampling the same
     repositories for both, and the share of resamples where ``a`` does not beat ``b``."""
-    gold = gold[gold["split"] == split]
-    for name, frame in (("A", a), ("B", b)):
-        covered = len(gold.merge(frame[KEY], on=KEY))
-        if covered != len(gold):
-            raise ValueError(
-                f"predictions {name} cover {covered} of the {len(gold)} {split} checkpoints; compare full files"
-            )
-    table = gold.merge(a[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one")
-    table = table.merge(b[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one", suffixes=("_a", "_b"))
+    table = _paired_table(gold, a, b, split)
     rng = np.random.default_rng(0)
     result = {}
     for k, group in table.groupby("k"):
@@ -263,5 +266,57 @@ def paired_auroc_gain(gold: pd.DataFrame, a: pd.DataFrame, b: pd.DataFrame, spli
             "gain": float(roc_auc_score(y, pa_) - roc_auc_score(y, pb)),
             "gain_95": [float(np.quantile(gains, 0.025)), float(np.quantile(gains, 0.975))],
             "p_not_better": float(np.mean(np.array(gains) <= 0)),
+        }
+    return result
+
+
+def _paired_table(gold: pd.DataFrame, a: pd.DataFrame, b: pd.DataFrame, split: str) -> pd.DataFrame:
+    """The ``split`` checkpoints with both models' ``p_resolved`` (``_a``, ``_b``); both must cover all of them."""
+    gold = gold[gold["split"] == split]
+    for name, frame in (("A", a), ("B", b)):
+        covered = len(gold.merge(frame[KEY], on=KEY))
+        if covered != len(gold):
+            raise ValueError(
+                f"predictions {name} cover {covered} of the {len(gold)} {split} checkpoints; compare full files"
+            )
+    table = gold.merge(a[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one")
+    return table.merge(b[[*KEY, "p_resolved"]], on=KEY, validate="one_to_one", suffixes=("_a", "_b"))
+
+
+def paired_same_issue_gain(
+    gold: pd.DataFrame, a: pd.DataFrame, b: pd.DataFrame, split: str = "test", n: int = 1000
+) -> dict:
+    """Same-issue pair share (see ``same_issue_pairs``) of model ``a`` minus model ``b`` per checkpoint.
+
+    The overall AUROC also rewards telling easy issues from hard ones, which the issue text alone does;
+    this gain counts only what each model reads from the run itself. The 95 % interval resamples the same
+    repositories for both models, as ``paired_auroc_gain`` does: each issue belongs to one repository, so
+    a resample sums the wins and pairs of its repositories' issues.
+    """
+    table = _paired_table(gold, a, b, split)
+    rng = np.random.default_rng(0)
+    result = {}
+    for k, group in table.groupby("k"):
+        y, issues = group["resolved"].to_numpy(bool), group["instance_id"].to_numpy()
+        ids, wins_a, pairs = _same_issue_counts(y, group["p_resolved_a"].to_numpy(), issues)
+        ids_b, wins_b, _ = _same_issue_counts(y, group["p_resolved_b"].to_numpy(), issues)
+        if not pairs.sum():
+            result[f"k={k}"] = {"gain": np.nan, "gain_95": [np.nan, np.nan], "p_not_better": np.nan, "pairs": 0}
+            continue
+        assert (ids == ids_b).all()
+        repository = group.drop_duplicates("instance_id").set_index("instance_id")["repository"]
+        issue_repo = repository.loc[ids].to_numpy()
+        # Every repository of the checkpoint is drawn, also those without a pair, as in paired_auroc_gain.
+        members = [np.flatnonzero(issue_repo == r) for r in np.unique(group["repository"])]
+        gains = []
+        for _ in range(n):
+            rows = np.concatenate([members[i] for i in rng.integers(len(members), size=len(members))])
+            if pairs[rows].sum():
+                gains.append((wins_a[rows].sum() - wins_b[rows].sum()) / pairs[rows].sum())
+        result[f"k={k}"] = {
+            "gain": float((wins_a.sum() - wins_b.sum()) / pairs.sum()),
+            "gain_95": [float(np.quantile(gains, 0.025)), float(np.quantile(gains, 0.975))],
+            "p_not_better": float(np.mean(np.array(gains) <= 0)),
+            "pairs": int(pairs.sum()),
         }
     return result

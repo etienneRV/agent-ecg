@@ -1,0 +1,6 @@
+Same-issue pair share (resolved run scored above an unresolved run on the same issue) of results/opentslm/full-multi/predictions.test.parquet minus results/baselines/issue_signals_thoughts.test.parquet (test, paired repository bootstrap)
+  k=5: -0.001 [-0.035, +0.035]  share of resamples not better: 0.507, 27526 pairs
+  k=10: -0.009 [-0.041, +0.017]  share of resamples not better: 0.745, 17091 pairs
+  k=15: +0.004 [-0.039, +0.045]  share of resamples not better: 0.389, 6964 pairs
+  k=20: +0.031 [-0.018, +0.091]  share of resamples not better: 0.112, 3203 pairs
+  k=30: -0.062 [-0.138, +0.041]  share of resamples not better: 0.879, 1223 pairs

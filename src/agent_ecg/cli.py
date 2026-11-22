@@ -227,12 +227,18 @@ def _opentslm_export(args: argparse.Namespace) -> None:
 def _compare(args: argparse.Namespace) -> None:
     gold = data.load_checkpoints(args.data)
     read = lambda path: pd.read_csv(path) if path.suffix == ".csv" else pd.read_parquet(path)  # noqa: E731
-    result = metrics.paired_auroc_gain(gold, read(args.a), read(args.b), args.split)
-    print(f"AUROC of {args.a.stem} minus {args.b.stem} ({args.split}, paired repository bootstrap)")
+    if args.same_issue:
+        result = metrics.paired_same_issue_gain(gold, read(args.a), read(args.b), args.split)
+        title = "Same-issue pair share (resolved run scored above an unresolved run on the same issue)"
+    else:
+        result = metrics.paired_auroc_gain(gold, read(args.a), read(args.b), args.split)
+        title = "AUROC"
+    print(f"{title} of {args.a} minus {args.b} ({args.split}, paired repository bootstrap)")
     for k, row in result.items():
         low, high = row["gain_95"]
+        pairs = f", {row['pairs']} pairs" if "pairs" in row else ""
         print(
-            f"  {k}: {row['gain']:+.3f} [{low:+.3f}, {high:+.3f}]  share of resamples not better: {row['p_not_better']:.3f}"
+            f"  {k}: {row['gain']:+.3f} [{low:+.3f}, {high:+.3f}]  share of resamples not better: {row['p_not_better']:.3f}{pairs}"
         )
 
 
@@ -314,6 +320,11 @@ def main() -> None:
     compare.add_argument("a", type=Path)
     compare.add_argument("b", type=Path)
     compare.add_argument("--split", default="test", choices=("validation", "test"))
+    compare.add_argument(
+        "--same-issue",
+        action="store_true",
+        help="compare on pairs of runs on the same issue only: what each model reads from the run, not the issue",
+    )
     compare.set_defaults(run=_compare)
 
     hunt = commands.add_parser(

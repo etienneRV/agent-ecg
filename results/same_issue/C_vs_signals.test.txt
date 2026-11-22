@@ -1,0 +1,6 @@
+Same-issue pair share (resolved run scored above an unresolved run on the same issue) of results/opentslm/ecg-only/predictions.test.parquet minus results/baselines/signals.test.parquet (test, paired repository bootstrap)
+  k=5: -0.008 [-0.032, +0.020]  share of resamples not better: 0.725, 27526 pairs
+  k=10: -0.058 [-0.109, -0.014]  share of resamples not better: 0.996, 17091 pairs
+  k=15: -0.056 [-0.123, +0.005]  share of resamples not better: 0.968, 6964 pairs
+  k=20: -0.057 [-0.170, +0.038]  share of resamples not better: 0.860, 3203 pairs
+  k=30: -0.069 [-0.162, -0.007]  share of resamples not better: 0.990, 1223 pairs
