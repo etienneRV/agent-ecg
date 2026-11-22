@@ -26,22 +26,9 @@
   --rule-b: #d32323;
   --show-light: block;
   --show-dark: none;
+  color-scheme: light; /* always white, like a paper page */
   --sans: "Inter", "Segoe UI", -apple-system, BlinkMacSystemFont, sans-serif;
   --mono: "JetBrains Mono", "SF Mono", Monaco, "Cascadia Code", monospace;
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #07090a; --band: #0e1316; --code-bg: #11161a; --fg: #eef2f0; --fg2: #c3ccc8; --muted: #8a9490;
-    --border: #1f282b; --primary: #4cc9f0; --button: #eef2f0; --button-fg: #07090a; --alarm: #ff4d4d;
-    --stable: #3ddc84; --cpu: #9aa3a0; --rule-a: #3ddc84; --rule-b: #ff4d4d;
-    --show-light: none; --show-dark: block; color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #07090a; --band: #0e1316; --code-bg: #11161a; --fg: #eef2f0; --fg2: #c3ccc8; --muted: #8a9490;
-  --border: #1f282b; --primary: #4cc9f0; --button: #eef2f0; --button-fg: #07090a; --alarm: #ff4d4d;
-  --stable: #3ddc84; --cpu: #9aa3a0; --rule-a: #3ddc84; --rule-b: #ff4d4d;
-  --show-light: none; --show-dark: block; color-scheme: dark;
 }
 
 body { background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--sans); }
