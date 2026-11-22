@@ -35,13 +35,18 @@ def pick_device(name: str = "auto") -> str:
     return "cpu"
 
 
-def load_model(llm_id: str, device: str, *, init_from: str | None = None, lora: bool = True) -> OpenTSLMSP:
+def load_model(
+    llm_id: str, device: str, *, init_from: str | None = None, lora: bool = True, lora_dropout: float = 0.0
+) -> OpenTSLMSP:
     """An OpenTSLM-SP on ``llm_id`` with LoRA, fresh or starting from a pretrained one on the Hub.
 
     ``init_from`` (e.g. ``OpenTSLM/llama-3.2-1b-ecg-sp``) loads that checkpoint's encoder, projector
     and LoRA weights, as ``OpenTSLM.load_pretrained`` does, but onto ``llm_id``. OpenTSLM's loader always
     uses the gated ``meta-llama/...`` id; ``unsloth/Llama-3.2-1B`` holds the same weights without the
     gate, so ``--llm unsloth/Llama-3.2-1B --init-from OpenTSLM/llama-3.2-1b-ecg-sp`` needs no approval.
+
+    ``lora_dropout`` (default 0, OpenTSLM's setting) drops LoRA inputs during training only, against
+    memorising the training text (run A2); prediction runs in eval mode, where it has no effect.
 
     Raises:
         ValueError: If ``init_from`` is not an SP checkpoint or was trained on another base model.
@@ -58,7 +63,7 @@ def load_model(llm_id: str, device: str, *, init_from: str | None = None, lora: 
     # memory on a 46 GB GPU. PyTorch's SDPA computes the same attention without that matrix.
     model.llm.set_attn_implementation(ATTENTION)
     if lora:
-        model.enable_lora(**LORA)
+        model.enable_lora(**(LORA | {"lora_dropout": lora_dropout}))
     if init_from:
         from huggingface_hub import hf_hub_download
 

@@ -47,6 +47,9 @@ def parse_args() -> argparse.Namespace:
         "--init-from", help="start from a pretrained OpenTSLM-SP on the Hub, e.g. OpenTSLM/llama-3.2-1b-tsqa-sp"
     )
     parser.add_argument("--no-lora", action="store_true", help="train only the encoder and projector")
+    parser.add_argument(
+        "--lora-dropout", type=float, default=0.0, help="dropout on the LoRA adapters (run A2: 0.1; A, B, C: 0)"
+    )
     parser.add_argument("--tasks", default="outcome,ending,status", help="e.g. `outcome` for a pass/fail-only model")
     parser.add_argument("--task-weights", default="", help="e.g. `outcome=2,status=0.5`; unnamed tasks weigh 1")
     parser.add_argument(
@@ -105,7 +108,9 @@ def main() -> None:
         f"device {device}; {len(train)} train checkpoints ({len(train_items)} items), {len(valid_items)} validation items"
     )
 
-    model = load_model(args.llm, device, init_from=args.init_from, lora=not args.no_lora)
+    model = load_model(
+        args.llm, device, init_from=args.init_from, lora=not args.no_lora, lora_dropout=args.lora_dropout
+    )
     if args.gradient_checkpointing:
         model.llm.gradient_checkpointing_enable(gradient_checkpointing_kwargs={"use_reentrant": False})
         model.llm.config.use_cache = False

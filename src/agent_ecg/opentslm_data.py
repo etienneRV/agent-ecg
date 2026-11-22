@@ -30,6 +30,7 @@ Token counts use the Llama 3.2 tokenizer, OpenTSLM's default base model.
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -47,7 +48,8 @@ from agent_ecg import data
 
 TOKENIZER = ("unsloth/Llama-3.2-1B", "tokenizer.json")  # same tokenizer as meta-llama/Llama-3.2-1B, not gated
 ISSUE_TOKENS = 512
-THOUGHT_TOKENS = 1024
+THOUGHT_TOKENS = 1024  # the latest thoughts kept (the tail)
+HEAD_THOUGHT_TOKENS = 0  # the first thoughts kept as well (the head); runs A, B, C used none
 PER_THOUGHT_TOKENS = 256
 
 CONTEXTS = ("full", "thoughts", "none")
@@ -109,8 +111,43 @@ EDIT_TARGETS = {
 }
 
 
-def time_series(row: pd.Series | dict) -> tuple[list[str], list[list[float]]]:
-    """The 19 labelled per-step series of a checkpoint."""
+# Run C2's three count channels: running totals and "time since" that the TSLM does not form on its own
+# (added to C's or B's own score they still raise AUROC by 0.03-0.07 on validation; A already uses them).
+# Each has a fixed scale, capped at 1, stated in its label: a per-run total in a label would give the
+# answer away in text. "Success" is defined as in agent_ecg.channels.steps_since_success.
+COUNT_CHANNELS = {
+    "since_success": (
+        "Steps since the last successful command (silent success, or output after a run or an edit), "
+        "divided by 30, capped at 1",
+        30.0,
+    ),
+    "tracebacks": ("Replies with a Python traceback so far, divided by 10, capped at 1", 10.0),
+    "runs": ("Code runs (python or pytest) so far, divided by 10, capped at 1", 10.0),
+}
+
+
+def count_series(row: pd.Series | Mapping) -> list[tuple[str, list[float]]]:
+    """The three count channels of a checkpoint: each value uses only the steps up to its own."""
+    actions = [str(a) for a in row["action_kind"]]
+    replies = [str(r) for r in row["observation_kind"]]
+    since, last = [], -1
+    for t, (action, reply) in enumerate(zip(actions, replies, strict=True)):
+        if reply == "silent_success" or (reply == "output" and action in ("run", "edit")):
+            last = t
+        since.append(float(t - last if last >= 0 else t + 1))
+    raw = {
+        "since_success": since,
+        "tracebacks": np.cumsum([r == "traceback" for r in replies]).tolist(),
+        "runs": np.cumsum([a == "run" for a in actions]).tolist(),
+    }
+    return [
+        (label, np.minimum(np.asarray(raw[name], float) / scale, 1.0).tolist())
+        for name, (label, scale) in COUNT_CHANNELS.items()
+    ]
+
+
+def time_series(row: pd.Series | Mapping, count_channels: bool = False) -> tuple[list[str], list[list[float]]]:
+    """The 19 labelled per-step series of a checkpoint, plus run C2's three count channels if asked."""
     texts, values = [], []
     for name, label in LENGTHS.items():
         series = np.asarray(row[name], float)
@@ -129,6 +166,10 @@ def time_series(row: pd.Series | dict) -> tuple[list[str], list[list[float]]]:
     for label, series in flags:
         texts.append(f"{label}:")
         values.append(series.tolist())
+    if count_channels:
+        for label, series in count_series(row):
+            texts.append(f"{label}:")
+            values.append(series)
     return texts, values
 
 
@@ -162,26 +203,36 @@ class Trimmer:
             return Trimmed(self.tokenizer.decode(ids), len(ids), False)
         return Trimmed(self.tokenizer.decode(ids[:budget]) + " [...]", budget, True)
 
-    def thoughts(self, step_ids: list[list[int]], k: int) -> tuple[str, int, int]:
-        """The latest of the first ``k`` thoughts that fit the budget.
+    def thoughts(
+        self, step_ids: list[list[int]], k: int, head_tokens: int | None = None, tail_tokens: int | None = None
+    ) -> tuple[str, int, int]:
+        """The first ``k`` thoughts cut to the budgets: the earliest steps that fit ``head_tokens``, then the
+        latest that fit ``tail_tokens``, with a note for the steps left out between them.
+
+        The head keeps how the agent first read the issue, which a long run otherwise loses (with no head,
+        97 % of 30-step checkpoints dropped their first thoughts, and a word-count model fed the same window
+        falls from 0.70 to 0.63 AUROC). Each step keeps at most ``PER_THOUGHT_TOKENS`` tokens. By default
+        the head is ``HEAD_THOUGHT_TOKENS`` (none) and the tail ``THOUGHT_TOKENS``, as in runs A, B and C.
 
         Returns:
-            The text, its token count, and how many of the earliest steps were dropped.
+            The text, its token count, and how many steps were left out.
         """
-        kept: list[str] = []
-        used = 0
-        first = k
-        for step in range(k - 1, -1, -1):
-            piece = self.head(step_ids[step], PER_THOUGHT_TOKENS)
-            if used + piece.tokens > THOUGHT_TOKENS and kept:
-                break
-            kept.append(f"Step {step + 1}: {piece.text}")
-            used += piece.tokens
-            first = step
-        lines = kept[::-1]
-        if first > 0:
-            lines.insert(0, f"(Thoughts of steps 1-{first} are left out to fit the length limit.)")
-        return "\n".join(lines), used, first
+        head_budget = HEAD_THOUGHT_TOKENS if head_tokens is None else head_tokens
+        tail_budget = THOUGHT_TOKENS if tail_tokens is None else tail_tokens
+        pieces = [self.head(step_ids[step], PER_THOUGHT_TOKENS) for step in range(k)]
+        head, used = 0, 0  # steps 1..head are kept from the start
+        while head < k and used + pieces[head].tokens <= head_budget:
+            used += pieces[head].tokens
+            head += 1
+        tail, tail_used = k, 0  # steps tail+1..k are kept from the end
+        while tail > head and (tail_used + pieces[tail - 1].tokens <= tail_budget or tail == k):
+            tail_used += pieces[tail - 1].tokens
+            tail -= 1
+        lines = [f"Step {step + 1}: {pieces[step].text}" for step in range(head)]
+        if tail > head:  # same wording as runs A, B and C were trained on, "1-1" included
+            lines.append(f"(Thoughts of steps {head + 1}-{tail} are left out to fit the length limit.)")
+        lines += [f"Step {step + 1}: {pieces[step].text}" for step in range(tail, k)]
+        return "\n".join(lines), used + tail_used, tail - head
 
 
 def pre_prompt(issue: str | None, thoughts: str | None) -> str:
@@ -198,13 +249,22 @@ def pre_prompt(issue: str | None, thoughts: str | None) -> str:
 class Prompts:
     """The pre-prompt of any prefix of a run, by context: the same text for the export and for a replay."""
 
-    def __init__(self, data_dir: Path, context: str = "full", tokenizer: Tokenizer | None = None) -> None:
+    def __init__(
+        self,
+        data_dir: Path,
+        context: str = "full",
+        tokenizer: Tokenizer | None = None,
+        head_tokens: int | None = None,
+        tail_tokens: int | None = None,
+    ) -> None:
         """Load what the context needs from the tables that ``agent-ecg prepare`` wrote.
 
         Args:
             data_dir: The flattened tables.
             context: What text joins the series: ``full`` (issue and thoughts), ``thoughts`` or ``none``.
             tokenizer: The tokenizer that counts the budgets; Llama 3.2's by default.
+            head_tokens: The earliest thoughts kept (default ``HEAD_THOUGHT_TOKENS``).
+            tail_tokens: The latest thoughts kept (default ``THOUGHT_TOKENS``).
 
         Raises:
             ValueError: If the context is not one of ``CONTEXTS``.
@@ -216,6 +276,8 @@ class Prompts:
 
             tokenizer = Tokenizer.from_file(hf_hub_download(*TOKENIZER))
         self.context = context
+        self.head_tokens = HEAD_THOUGHT_TOKENS if head_tokens is None else head_tokens
+        self.tail_tokens = THOUGHT_TOKENS if tail_tokens is None else tail_tokens
         self.trim = Trimmer(tokenizer)
         self.with_issue, self.with_thoughts = context == "full", context in ("full", "thoughts")
         self.thoughts = data.load_thoughts(data_dir) if self.with_thoughts else {}
@@ -234,41 +296,71 @@ class Prompts:
                 if len(self._step_ids) >= 2000:
                     self._step_ids.clear()
                 self._step_ids[run_id] = self.trim.ids(self.thoughts[run_id])
-            thoughts, used, dropped = self.trim.thoughts(self._step_ids[run_id], k)
+            thoughts, used, dropped = self.trim.thoughts(self._step_ids[run_id], k, self.head_tokens, self.tail_tokens)
         issue = self.issues[issue_id] if self.with_issue else None
         stats = {
             "issue_tokens": issue.tokens if issue else 0,
             "issue_cut": issue.cut if issue else False,
             "thought_tokens": used,
             "steps_dropped": dropped,
+            "first_step_lost": bool(thoughts) and not thoughts.startswith("Step 1:"),
         }
         return pre_prompt(issue.text if issue else None, thoughts), stats
 
 
-def export(data_dir: Path, out: Path, tokenizer: Tokenizer | None = None, context: str = "full") -> pd.DataFrame:
+def export_settings(meta_path: Path) -> dict:
+    """The settings an export was written with (``meta.json``), with the defaults of runs A, B and C for
+    older exports that only recorded their context. A replay rebuilds prompts with exactly these."""
+    meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
+    return {
+        "context": meta.get("context", "full"),
+        "head_thought_tokens": meta.get("head_thought_tokens", 0),
+        "thought_tokens": meta.get("thought_tokens", 1024),
+        "count_channels": meta.get("count_channels", False),
+    }
+
+
+def export(
+    data_dir: Path,
+    out: Path,
+    tokenizer: Tokenizer | None = None,
+    context: str = "full",
+    head_thought_tokens: int | None = None,
+    thought_tokens: int | None = None,
+    count_channels: bool = False,
+) -> pd.DataFrame:
     """Write ``{split}.parquet`` under ``out``: one row per checkpoint with its OpenTSLM inputs and targets.
 
     Args:
         data_dir: The flattened tables that ``agent-ecg prepare`` wrote.
-        out: Where the samples go, with ``post_prompts.json`` and ``meta.json`` (the context).
+        out: Where the samples go, with ``post_prompts.json`` and ``meta.json`` (the settings below).
         tokenizer: The tokenizer that counts the budgets; Llama 3.2's by default.
         context: What text joins the series: ``full`` (issue and thoughts), ``thoughts`` or ``none``.
+        head_thought_tokens: The earliest thoughts kept (default ``HEAD_THOUGHT_TOKENS``, none).
+        thought_tokens: The latest thoughts kept (default ``THOUGHT_TOKENS``).
+        count_channels: Add run C2's three count channels to the 19 series.
 
     Returns:
         Per-checkpoint trimming statistics, with each prompt's length in tokens.
     """
-    prompts = Prompts(data_dir, context, tokenizer)
+    prompts = Prompts(data_dir, context, tokenizer, head_thought_tokens, thought_tokens)
     checkpoints = data.load_checkpoints(data_dir)
     post = post_prompts(context)
     out.mkdir(parents=True, exist_ok=True)
     (out / "post_prompts.json").write_text(json.dumps(post, indent=2))
-    (out / "meta.json").write_text(json.dumps({"context": context}, indent=2))
+    settings = {
+        "context": context,
+        "head_thought_tokens": prompts.head_tokens,
+        "thought_tokens": prompts.tail_tokens,
+        "count_channels": count_channels,
+    }
+    (out / "meta.json").write_text(json.dumps(settings, indent=2))
     stats = []
     for split, table in checkpoints.groupby("split"):
         rows, split_stats = [], []
         for _, row in table.iterrows():
             text, trimmed = prompts(row["run_id"], row["issue_id"], row["k"])
-            series_text, series = time_series(row)
+            series_text, series = time_series(row, count_channels=count_channels)
             rows.append(
                 {
                     "run_id": row["run_id"],

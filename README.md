@@ -43,6 +43,12 @@ uv run agent-ecg opentslm-export --context thoughts  # thoughts + series        
 uv run agent-ecg opentslm-export --context none      # the series alone (ECG)   -> data/opentslm-none/
 ```
 
+Two options build the final runs' data (GPU.md section 6), and need `--out`:
+- `--count-channels` adds run C2's three count channels: steps since the last success, tracebacks so far, code runs so far; fixed scales, past steps only.
+- `--head-thought-tokens 512 --thought-tokens 1536` keeps the first thoughts as well as the latest (run A2).
+
+`meta.json` records the settings, and `opentslm/replay.py` rebuilds prompts from them.
+
 Each row is one checkpoint in [OpenTSLM](https://github.com/OpenTSLM/OpenTSLM)'s sample format:
 `pre_prompt` (the setting, then the issue and the agent's thoughts so far, as the context asks), 19
 labelled per-step `time_series`, and the three tasks' answers. `post_prompts.json` holds each task's

@@ -8,8 +8,10 @@ at batch 4 x 4), 32 GB or more for A (issue + thoughts + ECG, 27.7 GB at batch 4
 
 - Your Hugging Face account needs access to [meta-llama/Llama-3.2-1B](https://huggingface.co/meta-llama/Llama-3.2-1B)
   (request it on the page; Meta approves it), and a **read** token from https://huggingface.co/settings/tokens.
-- Without that approval: `--llm unsloth/Llama-3.2-1B` is the same model, not gated, but then train
-  from scratch (no `--init-from`: the OpenTSLM checkpoints name the gated id).
+- Without that approval, add `--llm unsloth/Llama-3.2-1B` to every `train.py` command: the same
+  weights, not gated, and `--init-from OpenTSLM/llama-3.2-1b-ecg-sp` still works (`load_model` puts the
+  checkpoint on whichever copy of Llama 3.2 1B you name). `predict.py` and `replay.py` read the model
+  from the run's `config.json`.
 
 ## 1. Set up (~20 min, mostly the 1.1 GB download)
 
@@ -147,6 +149,112 @@ save credits: ... failed 97 % of the time") once the state is critical. That is 
 shows. The alarm goes on when health is at most 15 in a zone where at least 95 % of validation runs
 failed, two steps in a row, and holds until health is back to 30.
 
+## 6. Final runs: C2 and A2
+
+Two runs in parallel, one per problem found in runs A-C (details: `results/SUMMARY.md`). Everything not
+listed stays as in the original run. Each export records its settings in `meta.json`, and
+`opentslm/replay.py` rebuilds prompts from them.
+
+**C2 = C + 3 count channels.** C and B ignore simple counts: added to their own scores, the three channels
+raise AUROC by 0.03-0.07 on validation. Each channel has a fixed scale, capped at 1 and stated in its
+label, and uses only past steps:
+- steps since the last successful command (/30);
+- tracebacks so far (/10);
+- code runs so far (/10).
+
+The prompt grows from 558 to 650 tokens at 30 steps (median).
+
+```bash
+uv run --no-sync agent-ecg opentslm-export --context none --count-channels --out data/opentslm-none-counts
+uv run --no-sync python opentslm/train.py --name ecg-counts --data data/opentslm-none-counts --tasks outcome \
+    --init-from OpenTSLM/llama-3.2-1b-ecg-sp 2>&1 | tee runs/ecg-counts.log
+```
+
+**A2 = A against overfitting, keeping the early thoughts.** B and A overfit: B's training loss fell to 0
+while its validation loss doubled, and A peaked at step 2,500 of 7,500. A also lost the first thoughts of
+long runs (97 % of 30-step checkpoints), and a word-count model fed A's window falls from 0.70 to 0.63
+AUROC at 30 steps. The changes:
+- one epoch at the natural share of successes, so each run is seen about once;
+- LoRA dropout 0.1;
+- finer early stopping;
+- the first 512 thought tokens kept as well as the latest 1,536. 0 % of checkpoints lose their first step; the median prompt is 2,700 tokens at 30 steps, so plan about 40 % more time per step.
+
+```bash
+uv run --no-sync agent-ecg opentslm-export --head-thought-tokens 512 --thought-tokens 1536 --out data/opentslm-a2
+uv run --no-sync python opentslm/train.py --name full-multi-a2 --data data/opentslm-a2 \
+    --epochs 1 --resolved-share 0.17 --lora-dropout 0.1 --eval-every 250 --val-checkpoints 4000 \
+    --batch-size 4 --grad-accum 4 --init-from OpenTSLM/llama-3.2-1b-ecg-sp 2>&1 | tee runs/full-multi-a2.log
+```
+
+On an 80 GB GPU, the default batch (8 x 2) likely fits; the smoke test tells. Then score both as in section 4.
+
+**How we judge them** (fixed before the runs; test, paired repository bootstrap with `agent-ecg compare`):
+- **C2 beats C** if the 95 % interval of the gain is above zero at two of steps 5 / 10 / 15.
+- **A2 beats A** if the interval is above zero at two of steps 15 / 20 / 30 (where the thought window bites:
+  38 / 77 / 97 % of A's checkpoints lost early thoughts), with steps 5 / 10 not worse beyond noise.
+  The same test runs still going at step 30 should also no longer score lower as the run goes on
+  (A: 0.68 at step 5, 0.62 at step 30).
+- A winner replaces its original in the results and the demo. Otherwise we report "tried, no gain",
+  with the validation numbers. Test intervals are about ±0.05 wide, so a real +0.02 can miss the bar.
+
+**Run them with one command each**, one per GPU (in `tmux`); `DRY_RUN=1` prints the steps first:
+
+```bash
+opentslm/final_run.sh c2    # first GPU
+opentslm/final_run.sh a2    # second GPU
+```
+
+It builds the export, smoke-tests the largest batch that leaves 20 % of the GPU free (8 x 2, else 4 x 4,
+else 4 x 4 with gradient checkpointing), trains, scores validation and test as in section 4, and writes the
+two comparisons the rule above needs: against the original run (`results/opentslm/...`) and against the CPU
+bar (`results/baselines/...`). Everything lands in `runs/<name>/` and `runs/<name>.final.log`; a trained run
+is never overwritten.
+
+### Design notes: why A2 keeps the first and the latest thoughts
+
+A keeps the latest 1,024 tokens of thoughts, so long runs lose their first steps, where the agent reads the
+issue and plans (6 % of checkpoints at 10 steps, 77 % at 20, 97 % at 30), while the CPU thoughts model reads
+everything. Two fixes were weighed:
+
+- **A tiered budget** (the latest 10 steps in full, older steps cut to their first 32 tokens), proposed first.
+- **The first 512 plus the latest 1,536 tokens** (head + tail), chosen. It is one export setting, and the
+  defaults reproduce runs A-C byte for byte.
+
+A validation check settled it (`opentslm/thought_window_check.py`, results in
+[results/thought_window_check.json](results/thought_window_check.json)): the CPU thoughts model, fitted on
+8,000 training runs with a fixed C and scored on all 22,418 validation checkpoints, with each variant cutting
+the thoughts exactly as the export does. Test was not read.
+
+| Thoughts kept | AUROC at 5 / 10 / 15 / 20 / 30 steps (validation) |
+| --- | --- |
+| latest 1,024 (runs A, B) | 0.681 / 0.728 / 0.720 / 0.722 / 0.683 |
+| latest 2,048 | 0.683 / 0.729 / 0.721 / 0.732 / 0.752 |
+| first 512 + latest 1,024 | 0.683 / 0.730 / 0.720 / 0.729 / 0.749 |
+| **first 512 + latest 1,536 (run A2)** | **0.683 / 0.730 / 0.721 / 0.733 / 0.757** |
+| tiered (latest 10 steps in full, older cut to 32 tokens) | 0.684 / 0.730 / 0.714 / 0.720 / 0.729 |
+| all thoughts, uncut | 0.683 / 0.730 / 0.719 / 0.732 / 0.753 |
+
+A2's window is best or tied at every checkpoint and recovers what keeping every thought gives: +0.07 over A's
+window at 30 steps, +0.01 at 20, nothing at 5-15, where nothing was cut. The tiered design loses information
+by cutting older thoughts to 32 tokens. This is a word-count model, not the TSLM, and the top variants differ
+by under 0.01.
+
+Both designs follow published findings:
+
+1. Keeping the beginning and the end of a long text beat keeping either alone for BERT classification
+   ([Sun et al. 2019](https://arxiv.org/abs/1905.05583)); later work finds the beginning alone can do as well,
+   depending on the data ([Investigating text shortening strategy in BERT, 2024](https://arxiv.org/abs/2403.12799)).
+2. Language models use the start and the end of a long input best and the middle worst, and do worse on longer
+   inputs ([Liu et al. 2023, *Lost in the Middle*](https://arxiv.org/abs/2307.03172)).
+3. Coding agents manage their own history this way: SWE-agent keeps its reasoning and recent tool outputs and
+   masks older outputs. Inside SWE-agent on SWE-bench Verified this halved cost while matching the solve rate,
+   and the best window was setup-specific
+   ([Lindenbauer et al. 2025, *The Complexity Trap*](https://arxiv.org/abs/2508.21433)).
+
+None of these covers our case (a fine-tuned model classifying a run from its thoughts), which is why the
+choice rests on the validation check above. (The first comparison, in PR #4, scored test; the validation
+check alone picks the same window, so the choice no longer depends on test.)
+
 ## Results
 
 | Run | Text beside the ECG | Tasks | AUROC 5 / 10 / 15 / 20 / 30 steps (test) | Same-issue pairs, 10 steps | Brier, calibrated, 10 steps |
@@ -189,57 +297,3 @@ Compare a TSLM with the CPU rows on the same test split, as above.
 | More training | `--epochs 3 --samples-per-epoch 120000` |
 
 Every run is scored by the same `agent-ecg evaluate`, so results stay comparable.
-
-## Second round (planned): C2 and A2
-
-Two runs, one per problem the first round showed. Both diagnoses use validation predictions only; test is
-scored once per run, under the channel hunt's rule (the paired repository-bootstrap 95 % interval of the gain
-over the original run is above 0 at two or more of 5 / 10 / 15 steps, and entirely below 0 at none).
-
-- **C2 = C + 3 channels, for C and B ignoring count information.** Added to a run's own validation score in a
-  logistic regression (repository-grouped cross-validation), three signals still raise AUROC at 10 / 15 / 20
-  steps by +0.05 / +0.07 / +0.06 for C and +0.06 / +0.05 / +0.03 for B, but only +0.01 / +0.01 / 0.00 for A.
-  On their own they score 0.66 / 0.67 / 0.65 (steps since the last success, fewer is better), 0.57 / 0.63 /
-  0.67 (tracebacks so far, more is better: the agent reproduced the bug) and 0.61 / 0.66 / 0.66 (code runs so
-  far). C2 adds them as series on fixed scales stated in their labels, from past steps only, and keeps C's
-  training settings exactly: C did not overfit (train loss 0.18, validation 0.17), and this keeps C2 against C
-  a clean test.
-- **A2 = A against overfitting.** Over 2 epochs at a 30 % share of successes, each resolved training run was
-  seen about 3.6 times and each failing one about 1.7 times; B's train loss reached 0 while its validation loss
-  more than doubled (0.149 to 0.344), and A peaked at step 2,500 of 7,500. A2 uses `--epochs 1
-  --resolved-share 0.17` (each run seen about once), LoRA dropout 0.1 (now 0), `--eval-every 250
-  --val-checkpoints 4000` (a finer, less noisy pick of the best checkpoint) and tiered thoughts (below).
-
-### Tiered thoughts (A2)
-
-A keeps the latest 1,024 tokens of thoughts, so runs lose their early steps: 6 % of runs at 10 steps, 38 % at
-15, 77 % at 20 and 97 % at 30, while the CPU thoughts model reads every thought. A flat 2,048-token budget
-would fix that but makes prompts about 40 % longer, gives the model more unique text to memorise, and may
-dilute the latest, most telling thoughts. A2 keeps every step at about the current length:
-
-- the **latest 10 steps in full** (up to 256 tokens each, as now), under "Latest steps";
-- **older steps shortened to their first 32 tokens**, usually the sentence where the agent says what it will
-  do, under "Earlier steps (shortened)";
-- a **cap of 2,048 tokens**, dropping the oldest shortened steps first if it is reached.
-
-At 30 steps this is about 1,250 tokens. The design follows three findings:
-
-1. Coding agents manage their own history this way: SWE-agent keeps recent tool outputs in full and replaces
-   older ones with a placeholder. Inside SWE-agent on SWE-bench Verified this halved cost while matching the
-   solve rate, with the best window at the last 10 observations; reusing that window in another agent
-   (OpenHands) degraded performance, so the window is setup-specific
-   ([Lindenbauer et al. 2025, *The Complexity Trap*](https://arxiv.org/abs/2508.21433)).
-2. For classifying long texts with BERT, keeping the beginning and the end beat keeping either alone
-   ([Sun et al. 2019](https://arxiv.org/abs/1905.05583)); later work finds the beginning alone can do as well,
-   depending on the data ([Investigating text shortening strategy in BERT, 2024](https://arxiv.org/abs/2403.12799)).
-3. Language models use the start and the end of a long input best and the middle worst, and do worse on
-   longer inputs ([Liu et al. 2023, *Lost in the Middle*](https://arxiv.org/abs/2307.03172)).
-
-None of these covers our case (a fine-tuned model classifying a run from its thoughts), and the first shows
-that the window size matters. With one run and no tuning, the window is generous (10 steps), so a miss keeps
-too much rather than too little. Fallback: a flat 2,048-token budget (`THOUGHT_TOKENS = 2048`).
-
-To build: a LoRA-dropout flag in `opentslm/train.py` (default 0, so C, B and A reproduce), the tiered thoughts
-in `Trimmer.thoughts()` behind an export option (the flat budget stays the default), and the three C2 channels
-in `opentslm_data.time_series()` behind an export option, each with tests for one value per step, values in
-[0, 1] and prefix consistency.
