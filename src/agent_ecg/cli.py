@@ -137,11 +137,15 @@ def _demo(args: argparse.Namespace) -> None:
     run = demo.fetch_run(run_id)
     if args.at is not None or args.svg is not None:
         step = args.at or demo.first_alarm(monitor) or max(monitor)
-        print(demo.render(run, monitor, step, svg=args.svg, width=args.width, height=args.height))
+        print(
+            demo.render(
+                run, monitor, step, svg=args.svg, width=args.width, height=args.height, chance=not args.no_chance
+            )
+        )
         if args.svg:
             print(f"wrote {args.svg} (step {step})")
         return
-    demo.play(run, monitor, pace=args.pace)
+    demo.play(run, monitor, pace=args.pace, chance=not args.no_chance)
 
 
 def _pick(chosen: list, pick: str) -> list:
@@ -257,6 +261,7 @@ def main() -> None:
     show.add_argument("replay", type=Path, help="a JSONL file from `agent-ecg replay --out` or opentslm/replay.py")
     show.add_argument("--run-id", help="the run to play; default: the first in the file")
     show.add_argument("--pace", type=float, default=2.0, help="seconds per step")
+    show.add_argument("--no-chance", action="store_true", help="hide the chance-of-failure line in the monitor panel")
     show.add_argument("--at", type=int, help="print the frame at this step instead of playing")
     show.add_argument("--svg", type=Path, help="save that frame as an SVG image (default step: the first alarm)")
     show.add_argument("--width", type=int, default=150, help="frame width for --at/--svg")
