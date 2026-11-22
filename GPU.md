@@ -1,7 +1,8 @@
 # Fine-tuning OpenTSLM on a GPU
 
-Step-by-step for the Nebius machine. One GPU with 24 GB or more (L40S, A100, H100) is enough for
-OpenTSLM-SP on Llama 3.2 1B: only ~14 M parameters train (encoder, projector, LoRA).
+Step-by-step for the Nebius machine. OpenTSLM-SP on Llama 3.2 1B trains only ~14 M parameters (encoder,
+projector, LoRA), so one GPU is enough: 24 GB for C (ECG only, 22.0 GB peak) and B (thoughts + ECG, 20.7 GB
+at batch 4 x 4), 32 GB or more for A (issue + thoughts + ECG, 27.7 GB at batch 4 x 4). We used L40S (46 GB).
 
 ## 0. Before you start
 
@@ -161,10 +162,15 @@ Each run is below its CPU bar. A is closest: 0.03-0.04 under issue+signals+thoug
 repository-bootstrap interval at 5-20 steps and outside it at 30. B and C are significantly below theirs at
 most checkpoints. A beats B by 0.03-0.04 at every checkpoint (borderline at 10 and 15 steps), but A differs
 in two ways at once (the issue, and three tasks instead of one), so the gain cannot be credited to either.
-C trained with eager attention, B and A with SDPA (same math). Reports, predictions, `compare` outputs and
+C trained with eager attention, B and A with SDPA (same math). Compute: one L40S per run, training 2.8 h
+(C), 5.3 h (B) and 7.1 h (A), 15.2 GPU-hours in all; scoring pass/fail on validation and test took
+0.5-1.4 h per run, and A's generated status reports on the full test split about 3 h more. Reports, predictions, `compare` outputs and
 configs: [results/opentslm/](results/opentslm/). As a live monitor (600 test runs replayed step by step), A
 and the signals monitor each flag about a third of the failing runs, mostly different ones; see
-[results/opentslm/scan/summary.md](results/opentslm/scan/summary.md).
+[results/opentslm/scan/summary.md](results/opentslm/scan/summary.md). Which agent LLM wrote a run does
+not drive any score (within each agent, AUROC changes by at most 0.012); issue difficulty partly does:
+[results/shortcut_checks.md](results/shortcut_checks.md). The CPU baselines' test predictions are in
+[results/baselines/](results/baselines/), so `agent-ecg compare` runs without rebuilding them.
 
 The test split is a hard draw for the signals: repository cross-validation (`agent-ecg baselines
 --cv 5`) gives them 0.663 / 0.711 / 0.729 / 0.747 / 0.775 and same-issue pairs of 0.615 at 10 steps.
