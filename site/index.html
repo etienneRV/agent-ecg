@@ -143,6 +143,31 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   .hero, .teaser { animation: fadeInUp 0.6s ease-out both; }
   @keyframes fadeInUp { from { transform: translateY(12px); } to { transform: none; } }
 }
+/* two-tier layout: the story on top, the details in tabs below */
+.keys { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: 1.2rem; }
+.key { border: 1px solid var(--border); border-radius: 14px; padding: 1.3rem 1.4rem; background: var(--bg); min-width: 0; }
+.key b { display: block; font: 700 2.3rem/1.05 var(--mono); letter-spacing: -0.03em; color: var(--fg); margin-bottom: 0.5rem; font-variant-numeric: tabular-nums; }
+.key.tslm b { color: var(--primary); }
+.key h3 { margin: 0 0 0.3rem; font-size: 1.05rem; }
+.key p { margin: 0; color: var(--fg2); font-size: 0.97rem; line-height: 1.5; }
+.pipe-wrap { overflow-x: auto; }
+.pipeline { width: 100%; min-width: 640px; height: auto; display: block; }
+.finding-title { font-size: 1.4rem; font-weight: 700; margin: 0 0 0.4rem; text-wrap: balance; }
+.lead { color: var(--fg2); margin: 0 0 1rem; max-width: 46rem; }
+.divider { background: #1e293b; color: #e2e8f0; padding-block: 2.2rem; text-align: center; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.divider h2 { margin: 0 0 0.3rem; font-size: 1.7rem; color: #ffffff; }
+.divider p { margin: 0 0 1rem; color: #94a3b8; }
+.jump { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.5rem; }
+.detail h2.title { font-size: 1.5rem; }
+.jump button { font: inherit; font-size: 0.92rem; color: #e2e8f0; background: transparent; border: 1px solid #475569; border-radius: 999px; padding: 0.35rem 0.95rem; cursor: pointer; }
+.jump button:hover { background: #334155; }
+.jump button:focus-visible { outline: 2px solid #ffffff; outline-offset: 2px; }
+.jump button[aria-selected="true"] { background: #ffffff; color: #1e293b; border-color: #ffffff; font-weight: 600; }
+.detail { min-height: 40vh; }
+.detail-nav { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.2rem; padding-top: 1.2rem; border-top: 1px solid var(--border); }
+.detail-nav button { font: inherit; font-size: 0.95rem; color: var(--primary); background: none; border: 0; padding: 0.3rem 0; cursor: pointer; }
+.detail-nav button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-radius: 12px; padding: 1rem 1.2rem; overflow-x: auto; font: 0.88rem/1.6 var(--mono); margin: 0.6rem 0 1rem; }
 </style>
 </head>
 <body>
@@ -171,15 +196,8 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- teaser -->
-  <section class="section teaser">
-    <div class="container">
-      <figure class="chart"><img src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>An unseen test run on <code>scverse__scanpy-2859</code>. ecg-full's health falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at step 12. The run went on to fail (it ran out of context). The signals baseline (grey, dashed) never alarms on this run. Below it are the 19 series the model reads, one row each.</figcaption></figure>
-    </div>
-  </section>
-
   <!-- abstract -->
-  <section class="section light">
+  <section class="section">
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
       <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of 235,978 checkpoints from 76,182 SWE-agent runs, where each checkpoint holds the first 5 to 30 steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on 7,640 runs from 143 repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within 0.03&ndash;0.04 AUROC of the best baseline, though every TSLM stays below the baseline with the same inputs. Replayed as a live monitor on 600 unseen runs, the alarms of our full model are right 96&nbsp;% of the time and fire at a median step of 6.</p>
@@ -192,8 +210,80 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- demo -->
+  <!-- method -->
+  <section class="section light">
+    <div class="container">
+      <h2 class="title centered">Method</h2>
+      <div class="pipe-wrap"><svg class="pipeline" viewBox="0 0 980 440" role="img" aria-label="Method. Top: each run is split into checkpoints, its first 5, 10, 15, 20 or 30 steps; the model sees only those steps, as 19 series plus the agent's thoughts and the issue. Bottom: a TSLM and a classical baseline read the same input and give a chance of failure, which the monitor turns into health and an alarm.">
+  <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker></defs>
+  <g font-family="Inter, Helvetica, Arial, sans-serif">
+    <text x="20" y="30" font-size="12" font-weight="700" letter-spacing="1" fill="#64748b">1 · EACH RUN IS SPLIT INTO CHECKPOINTS</text>
+    <rect x="20" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="37" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="54" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="71" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="88" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="105" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="122" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="139" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="156" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="173" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="190" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="207" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="224" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="241" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="258" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="275" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="292" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="309" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="326" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="343" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="360" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="377" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="394" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="411" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="428" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="445" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="462" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="479" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="496" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="513" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="530" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="547" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="564" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="581" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/>
+    <line x1="103.5" y1="52" x2="103.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="103.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">5</text><line x1="188.5" y1="52" x2="188.5" y2="98" stroke="#d32323" stroke-width="2.5" stroke-dasharray=""/><text x="188.5" y="114" text-anchor="middle" font-size="12" font-weight="700" fill="#d32323">10</text><line x1="273.5" y1="52" x2="273.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="273.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">15</text><line x1="358.5" y1="52" x2="358.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="358.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">20</text><line x1="528.5" y1="52" x2="528.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="528.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">30</text>
+    <text x="106" y="138" text-anchor="middle" font-size="12.5" font-weight="600" fill="#d32323">checkpoint: first 10 steps</text>
+    <text x="400" y="138" text-anchor="middle" font-size="12.5" fill="#64748b">rest of the run, and its outcome: hidden</text>
+    <text x="310" y="168" text-anchor="middle" font-size="12.5" fill="#475569">The model checks the run after 5, 10, 15, 20 and 30 steps.</text>
+    <line x1="604" y1="75" x2="634" y2="75" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+    <rect x="640" y="40" width="330" height="152" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+    <text x="805" y="63" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">Checkpoint: the model's input</text>
+    <polyline points="656,79 668,83 680,83 692,79 704,80 716,83 728,81 740,83 752,77 764,83 776,77 788,81 800,80" fill="none" stroke="#475569" stroke-width="1.4"/><polyline points="656,95 668,91 680,91 692,93 704,95 716,95 728,93 740,93 752,91 764,91 776,91 788,95 800,93" fill="none" stroke="#475569" stroke-width="1.4"/><line x1="656" y1="104" x2="800" y2="104" stroke="#f1f5f9" stroke-width="9"/><rect x="790" y="100" width="3" height="8" fill="#1e293b"/><rect x="658" y="100" width="3" height="8" fill="#1e293b"/><rect x="670" y="100" width="3" height="8" fill="#1e293b"/><rect x="682" y="100" width="3" height="8" fill="#1e293b"/><line x1="656" y1="116" x2="800" y2="116" stroke="#f1f5f9" stroke-width="9"/><rect x="766" y="112" width="3" height="8" fill="#1e293b"/><rect x="658" y="112" width="3" height="8" fill="#1e293b"/><rect x="706" y="112" width="3" height="8" fill="#1e293b"/><rect x="778" y="112" width="3" height="8" fill="#1e293b"/><line x1="656" y1="128" x2="800" y2="128" stroke="#f1f5f9" stroke-width="9"/><rect x="706" y="124" width="3" height="8" fill="#1e293b"/><rect x="742" y="124" width="3" height="8" fill="#1e293b"/><rect x="766" y="124" width="3" height="8" fill="#1e293b"/><rect x="730" y="124" width="3" height="8" fill="#1e293b"/><line x1="656" y1="140" x2="800" y2="140" stroke="#f1f5f9" stroke-width="9"/><rect x="790" y="136" width="3" height="8" fill="#1e293b"/><rect x="730" y="136" width="3" height="8" fill="#1e293b"/><rect x="778" y="136" width="3" height="8" fill="#1e293b"/><rect x="742" y="136" width="3" height="8" fill="#1e293b"/>
+    <text x="728" y="178" text-anchor="middle" font-size="12" fill="#475569">19 series: the agent's ECG</text>
+    <rect x="818" y="80" width="138" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="887" y="98" text-anchor="middle" font-size="12" fill="#334155">agent's thoughts</text>
+    <rect x="818" y="116" width="138" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="887" y="134" text-anchor="middle" font-size="12" fill="#334155">issue text</text>
+    <text x="887" y="178" text-anchor="middle" font-size="12" fill="#475569">text, by model</text>
+    <text x="20" y="246" font-size="12" font-weight="700" letter-spacing="1" fill="#64748b">2 · MODELS AND MONITOR</text>
+    <text x="20" y="282" font-size="13" fill="#334155">Each TSLM is paired with a</text>
+    <text x="20" y="300" font-size="13" fill="#334155">classical baseline that reads</text>
+    <text x="20" y="318" font-size="13" fill="#334155">exactly the same input:</text>
+    <text x="20" y="346" font-size="13" font-weight="600" fill="#1e293b">ECG only · + thoughts · + issue</text>
+    <path d="M805,192 V214 H330 V380" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="330" y1="290" x2="356" y2="290" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+    <line x1="330" y1="380" x2="356" y2="380" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+    <rect x="362" y="255" width="280" height="70" rx="14" fill="#eef6fc" stroke="#bfdcf0"/>
+    <text x="502" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="#0a74b8">TSLM</text>
+    <text x="502" y="301" text-anchor="middle" font-size="12.5" fill="#475569">OpenTSLM-SoftPrompt, Llama 3.2 1B:</text>
+    <text x="502" y="317" text-anchor="middle" font-size="12.5" fill="#475569">series become tokens next to the text</text>
+    <rect x="362" y="345" width="280" height="70" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="502" y="373" text-anchor="middle" font-size="15" font-weight="700" fill="#475569">Baseline</text>
+    <text x="502" y="394" text-anchor="middle" font-size="12.5" fill="#475569">classical model on the same input</text>
+    <path d="M642,290 H672 V335" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <path d="M642,380 H672 V335" fill="none" stroke="#94a3b8" stroke-width="2"/>
+    <line x1="672" y1="335" x2="702" y2="335" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
+    <rect x="708" y="255" width="262" height="160" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
+    <text x="839" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Monitor</text>
+    <text x="839" y="302" text-anchor="middle" font-size="12.5" fill="#475569">chance of failure → health 0–100,</text>
+    <text x="839" y="319" text-anchor="middle" font-size="12.5" fill="#475569">compared with runs of the same age</text>
+    <rect x="730" y="336" width="218" height="12" rx="6" fill="#e2e8f0"/>
+    <rect x="730" y="336" width="44" height="12" rx="6" fill="#d32323"/>
+    <text x="839" y="374" text-anchor="middle" font-size="13" font-weight="700" fill="#d32323">alarm after 2 critical steps:</text>
+    <text x="839" y="392" text-anchor="middle" font-size="13" font-weight="700" fill="#d32323">stop the agent</text>
+  </g>
+</svg></div>
+    </div>
+  </section>
+
+  <!-- results -->
   <section class="section">
+    <div class="container">
+      <h2 class="title">Results</h2>
+      <div class="keys">
+        <div class="key"><b>0.61 → 0.73</b><h3>The behaviour signal grows over the run</h3><p>The signals baseline climbs from 0.611 at 5 steps to 0.728 at 30. The issue text alone stays flat between 0.61 and 0.62.</p></div>
+        <div class="key tslm"><b>0.03–0.04</b><h3>The best TSLM comes close</h3><p>It comes within 0.03&ndash;0.04 AUROC of the best baseline, though every TSLM stays below the baseline with the same inputs.</p></div>
+        <div class="key"><b>96&nbsp;%</b><h3>Alarms that are right</h3><p>Replayed as a live monitor on 600 unseen runs, the alarms of our full model are right 96&nbsp;% of the time and fire at a median step of 6.</p></div>
+      </div>
+      <h3 class="finding-title" style="margin-top:2.6rem">The longer you watch, the more the behaviour tells you, and our TSLMs come close to the baselines</h3>
+      <p class="lead">Test AUROC on repositories never seen in training: each TSLM (blue) against the baseline that reads the same inputs (grey). 0.5 is chance.</p>
+      <figure class="chart"><img src="figures/auroc_by_step.svg" alt="Test AUROC at 5 to 30 steps for three TSLMs and their baselines" loading="lazy"><figcaption>Each panel pairs a TSLM (blue) with the baseline that reads the same inputs (grey). The dashed line reads the issue text only; the shading is a 95&nbsp;% interval from resampling test repositories.</figcaption></figure>
+      <h3 class="finding-title" style="margin-top:2.6rem">As a live monitor, ecg-full warns earlier than the baseline, and both are usually right</h3>
+      <p class="lead">600 unseen test runs, replayed step by step through two monitors.</p>
+      <figure class="chart"><img src="figures/monitor_numbers.svg" alt="Stat cards and a Venn diagram comparing the two live monitors" loading="lazy"><figcaption>The Venn counts are the failing runs each monitor flags (of 361); the circles are not to scale.</figcaption></figure>
+    </div>
+  </section>
+
+  <!-- demo -->
+  <section class="section light">
     <div class="container">
       <h2 class="title centered">Demo</h2>
       <figure class="demo">
@@ -204,11 +294,27 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- data -->
-  <section class="section light">
+  <!-- limitations -->
+  <section class="section">
     <div class="narrow content">
+      <h2 class="title">Limitations</h2>
+      <ul class="findings">
+        <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, the classical baselines still score above each TSLM. ecg-full comes closest: within 0.03&ndash;0.04 AUROC at 5&ndash;20 steps, a gap that is not statistically significant.</li>
+        <li><strong>How much ecg-full uses the ECG is untested.</strong> We did not run a test that shuffles its series between runs, so we do not claim ecg-full relies on the ECG. ecg, which reads only the ECG, scores above chance.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- details: one part at a time -->
+  <div class="divider" id="details">
+    <h2>In detail</h2>
+    <p>Everything behind the results above. Pick a part to read it.</p>
+    <div class="jump" role="tablist" aria-label="Details"><button type="button" role="tab" id="tab-d-data" aria-controls="d-data" aria-selected="true">Data</button><button type="button" role="tab" id="tab-d-model" aria-controls="d-model" aria-selected="false" tabindex="-1">Model</button><button type="button" role="tab" id="tab-d-results" aria-controls="d-results" aria-selected="false" tabindex="-1">Results</button><button type="button" role="tab" id="tab-d-monitor" aria-controls="d-monitor" aria-selected="false" tabindex="-1">Live monitor</button><button type="button" role="tab" id="tab-d-tasks" aria-controls="d-tasks" aria-selected="false" tabindex="-1">Other tasks</button><button type="button" role="tab" id="tab-d-round2" aria-controls="d-round2" aria-selected="false" tabindex="-1">Second round</button><button type="button" role="tab" id="tab-d-training" aria-controls="d-training" aria-selected="false" tabindex="-1">Training</button><button type="button" role="tab" id="tab-d-repro" aria-controls="d-repro" aria-selected="false" tabindex="-1">Reproduce</button><button type="button" role="tab" id="tab-d-cite" aria-controls="d-cite" aria-selected="false" tabindex="-1">Cite</button></div>
+  </div>
+
+  <section class="section detail" id="d-data" role="tabpanel" aria-labelledby="tab-d-data"><div class="narrow content">
       <h2 class="title">The Agent ECG</h2>
-      <p>Our TimeNet connector for <a href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories">nebius/SWE-agent-trajectories</a> (<a href="https://github.com/OpenTSLM/TimeNet/pull/832">TimeNet PR #832</a>) cuts every run into <strong>checkpoints</strong>: the first 5, 10, 15, 20 or 30 steps of a run that is still going. A checkpoint never contains the end of the run, so no input gives the outcome away. We call the 19 series recorded at every step the agent's <strong>ECG</strong>: like a heart ECG, a few lines over time that a trained reader scans for warning signs. It is a multichannel event trace, not a waveform:</p>
+      <p>Our TimeNet connector for <a href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories">nebius/SWE-agent-trajectories</a> (<a href="https://github.com/OpenTSLM/TimeNet/pull/832">TimeNet PR #832</a>) splits every run into <strong>checkpoints</strong>: the first 5, 10, 15, 20 or 30 steps of a run that is still going. A checkpoint never contains the end of the run, so no input gives the outcome away. We call the 19 series recorded at every step the agent's <strong>ECG</strong>: like a heart ECG, a few lines over time that a trained reader scans for warning signs. It is a multichannel event trace, not a waveform:</p>
       <div class="channels">
         <div><h4>4 lengths</h4><p>the agent's thought, its command, the environment's reply, and the whole conversation so far</p></div>
         <div><h4>5 actions</h4><p>edit, create a file, run code, read, search</p></div>
@@ -220,29 +326,21 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
         <thead><tr><th>Steps seen</th><th>Runs still going</th><th>Of those, fail</th></tr></thead>
         <tbody><tr><td>5</td><td>76,182</td><td>83&nbsp;%</td></tr><tr><td>10</td><td>59,708</td><td>86&nbsp;%</td></tr><tr><td>15</td><td>43,550</td><td>91&nbsp;%</td></tr><tr><td>20</td><td>34,059</td><td>94&nbsp;%</td></tr><tr><td>30</td><td>22,479</td><td>96&nbsp;%</td></tr></tbody>
       </table></div>
-    </div>
-  </section>
+  </div></section>
 
-  <!-- model -->
-  <section class="section">
-    <div class="narrow content">
+  <section class="section detail" id="d-model" role="tabpanel" aria-labelledby="tab-d-model" hidden><div class="narrow content">
       <h2 class="title">Model</h2>
       <p>OpenTSLM (<a href="https://arxiv.org/abs/2510.02410">Langer et al., 2025</a>) extends pretrained language models to read time series as a native input. We use its SoftPrompt variant, which the paper recommends for short series: a small encoder turns each of our 19 series into tokens that sit in the prompt next to the text, and only the encoder, a projection layer and LoRA adapters are trained (about 14&nbsp;M parameters). We start from the released Llama&nbsp;3.2&nbsp;1B checkpoint at the end of the paper's training curriculum (<code>OpenTSLM/llama-3.2-1b-ecg-sp</code>).</p>
       <p>We train three models on nested inputs: <strong>ecg</strong> reads only the 19 series, <strong>ecg-thought</strong> adds the agent's thoughts, and <strong>ecg-full</strong> adds the issue and learns two more tasks, how the run will end and a short status report.</p>
-    </div>
-    <div class="container">
+  </div><div class="container">
       <figure class="chart"><img src="opentslm_softprompt.png" alt="OpenTSLM-SoftPrompt architecture: a time-series encoder and projection layer turn series patches into tokens that join the text tokens in a pretrained LLM with LoRA adapters" loading="lazy">
         <figcaption>OpenTSLM-SoftPrompt. In our case the text holds the setting and, depending on the model, the issue and the agent's thoughts, and the time series are our 19 per-step series. Figure from Langer et al. (2025), CC&nbsp;BY&nbsp;4.0.</figcaption>
       </figure>
-    </div>
-  </section>
+  </div></section>
 
-  <!-- pass/fail results -->
-  <section class="section light">
-    <div class="container content">
+  <section class="section detail" id="d-results" role="tabpanel" aria-labelledby="tab-d-results" hidden><div class="container content">
       <h2 class="title">Predicting Pass or Fail from the First Steps</h2>
       <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
-      <figure class="chart"><img src="figures/auroc_by_step.svg" alt="Test AUROC at 5 to 30 steps for three TSLMs and their baselines" loading="lazy"><figcaption>Each panel pairs a TSLM (blue) with the baseline that reads the same inputs (grey). The dashed line reads the issue text only; the shading is a 95&nbsp;% interval from resampling test repositories.</figcaption></figure>
       <div class="table"><table>
         <thead><tr><th>Model</th><th>Reads</th><th>5</th><th>10</th><th>15</th><th>20</th><th>30</th></tr></thead>
         <tbody><tr class="baseline"><th><span class="tag">Baseline</span> signals</th><td class="reads">the ECG signals</td><td class="">0.611</td><td class="">0.645</td><td class="">0.674</td><td class="">0.712</td><td class="best">0.728</td></tr><tr class="baseline"><th><span class="tag">Baseline</span> thoughts</th><td class="reads">the agent's thoughts</td><td class="">0.680</td><td class="">0.703</td><td class="">0.710</td><td class="">0.701</td><td class="">0.701</td></tr><tr class="baseline"><th><span class="tag">Baseline</span> issue + signals + thoughts</th><td class="reads">everything</td><td class="best">0.691</td><td class="best">0.709</td><td class="best">0.720</td><td class="best">0.719</td><td class="">0.700</td></tr><tr class="baseline"><th><span class="tag">Baseline</span> issue only</th><td class="reads">the issue text</td><td class="">0.613</td><td class="">0.619</td><td class="">0.612</td><td class="">0.616</td><td class="">0.614</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ecg</th><td class="reads">the ECG</td><td class="">0.583</td><td class="">0.611</td><td class="">0.616</td><td class="">0.620</td><td class="">0.615</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ecg-thought</th><td class="reads">thoughts + ECG</td><td class="">0.624</td><td class="">0.638</td><td class="">0.643</td><td class="">0.647</td><td class="">0.596</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ecg-full (3 tasks)</th><td class="reads">issue + thoughts + ECG</td><td class="">0.657</td><td class="">0.677</td><td class="">0.684</td><td class="">0.679</td><td class="">0.624</td></tr></tbody>
@@ -253,28 +351,22 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
         <li class="tslm"><strong>ecg-full comes within 0.03&ndash;0.04 of the best baseline</strong> at 5&ndash;20 steps. The gap is not significant there (paired bootstrap over test repositories).</li>
         <li><strong>Each TSLM scores below the baseline with the same inputs.</strong> ecg, which reads only the series, stays between 0.58 and 0.62, about the level of the issue-only model.</li>
       </ul>
-    </div>
-  </section>
+  </div></section>
 
-  <!-- live monitor -->
-  <section class="section">
-    <div class="container content">
+  <section class="section detail" id="d-monitor" role="tabpanel" aria-labelledby="tab-d-monitor" hidden><div class="container content">
       <h2 class="title">As a Live Monitor</h2>
       <p>A <strong>monitor</strong> sits on top of a model and turns its prediction at every step into something an operator can act on: a health score from 0 to 100 that compares the run with runs of the same age, a state (stable, watch, low, critical), and an alarm after 2 critical steps in a row. We replayed 600 unseen test runs step by step through two monitors: one on ecg-full, and one on the signals baseline. The runs were all 239 resolved test runs with at least 20 steps, plus 361 random failing ones; neither monitor chose them.</p>
-      <figure class="chart"><img src="figures/monitor_numbers.svg" alt="Stat cards and a Venn diagram comparing the two live monitors" loading="lazy"><figcaption>The Venn counts are the failing runs each monitor flags (of 361); the circles are not to scale.</figcaption></figure>
       <div class="table"><table>
         <thead><tr><th>Monitor</th><th>Failing runs flagged</th><th>Median alarm step</th><th>False alarms</th><th>Alarms that were right*</th></tr></thead>
         <tbody><tr><th>ecg-full</th><td>32.4&nbsp;%</td><td>6</td><td>18.4&nbsp;%</td><td>95.8&nbsp;%</td></tr><tr><th>signals baseline</th><td>34.1&nbsp;%</td><td>9</td><td>14.6&nbsp;%</td><td>96.8&nbsp;%</td></tr></tbody>
       </table></div>
       <p class="note">* At the natural share of resolved runs among runs that last 20 steps (7.1&nbsp;%). False alarms are the share of resolved runs flagged.</p>
-      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: 66 only by ecg-full, 72 only by the signals baseline, and 51 by both. Part of ecg-full's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The run in the teaser is one where ecg-full's alarm rests on behaviour, and ecg-full spares the other runs of the same issue.</p>
+      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: 66 only by ecg-full, 72 only by the signals baseline, and 51 by both. Part of ecg-full's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The example run below is one where ecg-full's alarm rests on behaviour, and ecg-full spares the other runs of the same issue.</p>
+      <figure class="chart"><img src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>One example, chosen to illustrate: an unseen test run on <code>scverse__scanpy-2859</code>. ecg-full's health falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at step 12. The run went on to fail (it ran out of context). The signals baseline (grey, dashed) never alarms on this run. Below it are the 19 series the model reads, one row each.</figcaption></figure>
       <figure class="chart"><img src="figures/failing_vs_resolved.svg" alt="Health over time for a failing and a resolved run, both monitors" loading="lazy"><figcaption>The showcase failing run and a resolved run. ecg-full stays stable on the resolved run until a dip to watch at the end; the signals baseline reads it as low early on.</figcaption></figure>
-    </div>
-  </section>
+  </div></section>
 
-  <!-- other tasks -->
-  <section class="section light">
-    <div class="narrow content">
+  <section class="section detail" id="d-tasks" role="tabpanel" aria-labelledby="tab-d-tasks" hidden><div class="narrow content">
       <h2 class="title">ecg-full's Other Two Tasks</h2>
       <p>Besides pass or fail, ecg-full learns to predict how a run will end (one of six endings) and to write a short status report whose last sentence forecasts the rest of the run. Scores on the full test split (23,520 checkpoints), pooled over checkpoints:</p>
       <div class="table"><table>
@@ -283,12 +375,9 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
       </table></div>
       <p class="note">The majority baseline always predicts the most common ending, the median remaining steps, and "will not resolve".</p>
       <p style="margin-top:1.2rem">ecg-full is about level with the signals baseline on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the signals baseline.</p>
-    </div>
-  </section>
+  </div></section>
 
-  <!-- second round -->
-  <section class="section">
-    <div class="narrow content">
+  <section class="section detail" id="d-round2" role="tabpanel" aria-labelledby="tab-d-round2" hidden><div class="narrow content">
       <h2 class="title">A Second Round</h2>
       <p>Checks on validation pointed to two fixes, and we retrained one model for each, with the rule for success fixed before training. <strong>ecg v2</strong> adds three count channels to the 19 series: steps since the last success, tracebacks so far and code runs so far. <strong>ecg-full v2</strong> trains ecg-full against overfitting (one epoch, the natural share of successes, LoRA dropout, finer early stopping) and keeps the first thoughts of long runs as well as the latest. Gain in test AUROC over the original model, with its 95&nbsp;% interval (paired bootstrap over test repositories):</p>
       <div class="table"><table>
@@ -297,32 +386,25 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
       </table></div>
       <p class="note">Highlighted: the interval excludes zero. The rule: ecg v2 needed an interval above zero at two of 5, 10 and 15 steps; ecg-full v2 at two of 15, 20 and 30, where its fix acts, with 5 and 10 not worse.</p>
       <p style="margin-top:1.2rem">Neither run passed its rule, so ecg and ecg-full stay the models reported above. ecg v2 changed little: giving the model the counts did not help it use them. ecg-full v2 moved as expected where its fix acts (+0.018 at 20 steps, +0.036 at 30) and its validation score held near its peak instead of declining, but the test set is too small to separate it from ecg-full. Its gap to the issue + signals + thoughts baseline is no longer significant at any checkpoint (ecg-full's was, at 30 steps).</p>
-    </div>
-  </section>
+  </div></section>
 
-  <!-- limitations -->
-  <section class="section light">
-    <div class="narrow content">
-      <h2 class="title">Limitations</h2>
-      <ul class="findings">
-        <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, the classical baselines still score above each TSLM. ecg-full comes closest: within 0.03&ndash;0.04 AUROC at 5&ndash;20 steps, a gap that is not statistically significant.</li>
-        <li><strong>How much ecg-full uses the ECG is untested.</strong> We did not run a test that shuffles its series between runs, so we do not claim ecg-full relies on the ECG. ecg, which reads only the ECG, scores above chance.</li>
-      </ul>
-    </div>
-  </section>
-
-  <!-- training -->
-  <section class="section">
-    <div class="container content">
+  <section class="section detail" id="d-training" role="tabpanel" aria-labelledby="tab-d-training" hidden><div class="container content">
       <h2 class="title">Training</h2>
       <p>Each model was fine-tuned on one L40S. Training took 2.8&nbsp;h (ecg), 5.3&nbsp;h (ecg-thought) and 7.1&nbsp;h (ecg-full), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on ecg-full's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half. The second round ran on one H100 each: 1.25&nbsp;h (ecg v2) and 2.69&nbsp;h (ecg-full v2).</p>
       <figure class="chart"><img src="figures/training_curves.svg" alt="Validation AUROC over training steps for the three TSLMs" loading="lazy"><figcaption>Validation AUROC during training; the ringed point is the checkpoint we kept. Validation runs are not the test set.</figcaption></figure>
-    </div>
-  </section>
+  </div></section>
 
-  <!-- BibTeX -->
-  <section class="section light" id="BibTeX">
-    <div class="narrow">
+  <section class="section detail" id="d-repro" role="tabpanel" aria-labelledby="tab-d-repro" hidden><div class="narrow content">
+      <h2 class="title">Reproduce</h2>
+      <p>Everything runs from the repository; the GPU steps are in <code>GPU.md</code>.</p>
+<pre class="cmd">uv sync
+uv run agent-ecg prepare      # build the dataset (1.1 GB download, ~5 min)
+uv run agent-ecg baselines    # fit the baselines and score them on test
+uv run agent-ecg demo results/opentslm/scan/replay.showcase.A.jsonl --run-id train-00010-of-00012:721</pre>
+      <p>Every number on this page comes from <code>results/</code>; start at <code>results/SUMMARY.md</code>.</p>
+  </div></section>
+
+  <section class="section detail" id="d-cite" role="tabpanel" aria-labelledby="tab-d-cite" hidden><div class="narrow">
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>
         <button class="copy-bibtex-btn" id="copy-bibtex" type="button">Copy</button>
@@ -336,8 +418,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
 }</code></pre>
       <h3>References</h3>
       <p class="reference">Langer, P., Kaar, T., Rosenblattl, M., Xu, M.&nbsp;A., et al. (2025). OpenTSLM: Time-Series Language Models for Reasoning over Multivariate Medical Text- and Time-Series Data. <a href="https://arxiv.org/abs/2510.02410" target="_blank" rel="noopener">arXiv:2510.02410</a>.</p>
-    </div>
-  </section>
+  </div></section>
 </main>
 
 <footer class="footer">
@@ -354,6 +435,49 @@ document.getElementById("copy-bibtex").addEventListener("click", function () {
   function fallback() { var r = document.createRange(); r.selectNodeContents(document.getElementById("bibtex-code")); var s = getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent = "Selected: press Ctrl/Cmd+C"; }
   try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
 });
+</script>
+<script>
+(function () {
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.jump [role="tab"]'));
+  function show(tab, focus) {
+    tabs.forEach(function (t) {
+      var on = t === tab;
+      t.setAttribute("aria-selected", on ? "true" : "false");
+      t.tabIndex = on ? 0 : -1;
+      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
+    });
+    if (focus) tab.focus();
+  }
+  tabs.forEach(function (t, i) {
+    t.addEventListener("click", function () { show(t, false); });
+    t.addEventListener("keydown", function (e) {
+      var j = e.key === "ArrowRight" ? i + 1 : e.key === "ArrowLeft" ? i - 1 : null;
+      if (j === null) return;
+      e.preventDefault();
+      show(tabs[(j + tabs.length) % tabs.length], true);
+    });
+  });
+  // previous / next at the bottom of each part
+  tabs.forEach(function (t, i) {
+    var panel = document.getElementById(t.getAttribute("aria-controls"));
+    var box = panel.querySelector(".narrow, .container");
+    var nav = document.createElement("div");
+    nav.className = "detail-nav";
+    function link(k, text) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.textContent = text;
+      b.addEventListener("click", function () {
+        show(tabs[k], false);
+        document.getElementById("details").scrollIntoView({ behavior: "smooth" });
+      });
+      return b;
+    }
+    nav.appendChild(i > 0 ? link(i - 1, "← " + tabs[i - 1].textContent) : document.createElement("span"));
+    if (i < tabs.length - 1) nav.appendChild(link(i + 1, tabs[i + 1].textContent + " →"));
+    box.appendChild(nav);
+  });
+})();
 </script>
 </body>
 </html>
