@@ -1,0 +1,6 @@
+Same-issue pair share (resolved run scored above an unresolved run on the same issue) of results/baselines/thoughts.test.parquet minus results/baselines/majority.test.parquet (test, paired repository bootstrap)
+  k=5: +0.044 [+0.004, +0.086]  share of resamples not better: 0.012, 27526 pairs
+  k=10: +0.062 [+0.024, +0.101]  share of resamples not better: 0.002, 17091 pairs
+  k=15: +0.076 [+0.004, +0.153]  share of resamples not better: 0.020, 6964 pairs
+  k=20: +0.072 [+0.007, +0.148]  share of resamples not better: 0.011, 3203 pairs
+  k=30: +0.076 [-0.014, +0.184]  share of resamples not better: 0.052, 1223 pairs

@@ -159,3 +159,23 @@ def test_the_outcome_report_has_same_issue_pairs_and_calibrated_brier() -> None:
     outcome = evaluate(gold, pred)["outcome"]["k=5"]
     assert outcome["same_issue_pairs"] == 1.0 and outcome["n_pairs"] > 0
     assert outcome["brier_calibrated"] > 0
+
+
+def test_the_same_issue_gain_counts_only_order_within_an_issue() -> None:
+    from agent_ecg.metrics import paired_same_issue_gain, same_issue_pairs
+
+    gold = _gold().assign(instance_id=lambda t: t["run_id"].str[:-1])  # runs r3-0..r3-9 -> issue "r3-" per repo
+    rng = np.random.default_rng(2)
+    perfect = gold[["run_id", "k"]].assign(p_resolved=gold["resolved"].astype(float))
+    noise = gold[["run_id", "k"]].assign(p_resolved=rng.random(len(gold)))
+    # Issue difficulty only: one score per issue, so no order within an issue (every pair a tie, 0.5).
+    by_issue = gold[["run_id", "k"]].assign(p_resolved=gold.groupby("instance_id")["resolved"].transform("mean"))
+    y, issues = gold["resolved"].to_numpy(bool), gold["instance_id"].to_numpy()
+
+    result = paired_same_issue_gain(gold, perfect, noise, n=200)["k=5"]
+    expected = same_issue_pairs(y, perfect["p_resolved"].to_numpy(), issues)[0]
+    expected -= same_issue_pairs(y, noise["p_resolved"].to_numpy(), issues)[0]
+    assert result["gain"] == pytest.approx(expected)
+    assert result["gain_95"][0] <= result["gain"] <= result["gain_95"][1]
+    assert result["gain_95"][0] > 0 and result["p_not_better"] == 0.0 and result["pairs"] > 0
+    assert paired_same_issue_gain(gold, perfect, by_issue, n=50)["k=5"]["gain"] == pytest.approx(0.5)
