@@ -183,9 +183,63 @@ Compare a TSLM with the CPU rows on the same test split, as above.
 | Another starting point (3-axis motion, an earlier curriculum stage) | `--init-from OpenTSLM/llama-3.2-1b-har-sp` |
 | Bigger base model | `--llm meta-llama/Llama-3.2-3B --init-from OpenTSLM/llama-3.2-3b-ecg-sp` |
 | Weight pass/fail more in multi-task training | `--task-weights outcome=3` |
-| More or fewer successes in training | `--resolved-share 0.5` (0 = natural 12 %) |
-| One checkpoint per run (less repetition) | `--one-per-run` |
+| More or fewer successes in training | `--resolved-share 0.5` (0 = the natural share, 17 % of training runs) |
+| One fixed checkpoint per run | `--one-per-run` (does not reduce repetition: the sampler already weights runs equally) |
 | Longer thought history | raise `THOUGHT_TOKENS` in `src/agent_ecg/opentslm_data.py`, re-run `opentslm-export` |
 | More training | `--epochs 3 --samples-per-epoch 120000` |
 
 Every run is scored by the same `agent-ecg evaluate`, so results stay comparable.
+
+## Second round (planned): C2 and A2
+
+Two runs, one per problem the first round showed. Both diagnoses use validation predictions only; test is
+scored once per run, under the channel hunt's rule (the paired repository-bootstrap 95 % interval of the gain
+over the original run is above 0 at two or more of 5 / 10 / 15 steps, and entirely below 0 at none).
+
+- **C2 = C + 3 channels, for C and B ignoring count information.** Added to a run's own validation score in a
+  logistic regression (repository-grouped cross-validation), three signals still raise AUROC at 10 / 15 / 20
+  steps by +0.05 / +0.07 / +0.06 for C and +0.06 / +0.05 / +0.03 for B, but only +0.01 / +0.01 / 0.00 for A.
+  On their own they score 0.66 / 0.67 / 0.65 (steps since the last success, fewer is better), 0.57 / 0.63 /
+  0.67 (tracebacks so far, more is better: the agent reproduced the bug) and 0.61 / 0.66 / 0.66 (code runs so
+  far). C2 adds them as series on fixed scales stated in their labels, from past steps only, and keeps C's
+  training settings exactly: C did not overfit (train loss 0.18, validation 0.17), and this keeps C2 against C
+  a clean test.
+- **A2 = A against overfitting.** Over 2 epochs at a 30 % share of successes, each resolved training run was
+  seen about 3.6 times and each failing one about 1.7 times; B's train loss reached 0 while its validation loss
+  more than doubled (0.149 to 0.344), and A peaked at step 2,500 of 7,500. A2 uses `--epochs 1
+  --resolved-share 0.17` (each run seen about once), LoRA dropout 0.1 (now 0), `--eval-every 250
+  --val-checkpoints 4000` (a finer, less noisy pick of the best checkpoint) and tiered thoughts (below).
+
+### Tiered thoughts (A2)
+
+A keeps the latest 1,024 tokens of thoughts, so runs lose their early steps: 6 % of runs at 10 steps, 38 % at
+15, 77 % at 20 and 97 % at 30, while the CPU thoughts model reads every thought. A flat 2,048-token budget
+would fix that but makes prompts about 40 % longer, gives the model more unique text to memorise, and may
+dilute the latest, most telling thoughts. A2 keeps every step at about the current length:
+
+- the **latest 10 steps in full** (up to 256 tokens each, as now), under "Latest steps";
+- **older steps shortened to their first 32 tokens**, usually the sentence where the agent says what it will
+  do, under "Earlier steps (shortened)";
+- a **cap of 2,048 tokens**, dropping the oldest shortened steps first if it is reached.
+
+At 30 steps this is about 1,250 tokens. The design follows three findings:
+
+1. Coding agents manage their own history this way: SWE-agent keeps recent tool outputs in full and replaces
+   older ones with a placeholder. Inside SWE-agent on SWE-bench Verified this halved cost while matching the
+   solve rate, with the best window at the last 10 observations; reusing that window in another agent
+   (OpenHands) degraded performance, so the window is setup-specific
+   ([Lindenbauer et al. 2025, *The Complexity Trap*](https://arxiv.org/abs/2508.21433)).
+2. For classifying long texts with BERT, keeping the beginning and the end beat keeping either alone
+   ([Sun et al. 2019](https://arxiv.org/abs/1905.05583)); later work finds the beginning alone can do as well,
+   depending on the data ([Investigating text shortening strategy in BERT, 2024](https://arxiv.org/abs/2403.12799)).
+3. Language models use the start and the end of a long input best and the middle worst, and do worse on
+   longer inputs ([Liu et al. 2023, *Lost in the Middle*](https://arxiv.org/abs/2307.03172)).
+
+None of these covers our case (a fine-tuned model classifying a run from its thoughts), and the first shows
+that the window size matters. With one run and no tuning, the window is generous (10 steps), so a miss keeps
+too much rather than too little. Fallback: a flat 2,048-token budget (`THOUGHT_TOKENS = 2048`).
+
+To build: a LoRA-dropout flag in `opentslm/train.py` (default 0, so C, B and A reproduce), the tiered thoughts
+in `Trimmer.thoughts()` behind an export option (the flat budget stays the default), and the three C2 channels
+in `opentslm_data.time_series()` behind an export option, each with tests for one value per step, values in
+[0, 1] and prefix consistency.

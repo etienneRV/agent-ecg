@@ -42,12 +42,16 @@ Sources: [baselines.test.md](baselines.test.md), [baselines/](baselines/), [open
 - Early on, the text carries most of the signal (the issue and thoughts are complete from step 1); later, the
   behaviour does: the CPU signals model climbs from 0.611 to 0.728 while C stays flat.
 
-## A's other two tasks (4,000-checkpoint test subset; full split pending)
+## A's other two tasks (full test split, 23,520 checkpoints)
 
-- **Ending** (6 classes): accuracy 0.667, macro-F1 0.223; CPU signals 0.655 / 0.225; majority 0.494 / 0.110.
-- **Status report** (generated text): 99.5 % follow the format; the forecast sentence is weaker than the CPU
-  signals model (remaining steps, mean error 17.8 vs 14.3; pass/fail balanced accuracy 0.573 vs 0.614).
-- Source: [opentslm/full-multi.alltasks-4000/report.test.json](opentslm/full-multi.alltasks-4000/report.test.json).
+- **Ending** (6 classes): accuracy 0.662, macro-F1 0.222; CPU signals 0.655 / 0.225; majority 0.494 / 0.110.
+  About level with the CPU signals model.
+- **Status report** (generated text): 99.7 % follow the format. The forecast sentence is weaker than the CPU
+  signals model: remaining steps, mean error 17.8 (median 9) vs 14.3 (median 6); pass/fail balanced accuracy
+  0.568 vs 0.614.
+- Source: [opentslm/full-multi.alltasks/report.test.json](opentslm/full-multi.alltasks/report.test.json) (the
+  generated reports are in its `predictions.test.parquet`); the earlier 4,000-checkpoint subset agrees within
+  0.005 ([opentslm/full-multi.alltasks-4000/](opentslm/full-multi.alltasks-4000/)).
 
 ## The live monitor (600 unseen test runs, replayed step by step)
 
