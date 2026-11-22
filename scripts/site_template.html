@@ -257,8 +257,20 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
     </div>
   </section>
 
-  <!-- results -->
+  <!-- demo -->
   <section class="section">
+    <div class="container">
+      <h2 class="title centered">Demo</h2>
+      <figure class="demo">
+        <video src="demo.mp4" poster="demo_poster.jpg" autoplay muted loop playsinline controls preload="metadata"
+          aria-label="Terminal demo: the agent's steps on the left, the monitor's heartbeat and health on the right"></video>
+        <figcaption class="subtitle">A recorded test run, replayed step by step: the agent on the left, the monitor on the right.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- results -->
+  <section class="section light">
     <div class="container">
       <h2 class="title">Results</h2>
       <div class="keys">
@@ -272,18 +284,6 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
       <h3 class="finding-title" style="margin-top:2.6rem">As a live monitor, $mon_name warns earlier than the baseline, and both are usually right</h3>
       <p class="lead">$mon_total unseen test runs, replayed step by step through two monitors.</p>
       $fig_monitor
-    </div>
-  </section>
-
-  <!-- demo -->
-  <section class="section light">
-    <div class="container">
-      <h2 class="title centered">Demo</h2>
-      <figure class="demo">
-        <video src="demo.mp4" poster="demo_poster.jpg" autoplay muted loop playsinline controls preload="metadata"
-          aria-label="Terminal demo: the agent's steps on the left, the monitor's heartbeat and health on the right"></video>
-        <figcaption class="subtitle">A recorded test run, replayed step by step: the agent on the left, the monitor on the right.</figcaption>
-      </figure>
     </div>
   </section>
 
