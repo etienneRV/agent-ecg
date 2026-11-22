@@ -1,0 +1,6 @@
+AUROC of A_plus_cpu.test minus issue_signals_thoughts.test (test, paired repository bootstrap)
+  k=5: +0.002 [-0.023, +0.027]  share of resamples not better: 0.452
+  k=10: +0.004 [-0.021, +0.029]  share of resamples not better: 0.367
+  k=15: +0.001 [-0.024, +0.025]  share of resamples not better: 0.435
+  k=20: +0.001 [-0.029, +0.029]  share of resamples not better: 0.452
+  k=30: -0.018 [-0.067, +0.030]  share of resamples not better: 0.740
