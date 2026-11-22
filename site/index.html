@@ -123,6 +123,7 @@ td.best { font-weight: 600; color: var(--fg); background: var(--code-bg); }
 tr.tslm th { color: var(--primary); }
 .tag { font: 600 0.66rem/1 var(--mono); letter-spacing: 0.06em; padding: 0.2rem 0.35rem; border-radius: 4px; border: 1px solid currentColor; margin-right: 0.35rem; vertical-align: 2px; }
 tr.baseline .tag { color: var(--cpu); }
+.ci { font-size: 0.78rem; color: var(--muted); }
 .note { font-size: 0.88rem; color: var(--muted); margin-top: 0.6rem; }
 
 /* BibTeX */
@@ -285,8 +286,22 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- limitations -->
+  <!-- second round -->
   <section class="section">
+    <div class="narrow content">
+      <h2 class="title">A Second Round</h2>
+      <p>Checks on validation pointed to two fixes, and we retrained one model for each, with the rule for success fixed before training. <strong>ecg v2</strong> adds three count channels to the 19 series: steps since the last success, tracebacks so far and code runs so far. <strong>ecg-full v2</strong> trains ecg-full against overfitting (one epoch, the natural share of successes, LoRA dropout, finer early stopping) and keeps the first thoughts of long runs as well as the latest. Gain in test AUROC over the original model, with its 95&nbsp;% interval (paired bootstrap over test repositories):</p>
+      <div class="table"><table>
+        <thead><tr><th>Model</th><th>5 steps</th><th>10 steps</th><th>15 steps</th><th>20 steps</th><th>30 steps</th><th>Verdict</th></tr></thead>
+        <tbody><tr class="tslm"><th>ecg v2</th><td class="">+0.017<br><span class="ci">[-0.003, +0.037]</span></td><td class="">+0.004<br><span class="ci">[-0.008, +0.015]</span></td><td class="">-0.008<br><span class="ci">[-0.025, +0.008]</span></td><td class="">-0.003<br><span class="ci">[-0.026, +0.018]</span></td><td class="">+0.027<br><span class="ci">[-0.001, +0.054]</span></td><td class="reads">tried, no gain</td></tr><tr class="tslm"><th>ecg-full v2</th><td class="">+0.005<br><span class="ci">[-0.042, +0.055]</span></td><td class="">+0.009<br><span class="ci">[-0.043, +0.055]</span></td><td class="">-0.003<br><span class="ci">[-0.062, +0.057]</span></td><td class="">+0.018<br><span class="ci">[-0.047, +0.089]</span></td><td class="">+0.036<br><span class="ci">[-0.087, +0.162]</span></td><td class="reads">tried, no gain</td></tr></tbody>
+      </table></div>
+      <p class="note">Highlighted: the interval excludes zero. The rule: ecg v2 needed an interval above zero at two of 5, 10 and 15 steps; ecg-full v2 at two of 15, 20 and 30, where its fix acts, with 5 and 10 not worse.</p>
+      <p style="margin-top:1.2rem">Neither run passed its rule, so ecg and ecg-full stay the models reported above. ecg v2 changed little: giving the model the counts did not help it use them. ecg-full v2 moved as expected where its fix acts (+0.018 at 20 steps, +0.036 at 30) and its validation score held near its peak instead of declining, but the test set is too small to separate it from ecg-full. Its gap to the issue + signals + thoughts baseline is no longer significant at any checkpoint (ecg-full's was, at 30 steps).</p>
+    </div>
+  </section>
+
+  <!-- limitations -->
+  <section class="section light">
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
@@ -297,16 +312,16 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- training -->
-  <section class="section light">
+  <section class="section">
     <div class="container content">
       <h2 class="title">Training</h2>
-      <p>Each model was fine-tuned on one L40S. Training took 2.8&nbsp;h (ecg), 5.3&nbsp;h (ecg-thought) and 7.1&nbsp;h (ecg-full), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on ecg-full's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half.</p>
+      <p>Each model was fine-tuned on one L40S. Training took 2.8&nbsp;h (ecg), 5.3&nbsp;h (ecg-thought) and 7.1&nbsp;h (ecg-full), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on ecg-full's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half. The second round ran on one H100 each: 1.25&nbsp;h (ecg v2) and 2.69&nbsp;h (ecg-full v2).</p>
       <figure class="chart"><img src="figures/training_curves.svg" alt="Validation AUROC over training steps for the three TSLMs" loading="lazy"><figcaption>Validation AUROC during training; the ringed point is the checkpoint we kept. Validation runs are not the test set.</figcaption></figure>
     </div>
   </section>
 
   <!-- BibTeX -->
-  <section class="section" id="BibTeX">
+  <section class="section light" id="BibTeX">
     <div class="narrow">
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>

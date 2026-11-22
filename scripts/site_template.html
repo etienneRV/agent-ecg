@@ -118,6 +118,7 @@ td.best { font-weight: 600; color: var(--fg); background: var(--code-bg); }
 tr.tslm th { color: var(--primary); }
 .tag { font: 600 0.66rem/1 var(--mono); letter-spacing: 0.06em; padding: 0.2rem 0.35rem; border-radius: 4px; border: 1px solid currentColor; margin-right: 0.35rem; vertical-align: 2px; }
 tr.baseline .tag { color: var(--cpu); }
+.ci { font-size: 0.78rem; color: var(--muted); }
 .note { font-size: 0.88rem; color: var(--muted); margin-top: 0.6rem; }
 
 /* BibTeX */
@@ -278,8 +279,22 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- limitations -->
+  <!-- second round -->
   <section class="section">
+    <div class="narrow content">
+      <h2 class="title">A Second Round</h2>
+      <p>Checks on validation pointed to two fixes, and we retrained one model for each, with the rule for success fixed before training. <strong>$label_c2</strong> adds three count channels to the 19 series: steps since the last success, tracebacks so far and code runs so far. <strong>$label_a2</strong> trains $label_a against overfitting (one epoch, the natural share of successes, LoRA dropout, finer early stopping) and keeps the first thoughts of long runs as well as the latest. Gain in test AUROC over the original model, with its 95&nbsp;% interval (paired bootstrap over test repositories):</p>
+      <div class="table"><table>
+        <thead><tr><th>Model</th>$r2_head<th>Verdict</th></tr></thead>
+        <tbody>$r2_rows</tbody>
+      </table></div>
+      <p class="note">Highlighted: the interval excludes zero. The rule: $label_c2 needed an interval above zero at two of 5, 10 and 15 steps; $label_a2 at two of 15, 20 and 30, where its fix acts, with 5 and 10 not worse.</p>
+      <p style="margin-top:1.2rem">$r2_summary</p>
+    </div>
+  </section>
+
+  <!-- limitations -->
+  <section class="section light">
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
@@ -290,16 +305,16 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   </section>
 
   <!-- training -->
-  <section class="section light">
+  <section class="section">
     <div class="container content">
       <h2 class="title">Training</h2>
-      <p>Each model was fine-tuned on one $gpu. Training took $h_c&nbsp;h ($label_c), $h_b&nbsp;h ($label_b) and $h_a&nbsp;h ($label_a), $gpu_hours GPU-hours in all. OpenTSLM's eager attention ran out of memory on $label_a's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half.</p>
+      <p>Each model was fine-tuned on one $gpu. Training took $h_c&nbsp;h ($label_c), $h_b&nbsp;h ($label_b) and $h_a&nbsp;h ($label_a), $gpu_hours GPU-hours in all. OpenTSLM's eager attention ran out of memory on $label_a's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half. The second round ran on one $r2_gpu each: $h_c2&nbsp;h ($label_c2) and $h_a2&nbsp;h ($label_a2).</p>
       $fig_training
     </div>
   </section>
 
   <!-- BibTeX -->
-  <section class="section" id="BibTeX">
+  <section class="section light" id="BibTeX">
     <div class="narrow">
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>

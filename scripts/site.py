@@ -185,11 +185,88 @@ def other_tasks() -> dict:
     }
 
 
+def _gains(path: Path) -> dict[int, tuple[float, float, float]]:
+    """Per checkpoint: (gain, interval low, interval high) from an `agent-ecg compare` output."""
+    out = {}
+    for line in path.read_text().splitlines():
+        hit = re.match(r"\s*k=(\d+): ([+-][\d.]+) \[([+-][\d.]+), ([+-][\d.]+)\]", line)
+        if hit:
+            out[int(hit[1])] = (float(hit[2]), float(hit[3]), float(hit[4]))
+    if set(out) != set(charts.STEPS):
+        raise SystemExit(f"could not parse {path}")
+    return out
+
+
+def second_round() -> dict:
+    """The second-round runs (ecg v2, ecg-full v2): their gain over the original model and the pre-agreed verdict."""
+    names = charts.tslm_labels()
+    op = RESULTS / "opentslm"
+    runs = [  # (name, folder, original's folder, its baseline, steps the rule counts, steps that must not be worse)
+        (f"{names['C']} v2", "ecg-counts", "ecg-only", "signals", (5, 10, 15), ()),
+        (f"{names['A']} v2", "full-multi-a2", "full-multi", "issue_signals_thoughts", (15, 20, 30), (5, 10)),
+    ]
+    rows, verdicts, gains, base = [], {}, {}, {}
+    for name, folder, original, baseline, counted, not_worse in runs:
+        g = _gains(op / folder / f"compare_vs_{original}_predictions.test.txt")
+        base[name] = _gains(op / folder / f"compare_vs_baselines_{baseline}.test.txt")
+        passed = sum(g[k][1] > 0 for k in counted) >= 2 and all(g[k][2] > 0 for k in not_worse)
+        verdicts[name], gains[name] = passed, g
+        cells = "".join(
+            f'<td class="{"best" if lo > 0 or hi < 0 else ""}">{d:+.3f}<br><span class="ci">[{lo:+.3f}, {hi:+.3f}]</span></td>'
+            for d, lo, hi in (g[k] for k in charts.STEPS)
+        )
+        rows.append(
+            f'<tr class="tslm"><th>{name}</th>{cells}<td class="reads">{"better" if passed else "tried, no gain"}</td></tr>'
+        )
+    c2, a2 = (r[0] for r in runs)
+    first = _gains(op / "full-multi" / "compare_vs_issue_signals_thoughts.test.txt")
+    sig = lambda g: [k for k in charts.STEPS if g[k][1] > 0 or g[k][2] < 0]  # noqa: E731
+    if not any(verdicts.values()):
+        verdict = f"Neither run passed its rule, so {names['C']} and {names['A']} stay the models reported above."
+    else:
+        won = [n for n, v in verdicts.items() if v]
+        verdict = f"{' and '.join(won)} passed {'its rule' if len(won) == 1 else 'their rules'}."
+    gap = (
+        f"Its gap to the issue + signals + thoughts baseline is no longer significant at any checkpoint "
+        f"({names['A']}'s was, at {', '.join(map(str, sig(first)))} steps)."
+        if not sig(base[a2]) and sig(first)
+        else f"Its gap to the issue + signals + thoughts baseline stays significant at {', '.join(map(str, sig(base[a2]))) or 'no'} steps."
+    )
+    summary = (
+        f"{verdict} {c2} changed little: giving the model the counts did not help it use them. "
+        f"{a2} moved as expected where its fix acts ({gains[a2][20][0]:+.3f} at 20 steps, {gains[a2][30][0]:+.3f} at 30) "
+        f"and its validation score held near its peak instead of declining, but the test set is too small to separate it "
+        f"from {names['A']}. {gap}"
+    )
+    text = (RESULTS / "SUMMARY.md").read_text()
+    hit = re.search(r"Second round on (\w+): ([\d.]+) h \(ecg v2\) and ([\d.]+) h \(ecg-full v2\)", text)
+    if not hit:
+        raise SystemExit("results/SUMMARY.md lacks the second round's compute line; update second_round()")
+    return {
+        "r2_head": "".join(f"<th>{k} steps</th>" for k in charts.STEPS),
+        "r2_rows": "".join(rows),
+        "r2_summary": summary,
+        "label_c2": c2,
+        "label_a2": a2,
+        "r2_gpu": hit[1],
+        "h_c2": hit[2],
+        "h_a2": hit[3],
+    }
+
+
 def main() -> None:
     missing = [n for n in FIGS if not (ROOT / "figures" / "site" / f"{n}.svg").exists()]
     if missing:
         raise SystemExit("figures missing; run: uv run python scripts/charts.py --theme both")
-    values = {**data_numbers(), **auroc_table(), **monitor(), **showcase(), **compute(), **other_tasks()}
+    values = {
+        **data_numbers(),
+        **auroc_table(),
+        **monitor(),
+        **showcase(),
+        **compute(),
+        **other_tasks(),
+        **second_round(),
+    }
     values["fig_hero"] = figure(
         "hero_ecg",
         "Health of one agent run over 30 steps, with the 19 input series below",

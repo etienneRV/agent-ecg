@@ -73,6 +73,34 @@ runs of the same issue); at step 12 it is re-editing the same file after the lin
 [opentslm/scan/summary.md](opentslm/scan/summary.md); signals baseline monitor replays:
 [replay.signals.falling.jsonl](replay.signals.falling.jsonl), [demo.falling.step15.svg](demo.falling.step15.svg).
 
+## Second round: ecg v2 and ecg-full v2
+
+Each run fixes one problem found in the first round and was judged by a rule fixed before training (GPU.md section 6): ecg v2 needs a gain over ecg whose 95 % interval is above zero at two of 5 / 10 / 15
+steps; ecg-full v2 at two of 15 / 20 / 30 (where its fix acts), with 5 / 10 not worse. Neither passed, so ecg and
+ecg-full stay the reported models. Bold: the interval excludes zero (paired repository bootstrap on test).
+
+| run | what changed | test AUROC 5 / 10 / 15 / 20 / 30 | gain over its original, with 95 % interval (5 / 10 / 15 / 20 / 30) | verdict |
+|---|---|---|---|---|
+| ecg v2 | ecg + 3 count channels (steps since the last success, tracebacks so far, code runs so far) | 0.600 / 0.614 / 0.608 / 0.616 / 0.642 | +0.017 [-0.003, +0.037]; +0.004 [-0.008, +0.015]; -0.008 [-0.025, +0.008]; -0.003 [-0.026, +0.018]; +0.027 [-0.001, +0.054] | tried, no gain |
+| ecg-full v2 | ecg-full with 1 epoch, the natural share of successes, LoRA dropout 0.1, finer early stopping, and the first 512 + latest 1,536 thought tokens | 0.662 / 0.687 / 0.681 / 0.696 / 0.659 | +0.005 [-0.042, +0.055]; +0.009 [-0.043, +0.055]; -0.003 [-0.062, +0.057]; +0.018 [-0.047, +0.089]; +0.036 [-0.087, +0.162] | tried, no gain |
+
+- **ecg v2:** giving the TSLM the counts did not improve it, apart from a borderline +0.027 at 30 steps. Adding
+  the same counts to ecg's score in a simple outside model raises validation AUROC by 0.05-0.07, so the
+  information is there, but this fine-tuned model did not learn to use it. We did not vary the base model, the
+  starting checkpoint or the training setup, so we cannot say which of these limits it.
+- **ecg-full v2:** the expected pattern (+0.018 at 20 steps, +0.036 at 30, nothing lost at 5-10) and a validation
+  score that held near its peak (0.739 to 0.725, where ecg-full fell from 0.768 to 0.732), but intervals of 0.05 to 0.12 either way cannot separate it from ecg-full. Its
+  gap to the issue + signals + thoughts baseline is no longer significant at any checkpoint (ecg-full's was, at
+  30 steps):
+
+| run | gap to its baseline (5 / 10 / 15 / 20 / 30) |
+|---|---|
+| ecg v2 | -0.011 [-0.045, +0.026]; -0.031 [-0.082, +0.017]; **-0.066 [-0.125, -0.005]**; **-0.096 [-0.161, -0.025]**; **-0.086 [-0.152, -0.029]** |
+| ecg-full v2 | -0.029 [-0.076, +0.013]; -0.022 [-0.067, +0.017]; -0.039 [-0.080, +0.004]; -0.023 [-0.073, +0.030]; -0.041 [-0.120, +0.029] |
+
+Second round on H100: 1.25 h (ecg v2) and 2.69 h (ecg-full v2). Results:
+[opentslm/ecg-counts/](opentslm/ecg-counts/) and [opentslm/full-multi-a2/](opentslm/full-multi-a2/).
+
 ## Checks
 
 - **Shortcuts** ([shortcut_checks.md](shortcut_checks.md)): which agent LLM wrote a run does not drive any score

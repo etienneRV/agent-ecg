@@ -260,6 +260,24 @@ None of these covers our case (a fine-tuned model classifying a run from its tho
 choice rests on the validation check above. (The first comparison, in PR #4, scored test; the validation
 check alone picks the same window, so the choice no longer depends on test.)
 
+### Outcome
+
+Neither run passed its rule, so ecg and ecg-full stay the reported models (details and the reading of each
+result: [results/SUMMARY.md](results/SUMMARY.md), "Second round"). Bold: the 95 % interval excludes zero.
+
+| run | what changed | test AUROC 5 / 10 / 15 / 20 / 30 | gain over its original, with 95 % interval (5 / 10 / 15 / 20 / 30) | verdict |
+|---|---|---|---|---|
+| ecg v2 | ecg + 3 count channels (steps since the last success, tracebacks so far, code runs so far) | 0.600 / 0.614 / 0.608 / 0.616 / 0.642 | +0.017 [-0.003, +0.037]; +0.004 [-0.008, +0.015]; -0.008 [-0.025, +0.008]; -0.003 [-0.026, +0.018]; +0.027 [-0.001, +0.054] | tried, no gain |
+| ecg-full v2 | ecg-full with 1 epoch, the natural share of successes, LoRA dropout 0.1, finer early stopping, and the first 512 + latest 1,536 thought tokens | 0.662 / 0.687 / 0.681 / 0.696 / 0.659 | +0.005 [-0.042, +0.055]; +0.009 [-0.043, +0.055]; -0.003 [-0.062, +0.057]; +0.018 [-0.047, +0.089]; +0.036 [-0.087, +0.162] | tried, no gain |
+
+| run | gap to its baseline (5 / 10 / 15 / 20 / 30) |
+|---|---|
+| ecg v2 | -0.011 [-0.045, +0.026]; -0.031 [-0.082, +0.017]; **-0.066 [-0.125, -0.005]**; **-0.096 [-0.161, -0.025]**; **-0.086 [-0.152, -0.029]** |
+| ecg-full v2 | -0.029 [-0.076, +0.013]; -0.022 [-0.067, +0.017]; -0.039 [-0.080, +0.004]; -0.023 [-0.073, +0.030]; -0.041 [-0.120, +0.029] |
+
+ecg v2 trained in 1.25 h and ecg-full v2 in 2.69 h, each on one H100 (80 GB). ecg-full v2 ran out of memory at
+batch 8 x 2 and trained at 4 x 4 (41.8 GB); ecg v2 fit the default batch (16.5 GB).
+
 ## Results
 
 | Run | Text beside the ECG | Tasks | AUROC 5 / 10 / 15 / 20 / 30 steps (test) | Same-issue pairs, 10 steps | Brier, calibrated, 10 steps |
@@ -270,6 +288,8 @@ check alone picks the same window, so the choice no longer depends on test.)
 | ecg (`ecg-only`) | none | pass/fail | 0.583 / 0.611 / 0.616 / 0.620 / 0.615 | 0.552 | 0.1195 |
 | ecg-thought (`thoughts-outcome`) | thoughts | pass/fail | 0.624 / 0.638 / 0.643 / 0.647 / 0.596 | 0.520 | 0.1189 |
 | ecg-full (`full-multi`) | issue, thoughts | all three | 0.657 / 0.677 / 0.684 / 0.679 / 0.624 | 0.596 | 0.1184 |
+| ecg v2 (`ecg-counts`, H100) | none | pass/fail | 0.600 / 0.614 / 0.608 / 0.616 / 0.642 | 0.546 | 0.1190 |
+| ecg-full v2 (`full-multi-a2`, H100) | issue, thoughts | all three | 0.662 / 0.687 / 0.681 / 0.696 / 0.659 | 0.591 | 0.1155 |
 
 Each run is below its baseline. ecg-full is closest: 0.03-0.04 under issue+signals+thoughts, inside the paired
 repository-bootstrap interval at 5-20 steps and outside it at 30. ecg-thought and ecg are significantly below theirs at
