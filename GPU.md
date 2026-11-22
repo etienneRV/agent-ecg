@@ -2,7 +2,8 @@
 
 Step-by-step for the Nebius machine. OpenTSLM-SP on Llama 3.2 1B trains only ~14 M parameters (encoder,
 projector, LoRA), so one GPU is enough: 24 GB for ecg (ECG only, 22.0 GB peak) and ecg-thought (thoughts + ECG, 20.7 GB
-at batch 4 x 4), 32 GB or more for ecg-full (issue + thoughts + ECG, 27.7 GB at batch 4 x 4). We used L40S (46 GB).
+at batch 4 x 4), 32 GB or more for ecg-full (issue + thoughts + ECG, 27.7 GB at batch 4 x 4). We used L40S (46 GB) for the first round and H100 (80 GB) for the
+second.
 
 ## 0. Before you start
 
@@ -59,7 +60,7 @@ L40S (46 GB), from `OpenTSLM/llama-3.2-1b-ecg-sp`:
 | Run | Prompt tokens (p99) | Eager attention | SDPA |
 | --- | --- | --- | --- |
 | ecg, ECG only | ~560 | batch 8: 21.9 GB, 1.2 s/step | - |
-| ecg-full, issue + thoughts + ECG | ~2,300 | out of memory at batch 8 and 4; 4 x 4 with checkpointing: 7.8 s/step (~17 h) | out of memory at batch 8; 4 x 4: 27.1 GB, 3.1 s/step (~8 h) |
+| ecg-full, issue + thoughts + ECG | ~2,300 | out of memory at batch 8 and 4; 4 x 4 with checkpointing: 7.8 s/step (projected ~17 h; stopped after 10 min) | out of memory at batch 8; 4 x 4: 27.1 GB, 3.1 s/step in the smoke test (estimated ~8 h; trained in 7.1 h) |
 
 So train ecg-full with `--batch-size 4 --grad-accum 4`, and ecg-thought too (its prompts reach ~1,700 tokens, so batch 8
 would need an estimated ~40 GB); ecg fits the default.
@@ -296,8 +297,9 @@ repository-bootstrap interval at 5-20 steps and outside it at 30. ecg-thought an
 most checkpoints. ecg-full beats ecg-thought by 0.03-0.04 at every checkpoint (borderline at 10 and 15 steps), but ecg-full differs
 in two ways at once (the issue, and three tasks instead of one), so the gain cannot be credited to either.
 ecg trained with eager attention, ecg-thought and ecg-full with SDPA (same math). Compute: one L40S per run, training 2.8 h
-(ecg), 5.3 h (ecg-thought) and 7.1 h (ecg-full), 15.2 GPU-hours in all; scoring pass/fail on validation and test took
-0.5-1.4 h per run, and ecg-full's generated status reports on the full test split about 3 h more. Reports, predictions, `compare` outputs and
+(ecg), 5.3 h (ecg-thought) and 7.1 h (ecg-full), 15.2 GPU-hours of training; scoring pass/fail on validation and test took
+0.5-1.4 h per run, and ecg-full's endings and status reports about 6.2 h more (0.9 h on a 4,000-checkpoint subset, 5.3 h
+on the full test split). With replays and smoke tests the L40S total is about 25 GPU-hours (results/SUMMARY.md, Compute). Reports, predictions, `compare` outputs and
 configs: [results/opentslm/](results/opentslm/). As a live monitor (600 test runs replayed step by step), ecg-full
 and the signals monitor each flag about a third of the failing runs, mostly different ones; see
 [results/opentslm/scan/summary.md](results/opentslm/scan/summary.md). Which agent LLM wrote a run does

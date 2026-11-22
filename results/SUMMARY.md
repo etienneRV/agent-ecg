@@ -112,5 +112,14 @@ Second round on H100: 1.25 h (ecg v2) and 2.69 h (ecg-full v2). Results:
 
 ## Compute
 
-Training 2.8 h (ecg), 5.3 h (ecg-thought), 7.1 h (ecg-full): 15.2 GPU-hours on L40S. OpenTSLM's eager attention ran out of memory
-on ecg-full's long prompts; switching to PyTorch SDPA (same math) cut ecg-full from ~17 h to 7 h ([GPU.md](../GPU.md)).
+Training 2.8 h (ecg), 5.3 h (ecg-thought), 7.1 h (ecg-full): 15.2 GPU-hours on L40S, for training alone. With OpenTSLM's
+eager attention, ecg-full fit in memory only with gradient checkpointing, at 7.8 s per step (projected ~17 h; that run was
+stopped after 10 minutes). With PyTorch SDPA (same math) it fit without checkpointing and trained in 7.1 h ([GPU.md](../GPU.md)).
+
+| GPU | Training | Scoring, replays and status reports | Smoke tests, aborted run | Total |
+|---|---|---|---|---|
+| L40S (first round) | 15.2 h | 9.7 h: ecg 0.5, ecg-thought 1.1, ecg-full pass/fail 1.4, its endings and status reports 6.2, the 600-run live-monitor replay 0.5 | 0.4 h | about 25 GPU-hours |
+| H100 (second round) | 3.9 h: ecg v2 1.25, ecg-full v2 2.69 | 1.2 h | 0.1 h | about 5 GPU-hours |
+
+Times come from the run logs. ecg-full's status reports took longest: 0.9 h on a 4,000-checkpoint subset, then 5.3 h on
+the full test split (3.0 h scoring the endings, 2.3 h writing 23,520 reports). The baselines and the channel hunt ran on CPU.
