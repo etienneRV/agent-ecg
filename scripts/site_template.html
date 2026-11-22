@@ -220,7 +220,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     <div class="narrow content">
       <h2 class="title">Model</h2>
       <p>OpenTSLM (<a href="https://arxiv.org/abs/2510.02410">Langer et al., 2025</a>) extends pretrained language models to read time series as a native input. We use its SoftPrompt variant, which the paper recommends for short series: a small encoder turns each of our 19 series into tokens that sit in the prompt next to the text, and only the encoder, a projection layer and LoRA adapters are trained (about 14&nbsp;M parameters). We start from the released Llama&nbsp;3.2&nbsp;1B checkpoint at the end of the paper's training curriculum (<code>$base</code>).</p>
-      <p>We train three models on nested inputs: <strong>$label_c</strong> reads only the 19 series, <strong>$label_b</strong> adds the agent's thoughts, and <strong>$label_a</strong> adds the issue and learns two more tasks, how the run will end and a short status report. In the code and reports they are called C, B and A.</p>
+      <p>We train three models on nested inputs: <strong>$label_c</strong> reads only the 19 series, <strong>$label_b</strong> adds the agent's thoughts, and <strong>$label_a</strong> adds the issue and learns two more tasks, how the run will end and a short status report.</p>
     </div>
     <div class="container">
       <figure class="chart"><img src="opentslm_softprompt.png" alt="OpenTSLM-SoftPrompt architecture: a time-series encoder and projection layer turn series patches into tokens that join the text tokens in a pretrained LLM with LoRA adapters" loading="lazy">
