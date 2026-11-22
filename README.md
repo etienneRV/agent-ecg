@@ -5,9 +5,9 @@ resolve its GitHub issue. Built on the TimeNet dataset `nebius/swe_agent_traject
 ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832)). Team RAMadan, TimeNet
 hackathon Round 1.
 
-
 https://github.com/user-attachments/assets/2428ea1f-d6d5-4f16-8782-0e795f7c1f60
 
+*Agent-ECG in 45 seconds.*
 
 ## Start here
 
@@ -23,7 +23,8 @@ https://github.com/user-attachments/assets/2428ea1f-d6d5-4f16-8782-0e795f7c1f60
 uv sync
 ```
 
-Until #832 is merged, the connector is installed from its PR branch (see `pyproject.toml`).
+Until #832 is merged, the connector is installed from its PR branch, pinned to the commit our results used
+(see `pyproject.toml`).
 
 ## Run
 
