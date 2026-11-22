@@ -250,10 +250,10 @@ def model_auroc(path: Path) -> dict[int, tuple[float, float, float]]:
 
 
 RUNS_FILE = ROOT / "figures" / "runs.json"
-# The live-monitor scan (results/opentslm/scan) and A's full-test report were made with run A (full-multi),
+# The live-monitor scan (results/opentslm/scan) and ecg-full's full-test report were made with ecg-full (run folder full-multi),
 # whatever figures/runs.json says, so the monitor charts name that model directly.
-MONITOR_MODEL = "ECG-Full"
-SIGNALS_BASELINE = "Signals baseline"
+MONITOR_MODEL = "ecg-full"
+SIGNALS_BASELINE = "signals benchmark"
 
 
 def _runs() -> dict[str, dict]:
@@ -282,7 +282,7 @@ def scan_summary() -> dict:
     for line in text.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
         if len(cells) == 6 and re.match(r"\d+ / \d+", cells[1]):
-            key = "A" if cells[0].startswith("A ") else "signals" if cells[0].startswith("signals") else None
+            key = "A" if cells[0].startswith("ecg-full") else "signals" if cells[0].startswith("signals") else None
             if key is None:
                 continue
             failing, resolved = (int(x) for x in cells[1].split("/"))
@@ -295,7 +295,7 @@ def scan_summary() -> dict:
                 "right": float(cells[5].rstrip(" %")),
             }
     natural = re.search(r"natural ([\d.]+) % resolved", text)
-    venn = re.search(r"(\d+) are flagged by both, (\d+) only by A and (\d+) only by\s+the signals monitor", text)
+    venn = re.search(r"(\d+) are flagged by both, (\d+) only by ecg-full and (\d+) only by\s+the signals monitor", text)
     if set(rows) != {"A", "signals"} or not natural or not venn:
         raise SystemExit("could not parse results/opentslm/scan/summary.md; update scan_summary()")
     both, a_only, s_only = (int(x) for x in venn.groups())
@@ -584,15 +584,15 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         for n in ("signals", "signals_thoughts", "issue_signals_thoughts", "issue")
     }
     pairs = [
-        ("C", "ECG only", "signals", "signals baseline"),
-        ("B", "thoughts + ECG", "signals_thoughts", "signals + thoughts baseline"),
-        ("A", "issue + thoughts + ECG", "issue_signals_thoughts", "issue + signals + thoughts baseline"),
+        ("C", "ECG only", "signals", "signals benchmark"),
+        ("B", "thoughts + ECG", "signals_thoughts", "signals + thoughts benchmark"),
+        ("A", "issue + thoughts + ECG", "issue_signals_thoughts", "issue + signals + thoughts benchmark"),
     ]
     early = [k for k in STEPS if k <= 20]
     gaps = [cpu["issue_signals_thoughts"][k][0] - tslm["A"][k][0] for k in early]
     all_below = all(tslm[m][k][0] < cpu[c][k][0] for m, _, c, _ in pairs for k in STEPS)
     sub = (
-        "Each TSLM stays below the baseline with the same inputs; " if all_below else ""
+        "Each TSLM stays below the benchmark with the same inputs; " if all_below else ""
     ) + f"{names['A']} comes within {min(gaps):.2f}-{max(gaps):.2f} ({early[0]}-{early[-1]} steps)."
     fig = figure(t, "Predicting pass / fail from the first steps (test AUROC)", sub)
     lo = min(min(v[0] for v in m.values()) for m in [*tslm.values(), *cpu.values()])
@@ -644,7 +644,7 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         # direct labels at the right end, nudged apart
         ends = {
             names[m]: (tslm[m][STEPS[-1]][0], t.tslm),
-            "baseline": (cpu[c][STEPS[-1]][0], t.cpu),
+            "benchmark": (cpu[c][STEPS[-1]][0], t.cpu),
             "issue only": (iss[-1], t.muted),
         }
         placed: list[float] = []
@@ -672,8 +672,8 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         0.835,
         [
             ("TSLM (OpenTSLM, Llama 3.2 1B)", {"color": t.tslm, "lw": 3.4, "marker": "o", "ms": 7}),
-            ("Baseline, same inputs", {"color": t.cpu, "lw": 2.6, "marker": "o", "ms": 7}),
-            ("Issue-only baseline", {"color": t.muted, "lw": 1.6, "ls": (0, (6, 4))}),
+            ("Benchmark, same inputs", {"color": t.cpu, "lw": 2.6, "marker": "o", "ms": 7}),
+            ("Issue-only benchmark", {"color": t.muted, "lw": 1.6, "ls": (0, (6, 4))}),
         ],
     )
     test = pd.read_parquet(CHECKPOINTS, columns=["run_id", "repository", "split"]).query("split == 'test'")

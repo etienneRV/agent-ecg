@@ -1,8 +1,8 @@
 """Which way of cutting the agent's thoughts keeps the most signal? Train split to fit, validation to score.
 
 Each variant cuts every checkpoint's thoughts exactly as the OpenTSLM export would (the same tokenizer and,
-for the head + tail variants, ``opentslm_data.Trimmer.thoughts`` itself). A word-count model (the CPU
-thoughts baseline: hashed word and word-pair counts, TF-IDF, logistic regression with a fixed C) is fitted
+for the head + tail variants, ``opentslm_data.Trimmer.thoughts`` itself). A word-count model (the
+thoughts benchmark: hashed word and word-pair counts, TF-IDF, logistic regression with a fixed C) is fitted
 on a fixed sample of training runs and scored on every validation checkpoint. The test split is never read.
 
     uv run python opentslm/thought_window_check.py [--train-runs 8000]
@@ -29,7 +29,7 @@ from agent_ecg import data
 from agent_ecg.baselines import _SEED, _weights
 from agent_ecg.opentslm_data import PER_THOUGHT_TOKENS, TOKENIZER, Trimmer
 
-RECENT, OLDER, CAP = 10, 32, 2048  # the tiered design first proposed for A2
+RECENT, OLDER, CAP = 10, 32, 2048  # the tiered design first proposed for ecg-full v2
 
 
 def tiered(trim: Trimmer, ids: list[list[int]], k: int) -> str:
@@ -50,10 +50,10 @@ def variants(trim: Trimmer) -> dict[str, Callable[[list[str], list[list[int]], i
         return lambda raw, ids, k: trim.thoughts(ids, k, head, tail)[0]
 
     return {
-        "latest 1,024 (runs A, B)": head_tail(0, 1024),
+        "latest 1,024 (ecg-thought, ecg-full)": head_tail(0, 1024),
         "latest 2,048": head_tail(0, 2048),
         "first 512 + latest 1,024": head_tail(512, 1024),
-        "first 512 + latest 1,536 (run A2)": head_tail(512, 1536),
+        "first 512 + latest 1,536 (ecg-full v2)": head_tail(512, 1536),
         "tiered: latest 10 full + older 32 tokens": lambda raw, ids, k: tiered(trim, ids, k),
         "all thoughts, uncut": lambda raw, ids, k: "\n".join(raw[:k]),
     }

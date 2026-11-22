@@ -1,4 +1,4 @@
-"""Six CPU baselines a time-series language model has to beat.
+"""Six benchmarks (CPU models) a time-series language model has to beat.
 
 ``majority``
     Always "will not resolve", with the training resolved rate of the checkpoint as its probability.
@@ -11,14 +11,14 @@
     Logistic regression on both.
 ``issue``
     Logistic regression on hashed word and word-pair counts of the issue text alone, plus the
-    checkpoint. It never sees the agent: if the agent-based baselines beat it, they learn from the
+    checkpoint. It never sees the agent: if the agent-based benchmarks beat it, they learn from the
     agent's behaviour and not only from how hard the issue is.
 ``issue+signals+thoughts``
     Logistic regression on everything a full-context model reads: the bar for the TSLM.
 
 All train on the train split, pick their decision threshold and regularisation on validation (mean per-checkpoint AUROC), and
 predict validation and test. Each checkpoint is weighted by 1 / (checkpoints of its run), so long runs,
-which fail more often, do not count five times. The status report of a baseline is the description
+which fail more often, do not count five times. The status report of a benchmark is the description
 rebuilt from the signals plus a prediction sentence from its three predicted facts. The signals model
 and its monitor (fitted on validation, see :mod:`agent_ecg.monitor`) are saved for ``agent-ecg replay``.
 
@@ -125,10 +125,10 @@ def _with_status(
 def run(
     checkpoints: pd.DataFrame, thoughts: dict[str, list[str]], issues: dict[int, str], out: Path
 ) -> dict[str, dict[str, pd.DataFrame]]:
-    """Fit every baseline and write its validation and test predictions to ``out``.
+    """Fit every benchmark and write its validation and test predictions to ``out``.
 
     Returns:
-        For each baseline, its predictions keyed by split.
+        For each benchmark, its predictions keyed by split.
     """
     start = time.perf_counter()
     out.mkdir(parents=True, exist_ok=True)
@@ -270,7 +270,7 @@ def cross_validate(
     folds: int = 5,
     models: tuple[str, ...] = CV_MODELS,
 ) -> dict[str, dict[int, dict[str, float]]]:
-    """Score baselines by repository cross-validation over every checkpoint of all three splits.
+    """Score benchmarks by repository cross-validation over every checkpoint of all three splits.
 
     The test split holds 143 repositories, so its AUROC moves by several points with the repositories
     it drew. Here each fold holds out a fifth of all repositories, and every checkpoint is predicted

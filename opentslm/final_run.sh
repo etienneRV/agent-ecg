@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Run C2 or A2 end to end on one GPU (GPU.md section 6): export, smoke test, train, score, compare.
+# Run ecg v2 (c2) or ecg-full v2 (a2) end to end on one GPU (GPU.md section 6): export, smoke test, train, score, compare.
 #
 #     tmux new -s c2 'opentslm/final_run.sh c2'      # and, on a second GPU: opentslm/final_run.sh a2
 #
@@ -20,7 +20,7 @@ case "$RUN" in
     NAME=ecg-counts
     DATA=data/opentslm-none-counts
     EXPORT=(--context none --count-channels)
-    TRAIN=(--tasks outcome)  # everything else as run C
+    TRAIN=(--tasks outcome)  # everything else as ecg
     ORIGINAL=results/opentslm/ecg-only/predictions.test.parquet
     BASELINE=results/baselines/signals.test.parquet
     ;;
@@ -115,7 +115,7 @@ run uv run --no-sync python opentslm/predict.py "$R" --split test --tasks outcom
   || { say "test predictions failed"; exit 1; }
 run uv run --no-sync agent-ecg evaluate "$R/predictions.test.parquet" --json "$R/report.test.json"
 
-# 5. The comparisons the decision rule uses: against the original run, and against the CPU bar.
+# 5. The comparisons the decision rule uses: against the original run, and against the benchmark.
 for OTHER in "$ORIGINAL" "$BASELINE"; do
   OUT="$R/compare_vs_$(basename "$(dirname "$OTHER")")_$(basename "$OTHER" .test.parquet).test.txt"
   if [ "${DRY_RUN:-0}" = 1 ]; then

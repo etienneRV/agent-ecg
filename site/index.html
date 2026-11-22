@@ -122,7 +122,7 @@ td.reads { font-family: var(--sans); color: var(--muted); }
 td.best { font-weight: 600; color: var(--fg); background: var(--code-bg); }
 tr.tslm th { color: var(--primary); }
 .tag { font: 600 0.66rem/1 var(--mono); letter-spacing: 0.06em; padding: 0.2rem 0.35rem; border-radius: 4px; border: 1px solid currentColor; margin-right: 0.35rem; vertical-align: 2px; }
-tr.baseline .tag { color: var(--cpu); }
+tr.benchmark .tag { color: var(--cpu); }
 .note { font-size: 0.88rem; color: var(--muted); margin-top: 0.6rem; }
 
 /* BibTeX */
@@ -173,7 +173,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <!-- teaser -->
   <section class="section teaser">
     <div class="container">
-      <figure class="chart"><img src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>An unseen test run on <code>scverse__scanpy-2859</code>. ECG-Full's health falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at step 12. The run went on to fail (it ran out of context). The signals baseline (grey, dashed) never alarms on this run. Below it are the 19 series the model reads, one row each.</figcaption></figure>
+      <figure class="chart"><img src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>An unseen test run on <code>scverse__scanpy-2859</code>. ecg-full's health falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at step 12. The run went on to fail (it ran out of context). The signals benchmark (grey, dashed) never alarms on this run. Below it are the 19 series the model reads, one row each.</figcaption></figure>
     </div>
   </section>
 
@@ -181,12 +181,12 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section light">
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
-      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of 235,978 checkpoints from 76,182 SWE-agent runs, where each checkpoint holds the first 5 to 30 steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on 7,640 runs from 143 repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within 0.03&ndash;0.04 AUROC of the best baseline, though every TSLM stays below the baseline with the same inputs. Replayed as a live monitor on 600 unseen runs, the alarms of our full model are right 96&nbsp;% of the time and fire at a median step of 6.</p>
+      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of 235,978 checkpoints from 76,182 SWE-agent runs, where each checkpoint holds the first 5 to 30 steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical benchmark that reads exactly the same inputs, on 7,640 runs from 143 repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within 0.03&ndash;0.04 AUROC of the best benchmark, though every TSLM stays below the benchmark with the same inputs. Replayed as a live monitor on 600 unseen runs, the alarms of our full model are right 96&nbsp;% of the time and fire at a median step of 6.</p>
       <div class="stats">
         <div class="stat"><b>76,182</b><span>SWE-agent runs on real GitHub issues</span></div>
         <div class="stat"><b>83&nbsp;%</b><span>of runs still going at step 5 fail (96&nbsp;% at step 30)</span></div>
-        <div class="stat tslm"><b>96&nbsp;%</b><span>of ECG-Full's alarms were right</span></div>
-        <div class="stat alarm"><b>step 6</b><span>median alarm (signals baseline: step 9)</span></div>
+        <div class="stat tslm"><b>96&nbsp;%</b><span>of ecg-full's alarms were right</span></div>
+        <div class="stat alarm"><b>step 6</b><span>median alarm (signals benchmark: step 9)</span></div>
       </div>
     </div>
   </section>
@@ -227,7 +227,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     <div class="narrow content">
       <h2 class="title">Model</h2>
       <p>OpenTSLM (<a href="https://arxiv.org/abs/2510.02410">Langer et al., 2025</a>) extends pretrained language models to read time series as a native input. We use its SoftPrompt variant, which the paper recommends for short series: a small encoder turns each of our 19 series into tokens that sit in the prompt next to the text, and only the encoder, a projection layer and LoRA adapters are trained (about 14&nbsp;M parameters). We start from the released Llama&nbsp;3.2&nbsp;1B checkpoint at the end of the paper's training curriculum (<code>OpenTSLM/llama-3.2-1b-ecg-sp</code>).</p>
-      <p>We train three models on nested inputs: <strong>ECG</strong> reads only the 19 series, <strong>ECG+Thought</strong> adds the agent's thoughts, and <strong>ECG-Full</strong> adds the issue and learns two more tasks, how the run will end and a short status report.</p>
+      <p>We train three models on nested inputs: <strong>ecg</strong> reads only the 19 series, <strong>ecg-thought</strong> adds the agent's thoughts, and <strong>ecg-full</strong> adds the issue and learns two more tasks, how the run will end and a short status report.</p>
     </div>
     <div class="container">
       <figure class="chart"><img src="opentslm_softprompt.png" alt="OpenTSLM-SoftPrompt architecture: a time-series encoder and projection layer turn series patches into tokens that join the text tokens in a pretrained LLM with LoRA adapters" loading="lazy">
@@ -240,17 +240,17 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section light">
     <div class="container content">
       <h2 class="title">Predicting Pass or Fail from the First Steps</h2>
-      <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
-      <figure class="chart"><img src="figures/auroc_by_step.svg" alt="Test AUROC at 5 to 30 steps for three TSLMs and their baselines" loading="lazy"><figcaption>Each panel pairs a TSLM (blue) with the baseline that reads the same inputs (grey). The dashed line reads the issue text only; the shading is a 95&nbsp;% interval from resampling test repositories.</figcaption></figure>
+      <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical benchmark that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
+      <figure class="chart"><img src="figures/auroc_by_step.svg" alt="Test AUROC at 5 to 30 steps for three TSLMs and their benchmarks" loading="lazy"><figcaption>Each panel pairs a TSLM (blue) with the benchmark that reads the same inputs (grey). The dashed line reads the issue text only; the shading is a 95&nbsp;% interval from resampling test repositories.</figcaption></figure>
       <div class="table"><table>
         <thead><tr><th>Model</th><th>Reads</th><th>5</th><th>10</th><th>15</th><th>20</th><th>30</th></tr></thead>
-        <tbody><tr class="baseline"><th><span class="tag">Baseline</span> signals</th><td class="reads">the ECG signals</td><td class="">0.611</td><td class="">0.645</td><td class="">0.674</td><td class="">0.712</td><td class="best">0.728</td></tr><tr class="baseline"><th><span class="tag">Baseline</span> thoughts</th><td class="reads">the agent's thoughts</td><td class="">0.680</td><td class="">0.703</td><td class="">0.710</td><td class="">0.701</td><td class="">0.701</td></tr><tr class="baseline"><th><span class="tag">Baseline</span> issue + signals + thoughts</th><td class="reads">everything</td><td class="best">0.691</td><td class="best">0.709</td><td class="best">0.720</td><td class="best">0.719</td><td class="">0.700</td></tr><tr class="baseline"><th><span class="tag">Baseline</span> issue only</th><td class="reads">the issue text</td><td class="">0.613</td><td class="">0.619</td><td class="">0.612</td><td class="">0.616</td><td class="">0.614</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ECG</th><td class="reads">the ECG</td><td class="">0.583</td><td class="">0.611</td><td class="">0.616</td><td class="">0.620</td><td class="">0.615</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ECG+Thought</th><td class="reads">thoughts + ECG</td><td class="">0.624</td><td class="">0.638</td><td class="">0.643</td><td class="">0.647</td><td class="">0.596</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ECG-Full (3 tasks)</th><td class="reads">issue + thoughts + ECG</td><td class="">0.657</td><td class="">0.677</td><td class="">0.684</td><td class="">0.679</td><td class="">0.624</td></tr></tbody>
+        <tbody><tr class="benchmark"><th><span class="tag">Benchmark</span> signals</th><td class="reads">the ECG signals</td><td class="">0.611</td><td class="">0.645</td><td class="">0.674</td><td class="">0.712</td><td class="best">0.728</td></tr><tr class="benchmark"><th><span class="tag">Benchmark</span> thoughts</th><td class="reads">the agent's thoughts</td><td class="">0.680</td><td class="">0.703</td><td class="">0.710</td><td class="">0.701</td><td class="">0.701</td></tr><tr class="benchmark"><th><span class="tag">Benchmark</span> issue + signals + thoughts</th><td class="reads">everything</td><td class="best">0.691</td><td class="best">0.709</td><td class="best">0.720</td><td class="best">0.719</td><td class="">0.700</td></tr><tr class="benchmark"><th><span class="tag">Benchmark</span> issue only</th><td class="reads">the issue text</td><td class="">0.613</td><td class="">0.619</td><td class="">0.612</td><td class="">0.616</td><td class="">0.614</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ecg</th><td class="reads">the ECG</td><td class="">0.583</td><td class="">0.611</td><td class="">0.616</td><td class="">0.620</td><td class="">0.615</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ecg-thought</th><td class="reads">thoughts + ECG</td><td class="">0.624</td><td class="">0.638</td><td class="">0.643</td><td class="">0.647</td><td class="">0.596</td></tr><tr class="tslm"><th><span class="tag">TSLM</span> ecg-full (3 tasks)</th><td class="reads">issue + thoughts + ECG</td><td class="">0.657</td><td class="">0.677</td><td class="">0.684</td><td class="">0.679</td><td class="">0.624</td></tr></tbody>
       </table></div>
       <p class="note">Column headers are the number of steps seen. The shaded cell is the best score at that step.</p>
       <ul class="findings">
-        <li><strong>The behaviour signal grows over the run.</strong> The signals baseline climbs from 0.611 at 5 steps to 0.728 at 30. A model that reads only the issue text stays flat between 0.61 and 0.62.</li>
-        <li class="tslm"><strong>ECG-Full comes within 0.03&ndash;0.04 of the best baseline</strong> at 5&ndash;20 steps. The gap is not significant there (paired bootstrap over test repositories).</li>
-        <li><strong>Each TSLM scores below the baseline with the same inputs.</strong> ECG, which reads only the series, stays between 0.58 and 0.62, about the level of the issue-only model.</li>
+        <li><strong>The behaviour signal grows over the run.</strong> The signals benchmark climbs from 0.611 at 5 steps to 0.728 at 30. A model that reads only the issue text stays flat between 0.61 and 0.62.</li>
+        <li class="tslm"><strong>ecg-full comes within 0.03&ndash;0.04 of the best benchmark</strong> at 5&ndash;20 steps. The gap is not significant there (paired bootstrap over test repositories).</li>
+        <li><strong>Each TSLM scores below the benchmark with the same inputs.</strong> ecg, which reads only the series, stays between 0.58 and 0.62, about the level of the issue-only model.</li>
       </ul>
     </div>
   </section>
@@ -259,29 +259,29 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section">
     <div class="container content">
       <h2 class="title">As a Live Monitor</h2>
-      <p>A <strong>monitor</strong> sits on top of a model and turns its prediction at every step into something an operator can act on: a health score from 0 to 100 that compares the run with runs of the same age, a state (stable, watch, low, critical), and an alarm after 2 critical steps in a row. We replayed 600 unseen test runs step by step through two monitors: one on ECG-Full, and one on the signals baseline. The runs were all 239 resolved test runs with at least 20 steps, plus 361 random failing ones; neither monitor chose them.</p>
+      <p>A <strong>monitor</strong> sits on top of a model and turns its prediction at every step into something an operator can act on: a health score from 0 to 100 that compares the run with runs of the same age, a state (stable, watch, low, critical), and an alarm after 2 critical steps in a row. We replayed 600 unseen test runs step by step through two monitors: one on ecg-full, and one on the signals benchmark. The runs were all 239 resolved test runs with at least 20 steps, plus 361 random failing ones; neither monitor chose them.</p>
       <figure class="chart"><img src="figures/monitor_numbers.svg" alt="Stat cards and a Venn diagram comparing the two live monitors" loading="lazy"><figcaption>The Venn counts are the failing runs each monitor flags (of 361); the circles are not to scale.</figcaption></figure>
       <div class="table"><table>
         <thead><tr><th>Monitor</th><th>Failing runs flagged</th><th>Median alarm step</th><th>False alarms</th><th>Alarms that were right*</th></tr></thead>
-        <tbody><tr><th>ECG-Full</th><td>32.4&nbsp;%</td><td>6</td><td>18.4&nbsp;%</td><td>95.8&nbsp;%</td></tr><tr><th>Signals baseline</th><td>34.1&nbsp;%</td><td>9</td><td>14.6&nbsp;%</td><td>96.8&nbsp;%</td></tr></tbody>
+        <tbody><tr><th>ecg-full</th><td>32.4&nbsp;%</td><td>6</td><td>18.4&nbsp;%</td><td>95.8&nbsp;%</td></tr><tr><th>signals benchmark</th><td>34.1&nbsp;%</td><td>9</td><td>14.6&nbsp;%</td><td>96.8&nbsp;%</td></tr></tbody>
       </table></div>
       <p class="note">* At the natural share of resolved runs among runs that last 20 steps (7.1&nbsp;%). False alarms are the share of resolved runs flagged.</p>
-      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: 66 only by ECG-Full, 72 only by the signals baseline, and 51 by both. Part of ECG-Full's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The run in the teaser is one where ECG-Full's alarm rests on behaviour, and ECG-Full spares the other runs of the same issue.</p>
-      <figure class="chart"><img src="figures/failing_vs_resolved.svg" alt="Health over time for a failing and a resolved run, both monitors" loading="lazy"><figcaption>The showcase failing run and a resolved run. ECG-Full stays stable on the resolved run until a dip to watch at the end; the signals baseline reads it as low early on.</figcaption></figure>
+      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: 66 only by ecg-full, 72 only by the signals benchmark, and 51 by both. Part of ecg-full's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The run in the teaser is one where ecg-full's alarm rests on behaviour, and ecg-full spares the other runs of the same issue.</p>
+      <figure class="chart"><img src="figures/failing_vs_resolved.svg" alt="Health over time for a failing and a resolved run, both monitors" loading="lazy"><figcaption>The showcase failing run and a resolved run. ecg-full stays stable on the resolved run until a dip to watch at the end; the signals benchmark reads it as low early on.</figcaption></figure>
     </div>
   </section>
 
   <!-- other tasks -->
   <section class="section light">
     <div class="narrow content">
-      <h2 class="title">ECG-Full's Other Two Tasks</h2>
-      <p>Besides pass or fail, ECG-Full learns to predict how a run will end (one of six endings) and to write a short status report whose last sentence forecasts the rest of the run. Scores on the full test split (23,520 checkpoints), pooled over checkpoints:</p>
+      <h2 class="title">ecg-full's Other Two Tasks</h2>
+      <p>Besides pass or fail, ecg-full learns to predict how a run will end (one of six endings) and to write a short status report whose last sentence forecasts the rest of the run. Scores on the full test split (23,520 checkpoints), pooled over checkpoints:</p>
       <div class="table"><table>
         <thead><tr><th>Model</th><th>Ending<br>accuracy</th><th>Ending<br>macro-F1</th><th>Report<br>format ok</th><th>Steps-left error<br>mean (median)</th><th>Pass/fail<br>bal. accuracy</th></tr></thead>
-        <tbody><tr class="tslm"><th>ECG-Full</th><td>0.662</td><td>0.222</td><td>99.7&nbsp;%</td><td>17.8 (9)</td><td>0.568</td></tr><tr class="baseline"><th>Signals baseline</th><td>0.655</td><td>0.225</td><td>100.0&nbsp;%</td><td>14.3 (6)</td><td>0.614</td></tr><tr class="baseline"><th>majority</th><td>0.494</td><td>0.110</td><td>100.0&nbsp;%</td><td>16.7 (10)</td><td>0.500</td></tr></tbody>
+        <tbody><tr class="tslm"><th>ecg-full</th><td>0.662</td><td>0.222</td><td>99.7&nbsp;%</td><td>17.8 (9)</td><td>0.568</td></tr><tr class="benchmark"><th>signals benchmark</th><td>0.655</td><td>0.225</td><td>100.0&nbsp;%</td><td>14.3 (6)</td><td>0.614</td></tr><tr class="benchmark"><th>majority</th><td>0.494</td><td>0.110</td><td>100.0&nbsp;%</td><td>16.7 (10)</td><td>0.500</td></tr></tbody>
       </table></div>
-      <p class="note">The majority baseline always predicts the most common ending, the median remaining steps, and "will not resolve".</p>
-      <p style="margin-top:1.2rem">ECG-Full is about level with the signals baseline on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the signals baseline.</p>
+      <p class="note">The majority benchmark always predicts the most common ending, the median remaining steps, and "will not resolve".</p>
+      <p style="margin-top:1.2rem">ecg-full is about level with the signals benchmark on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the signals benchmark.</p>
     </div>
   </section>
 
@@ -290,8 +290,8 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
-        <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, the classical baselines still score above each TSLM. ECG-Full comes closest: within 0.03&ndash;0.04 AUROC at 5&ndash;20 steps, a gap that is not statistically significant.</li>
-        <li><strong>How much ECG-Full uses the ECG is still open.</strong> A test that shuffles its series between runs is planned. ECG, which reads only the ECG, scores above chance.</li>
+        <li><strong>Classical benchmarks are strong on this task.</strong> With the same inputs, the classical benchmarks still score above each TSLM. ecg-full comes closest: within 0.03&ndash;0.04 AUROC at 5&ndash;20 steps, a gap that is not statistically significant.</li>
+        <li><strong>How much ecg-full uses the ECG is still open.</strong> A test that shuffles its series between runs is planned. ecg, which reads only the ECG, scores above chance.</li>
       </ul>
     </div>
   </section>
@@ -300,7 +300,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section light">
     <div class="container content">
       <h2 class="title">Training</h2>
-      <p>Each model was fine-tuned on one L40S. Training took 2.8&nbsp;h (ECG), 5.3&nbsp;h (ECG+Thought) and 7.1&nbsp;h (ECG-Full), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on ECG-Full's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half.</p>
+      <p>Each model was fine-tuned on one L40S. Training took 2.8&nbsp;h (ecg), 5.3&nbsp;h (ecg-thought) and 7.1&nbsp;h (ecg-full), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on ecg-full's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half.</p>
       <figure class="chart"><img src="figures/training_curves.svg" alt="Validation AUROC over training steps for the three TSLMs" loading="lazy"><figcaption>Validation AUROC during training; the ringed point is the checkpoint we kept. Validation runs are not the test set.</figcaption></figure>
     </div>
   </section>

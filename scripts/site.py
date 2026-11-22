@@ -67,10 +67,10 @@ def auroc_table() -> dict:
         for n in ("signals", "thoughts", "issue_signals_thoughts", "issue")
     }
     models = [
-        ("Baseline", "signals", "the ECG signals", cpu["signals"]),
-        ("Baseline", "thoughts", "the agent's thoughts", cpu["thoughts"]),
-        ("Baseline", "issue + signals + thoughts", "everything", cpu["issue_signals_thoughts"]),
-        ("Baseline", "issue only", "the issue text", cpu["issue"]),
+        ("Benchmark", "signals", "the ECG signals", cpu["signals"]),
+        ("Benchmark", "thoughts", "the agent's thoughts", cpu["thoughts"]),
+        ("Benchmark", "issue + signals + thoughts", "everything", cpu["issue_signals_thoughts"]),
+        ("Benchmark", "issue only", "the issue text", cpu["issue"]),
         ("TSLM", names["C"], "the ECG", tslm["C"]),
         ("TSLM", names["B"], "thoughts + ECG", tslm["B"]),
         ("TSLM", f"{names['A']} (3 tasks)", "issue + thoughts + ECG", tslm["A"]),
@@ -143,7 +143,10 @@ def showcase() -> dict:
 
 def compute() -> dict:
     text = (RESULTS / "SUMMARY.md").read_text()
-    hit = re.search(r"Training ([\d.]+) h \(C\), ([\d.]+) h \(B\), ([\d.]+) h \(A\): ([\d.]+) GPU-hours on (\w+)", text)
+    hit = re.search(
+        r"Training ([\d.]+) h \(ecg\), ([\d.]+) h \(ecg-thought\), ([\d.]+) h \(ecg-full\): ([\d.]+) GPU-hours on (\w+)",
+        text,
+    )
     if not hit:
         raise SystemExit("could not find the compute line in results/SUMMARY.md; update compute()")
     c, b, a, total, gpu = hit.groups()
@@ -162,8 +165,8 @@ def other_tasks() -> dict:
     a = json.loads((path / "report.test.json").read_text())
     models = [
         (charts.MONITOR_MODEL, "tslm", a),
-        (charts.SIGNALS_BASELINE, "baseline", json.loads((RESULTS / "signals.test.json").read_text())),
-        ("majority", "baseline", json.loads((RESULTS / "majority.test.json").read_text())),
+        (charts.SIGNALS_BASELINE, "benchmark", json.loads((RESULTS / "signals.test.json").read_text())),
+        ("majority", "benchmark", json.loads((RESULTS / "majority.test.json").read_text())),
     ]
     rows = []
     for name, kind, r in models:
@@ -192,13 +195,13 @@ def main() -> None:
         "Health of one agent run over 30 steps, with the 19 input series below",
         f"An unseen test run on <code>{values['show_issue']}</code>. {charts.MONITOR_MODEL}'s health falls through watch and low "
         f"while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at "
-        f"step {values['show_alarm']}. The run went on to fail (it {values['show_end']}). The signals baseline "
+        f"step {values['show_alarm']}. The run went on to fail (it {values['show_end']}). The signals benchmark "
         f"(grey, dashed) {values['show_signals']} on this run. Below it are the 19 series the model reads, one row each.",
     )
     values["fig_auroc"] = figure(
         "auroc_by_step",
-        "Test AUROC at 5 to 30 steps for three TSLMs and their baselines",
-        "Each panel pairs a TSLM (blue) with the baseline that reads the same inputs (grey). The dashed line reads "
+        "Test AUROC at 5 to 30 steps for three TSLMs and their benchmarks",
+        "Each panel pairs a TSLM (blue) with the benchmark that reads the same inputs (grey). The dashed line reads "
         "the issue text only; the shading is a 95&nbsp;% interval from resampling test repositories.",
     )
     values["fig_monitor"] = figure(
@@ -210,7 +213,7 @@ def main() -> None:
         "failing_vs_resolved",
         "Health over time for a failing and a resolved run, both monitors",
         f"The showcase failing run and a resolved run. {charts.MONITOR_MODEL} stays stable on the resolved run until a dip to watch "
-        "at the end; the signals baseline reads it as low early on.",
+        "at the end; the signals benchmark reads it as low early on.",
     )
     values["fig_training"] = figure(
         "training_curves",

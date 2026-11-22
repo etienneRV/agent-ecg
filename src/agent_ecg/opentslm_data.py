@@ -49,7 +49,7 @@ from agent_ecg import data
 TOKENIZER = ("unsloth/Llama-3.2-1B", "tokenizer.json")  # same tokenizer as meta-llama/Llama-3.2-1B, not gated
 ISSUE_TOKENS = 512
 THOUGHT_TOKENS = 1024  # the latest thoughts kept (the tail)
-HEAD_THOUGHT_TOKENS = 0  # the first thoughts kept as well (the head); runs A, B, C used none
+HEAD_THOUGHT_TOKENS = 0  # the first thoughts kept as well (the head); ecg, ecg-thought and ecg-full used none
 PER_THOUGHT_TOKENS = 256
 
 CONTEXTS = ("full", "thoughts", "none")
@@ -111,8 +111,8 @@ EDIT_TARGETS = {
 }
 
 
-# Run C2's three count channels: running totals and "time since" that the TSLM does not form on its own
-# (added to C's or B's own score they still raise AUROC by 0.03-0.07 on validation; A already uses them).
+# ecg v2's three count channels: running totals and "time since" that the TSLM does not form on its own
+# (added to ecg's or ecg-thought's own score they still raise AUROC by 0.03-0.07 on validation; ecg-full already uses them).
 # Each has a fixed scale, capped at 1, stated in its label: a per-run total in a label would give the
 # answer away in text. "Success" is defined as in agent_ecg.channels.steps_since_success.
 COUNT_CHANNELS = {
@@ -147,7 +147,7 @@ def count_series(row: pd.Series | Mapping) -> list[tuple[str, list[float]]]:
 
 
 def time_series(row: pd.Series | Mapping, count_channels: bool = False) -> tuple[list[str], list[list[float]]]:
-    """The 19 labelled per-step series of a checkpoint, plus run C2's three count channels if asked."""
+    """The 19 labelled per-step series of a checkpoint, plus ecg v2's three count channels if asked."""
     texts, values = [], []
     for name, label in LENGTHS.items():
         series = np.asarray(row[name], float)
@@ -212,7 +212,7 @@ class Trimmer:
         The head keeps how the agent first read the issue, which a long run otherwise loses (with no head,
         97 % of 30-step checkpoints dropped their first thoughts, and a word-count model fed the same window
         falls from 0.70 to 0.63 AUROC). Each step keeps at most ``PER_THOUGHT_TOKENS`` tokens. By default
-        the head is ``HEAD_THOUGHT_TOKENS`` (none) and the tail ``THOUGHT_TOKENS``, as in runs A, B and C.
+        the head is ``HEAD_THOUGHT_TOKENS`` (none) and the tail ``THOUGHT_TOKENS``, as in ecg, ecg-thought and ecg-full.
 
         Returns:
             The text, its token count, and how many steps were left out.
@@ -229,7 +229,7 @@ class Trimmer:
             tail_used += pieces[tail - 1].tokens
             tail -= 1
         lines = [f"Step {step + 1}: {pieces[step].text}" for step in range(head)]
-        if tail > head:  # same wording as runs A, B and C were trained on, "1-1" included
+        if tail > head:  # same wording as ecg, ecg-thought and ecg-full were trained on, "1-1" included
             lines.append(f"(Thoughts of steps {head + 1}-{tail} are left out to fit the length limit.)")
         lines += [f"Step {step + 1}: {pieces[step].text}" for step in range(tail, k)]
         return "\n".join(lines), used + tail_used, tail - head
@@ -309,7 +309,7 @@ class Prompts:
 
 
 def export_settings(meta_path: Path) -> dict:
-    """The settings an export was written with (``meta.json``), with the defaults of runs A, B and C for
+    """The settings an export was written with (``meta.json``), with the defaults of ecg, ecg-thought and ecg-full for
     older exports that only recorded their context. A replay rebuilds prompts with exactly these."""
     meta = json.loads(meta_path.read_text()) if meta_path.exists() else {}
     return {
@@ -338,7 +338,7 @@ def export(
         context: What text joins the series: ``full`` (issue and thoughts), ``thoughts`` or ``none``.
         head_thought_tokens: The earliest thoughts kept (default ``HEAD_THOUGHT_TOKENS``, none).
         thought_tokens: The latest thoughts kept (default ``THOUGHT_TOKENS``).
-        count_channels: Add run C2's three count channels to the 19 series.
+        count_channels: Add ecg v2's three count channels to the 19 series.
 
     Returns:
         Per-checkpoint trimming statistics, with each prompt's length in tokens.

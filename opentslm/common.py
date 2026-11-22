@@ -46,7 +46,7 @@ def load_model(
     gate, so ``--llm unsloth/Llama-3.2-1B --init-from OpenTSLM/llama-3.2-1b-ecg-sp`` needs no approval.
 
     ``lora_dropout`` (default 0, OpenTSLM's setting) drops LoRA inputs during training only, against
-    memorising the training text (run A2); prediction runs in eval mode, where it has no effect.
+    memorising the training text (ecg-full v2); prediction runs in eval mode, where it has no effect.
 
     Raises:
         ValueError: If ``init_from`` is not an SP checkpoint or was trained on another base model.

@@ -48,7 +48,10 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--no-lora", action="store_true", help="train only the encoder and projector")
     parser.add_argument(
-        "--lora-dropout", type=float, default=0.0, help="dropout on the LoRA adapters (run A2: 0.1; A, B, C: 0)"
+        "--lora-dropout",
+        type=float,
+        default=0.0,
+        help="dropout on the LoRA adapters (ecg-full v2: 0.1; ecg, ecg-thought, ecg-full: 0)",
     )
     parser.add_argument("--tasks", default="outcome,ending,status", help="e.g. `outcome` for a pass/fail-only model")
     parser.add_argument("--task-weights", default="", help="e.g. `outcome=2,status=0.5`; unnamed tasks weigh 1")

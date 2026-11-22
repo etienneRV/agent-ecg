@@ -3,7 +3,7 @@
 *Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-21*
 
 > **Status:** dataset contributed to TimeNet ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832),
-> awaiting review) · evaluation and CPU baselines done (this report) · OpenTSLM fine-tune: next, on
+> awaiting review) · evaluation and benchmarks done (this report) · OpenTSLM fine-tune: next, on
 > Nebius compute.
 
 ## 1. In one paragraph
@@ -84,13 +84,13 @@ on the held-out **test** split. Three choices matter:
    issue with one resolved and one not, the share where the model scores the resolved run higher
    (0.5 is chance). The issue is fixed within a pair, so only what the model reads from the run counts.
 
-## 5. Baselines
+## 5. Benchmarks
 
-All baselines run on a laptop CPU, train on train, tune on validation (by mean per-checkpoint
+All benchmarks run on a laptop CPU, train on train, tune on validation (by mean per-checkpoint
 AUROC), and are scored on test. Each
 checkpoint is weighted by 1 / (checkpoints of its run) so long, failing runs do not count five times.
 
-| Baseline | Inputs | Model |
+| Benchmark | Inputs | Model |
 | --- | --- | --- |
 | majority | none | resolved rate of the checkpoint; most common ending; median remaining steps |
 | signals | the 9 per-step signals, summarised (kind shares overall and in the last 5 steps, lengths, conversation size) | gradient-boosted trees |
@@ -99,17 +99,17 @@ checkpoint is weighted by 1 / (checkpoints of its run) so long, failing runs do 
 | issue | the issue text only (never the agent) | TF-IDF + logistic regression |
 | issue+signals+thoughts | everything a full-context TSLM reads | logistic regression |
 
-**Why the issue-only baseline.** Some issues are simply harder than others, and each is attempted 22
+**Why the issue-only benchmark.** Some issues are simply harder than others, and each is attempted 22
 times on average. A model could score well by judging the issue ("issues like this usually fail")
 without watching the agent at all, and the agent's thoughts often repeat the issue. If the
-agent-based baselines beat the issue-only one, the monitor really learns from the agent's behaviour.
+agent-based benchmarks beat the issue-only one, the monitor really learns from the agent's behaviour.
 
 ### Results on test (143 repositories never seen in training)
 
 **Will it pass?** AUROC per checkpoint, with 95 % intervals from resampling test repositories
 (chance = 0.5). Average precision is in parentheses; its chance level is the resolved rate (16 / 14 / 9 / 7 / 6 %).
 
-| Baseline | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+| Benchmark | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
 | --- | --- | --- | --- | --- | --- |
 | majority | 0.50 (0.16) | 0.50 (0.14) | 0.50 (0.09) | 0.50 (0.07) | 0.50 (0.06) |
 | issue only | 0.61 [0.54, 0.69] (0.25) | 0.62 [0.55, 0.69] (0.23) | 0.61 [0.52, 0.70] (0.15) | 0.62 [0.50, 0.70] (0.12) | 0.61 [0.46, 0.72] (0.10) |
@@ -121,7 +121,7 @@ agent-based baselines beat the issue-only one, the monitor really learns from th
 **Same-issue pairs** (share of resolved/unresolved pairs on the same issue where the resolved run
 scores higher; 0.5 = chance; 27,526 / 17,091 / 6,964 / 3,203 / 1,223 pairs):
 
-| Baseline | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+| Benchmark | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
 | --- | --- | --- | --- | --- | --- |
 | issue only | 0.500 | 0.500 | 0.500 | 0.500 | 0.500 |
 | signals | 0.543 | **0.610** | **0.593** | **0.601** | **0.651** |
@@ -133,7 +133,7 @@ scores higher; 0.5 = chance; 27,526 / 17,091 / 6,964 / 3,203 / 1,223 pairs):
 repositories, so every checkpoint is predicted once by a model that never saw its repository.
 Mean ± sd of the fold AUROCs / same-issue pairs:
 
-| Baseline | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+| Benchmark | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
 | --- | --- | --- | --- | --- | --- |
 | issue only | 0.616 ± 0.024 / 0.500 | 0.609 ± 0.029 / 0.500 | 0.602 ± 0.036 / 0.500 | 0.601 ± 0.037 / 0.500 | 0.603 ± 0.033 / 0.500 |
 | signals | 0.663 ± 0.024 / 0.551 | 0.711 ± 0.015 / **0.615** | 0.729 ± 0.020 / **0.662** | 0.747 ± 0.018 / **0.686** | **0.775** ± 0.016 / **0.735** |
@@ -175,19 +175,19 @@ Mean ± sd of the fold AUROCs / same-issue pairs:
   at 5-20 steps by 0.01-0.02, within the intervals. It is the bar for a full-context TSLM.
 - **The test split is a hard draw for the signals.** Cross-validation puts them at 0.711 ± 0.015 at 10
   steps; the single test split gives 0.645. Differences under about 0.05 on test are not reliable.
-- **Pooled scores mislead.** The majority baseline has a pooled AUROC of 0.6 although it knows nothing
+- **Pooled scores mislead.** The majority benchmark has a pooled AUROC of 0.6 although it knows nothing
   about any run, because the resolved rate differs by checkpoint. Hence per-checkpoint scores.
 
-**How will it end?** (signals baseline vs majority, test) Macro-F1 over the six endings is 0.13 / 0.18
+**How will it end?** (signals benchmark vs majority, test) Macro-F1 over the six endings is 0.13 / 0.18
 / 0.22 / 0.22 / 0.20 at 5 / 10 / 15 / 20 / 30 steps, against 0.08 / 0.10 / 0.12 / 0.14 / 0.15 for
 always guessing the most common training ending (`context_limit`). It mostly separates `submitted`
 from `context_limit`; `early_exit` (3 % of test checkpoints) is predicted 19 times.
 
-**Status report.** The signals baseline predicts the remaining steps with a median error of 6 steps
-(majority: 10). The table below shows why only the last sentence is scored: the majority baseline,
+**Status report.** The signals benchmark predicts the remaining steps with a median error of 6 steps
+(majority: 10). The table below shows why only the last sentence is scored: the majority benchmark,
 which predicts "will not resolve" for every run, gets 0.97 word-overlap F1 on the full text.
 
-| Baseline | Word-overlap F1, full text | Word-overlap F1, last sentence | Pass/fail balanced accuracy | Remaining steps, median error |
+| Benchmark | Word-overlap F1, full text | Word-overlap F1, last sentence | Pass/fail balanced accuracy | Remaining steps, median error |
 | --- | --- | --- | --- | --- |
 | majority | 0.968 | 0.874 | 0.500 | 10 |
 | signals | 0.974 | 0.897 | 0.614 | 6 |
@@ -199,7 +199,7 @@ test runs from it: the top one (`results/replay.signals.falling.jsonl`) starts a
 31 at step 8 and turns critical at step 15, while the agent alternates `read` and `search` with
 repeated commands; it ran into the context limit and did not resolve its issue.
 
-Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per baseline in `results/`.
+Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per benchmark in `results/`.
 
 ## 6. Fine-tuning OpenTSLM, and the live monitor
 
@@ -211,11 +211,11 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
   say only what a 1 means.
 - **Runs, in order** (`GPU.md`), all starting from OpenTSLM's ECG model (`OpenTSLM/llama-3.2-1b-ecg-sp`,
   the last stage of its curriculum, which reads 12 labelled leads at once):
-  1. **C: the ECG alone, pass/fail.** Whatever it gets right, it read from the trace; this is the
+  1. **ecg: the ECG alone, pass/fail.** Whatever it gets right, it read from the trace; this is the
      demo's model.
-  2. **B: thoughts beside the ECG, pass/fail.** Against the thoughts baseline, it shows what the
+  2. **ecg-thought: thoughts beside the ECG, pass/fail.** Against the thoughts benchmark, it shows what the
      series add to the text.
-  3. **A: everything, all three tasks**, against the issue+signals+thoughts baseline.
+  3. **ecg-full: everything, all three tasks**, against the issue+signals+thoughts benchmark.
 - **Training:** each answer counts equally in the loss, resolved runs get 30 % of the sampling
   weight, and the best checkpoint is chosen by validation pass/fail AUROC.
 - **The monitor** (`src/agent_ecg/monitor.py`), fitted on validation predictions only: an isotonic
@@ -224,9 +224,9 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
   step; the alarm goes on when health is at most 15 in a zone where at least 95 % of validation runs
   failed, two steps in a row, and holds until health is back to 30. `agent-ecg replay` and `opentslm/replay.py` replay test runs step by
   step and write one JSON line per step for the terminal ECG.
-- **Bar to clear:** for C, the signals baseline on the same inputs (0.61 / 0.65 / 0.67 / 0.71 / 0.73
-  on test; same-issue pairs 0.61 at 10 steps); for B, the thoughts baseline (0.68 / 0.70 / 0.71 /
-  0.70 / 0.70); for A, issue+signals+thoughts (0.69 / 0.71 / 0.72 / 0.72 / 0.70). And always clearly
+- **Bar to clear:** for ecg, the signals benchmark on the same inputs (0.61 / 0.65 / 0.67 / 0.71 / 0.73
+  on test; same-issue pairs 0.61 at 10 steps); for ecg-thought, the thoughts benchmark (0.68 / 0.70 / 0.71 /
+  0.70 / 0.70); for ecg-full, issue+signals+thoughts (0.69 / 0.71 / 0.72 / 0.72 / 0.70). And always clearly
   above the issue-only model (0.61-0.62), so the gain comes from watching the agent.
 
 ## 7. Limitations
@@ -236,7 +236,7 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
 - Signals and kinds come from fixed text rules (listed in the dataset card); the status report is a
   template, not an expert's assessment.
 - The label is the release's test result, which can miss correct fixes or accept incomplete ones.
-- No baseline reads the steps as a sequence; that is the TSLM's job.
+- No benchmark reads the steps as a sequence; that is the TSLM's job.
 
 ## 8. Reproduce
 

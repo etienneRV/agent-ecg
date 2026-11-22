@@ -1,15 +1,15 @@
 {
-  "_comment": "Which training run fills each TSLM slot on the charts and the site. To show a second-round run, point its slot at the new results/opentslm/<dir> and give it its own label (e.g. ECG-Full v2). The live-monitor sections stay on run A until the 600-run scan is redone with the new model.",
+  "_comment": "Which training run fills each TSLM slot on the charts and the site. To show a second-round run, point its slot at the new results/opentslm/<dir> and give it its own label (e.g. ecg-full v2). The live-monitor sections stay on ecg-full until the 600-run scan is redone with the new model.",
   "A": {
     "dir": "full-multi",
-    "label": "ECG-Full"
+    "label": "ecg-full"
   },
   "B": {
     "dir": "thoughts-outcome",
-    "label": "ECG+Thought"
+    "label": "ecg-thought"
   },
   "C": {
     "dir": "ecg-only",
-    "label": "ECG"
+    "label": "ecg"
   }
 }

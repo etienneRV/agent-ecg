@@ -234,7 +234,7 @@ def main() -> None:
     prepare.add_argument("--release", type=Path, help="use an already built release directory instead")
     prepare.set_defaults(run=_prepare)
 
-    run = commands.add_parser("baselines", help="fit the baselines and score them, or cross-validate them")
+    run = commands.add_parser("baselines", help="fit the benchmarks and score them, or cross-validate them")
     run.add_argument("--split", default="test", choices=("validation", "test"))
     run.add_argument(
         "--cv", type=int, metavar="FOLDS", help="instead, repository cross-validation over all checkpoints"
@@ -284,7 +284,7 @@ def main() -> None:
     )
     export.add_argument("--out", type=Path, help="default: data/opentslm (full) or data/opentslm-<context>")
     export.add_argument(
-        "--count-channels", action="store_true", help="run C2: add 3 count channels (fixed scales) to the 19 series"
+        "--count-channels", action="store_true", help="ecg v2: add 3 count channels (fixed scales) to the 19 series"
     )
     export.add_argument(
         "--head-thought-tokens", type=int, default=0, help="also keep the earliest thoughts, up to this many tokens"

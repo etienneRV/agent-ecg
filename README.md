@@ -19,7 +19,7 @@ Until #832 is merged, the connector is installed from its PR branch (see `pyproj
 
 ```bash
 uv run agent-ecg prepare      # build the TimeNet release (1.1 GB download, ~5 min) and flatten it into data/
-uv run agent-ecg baselines    # fit the six CPU baselines, score them on test, write results/ and data/models/
+uv run agent-ecg baselines    # fit the six benchmarks, score them on test, write results/ and data/models/
 uv run agent-ecg baselines --cv 5   # repository cross-validation over all checkpoints: steadier AUROCs
 uv run agent-ecg replay --top 3     # the live monitor on test runs, step by step (signals model)
 uv run agent-ecg evaluate my_predictions.parquet          # score any model on test
@@ -44,8 +44,8 @@ uv run agent-ecg opentslm-export --context none      # the series alone (ECG)   
 ```
 
 Two options build the final runs' data (GPU.md section 6), and need `--out`:
-- `--count-channels` adds run C2's three count channels: steps since the last success, tracebacks so far, code runs so far; fixed scales, past steps only.
-- `--head-thought-tokens 512 --thought-tokens 1536` keeps the first thoughts as well as the latest (run A2).
+- `--count-channels` adds ecg v2's three count channels: steps since the last success, tracebacks so far, code runs so far; fixed scales, past steps only.
+- `--head-thought-tokens 512 --thought-tokens 1536` keeps the first thoughts as well as the latest (ecg-full v2).
 
 `meta.json` records the settings, and `opentslm/replay.py` rebuilds prompts from them.
 
@@ -165,8 +165,8 @@ src/agent_ecg/
   opentslm_data.py  checkpoints -> OpenTSLM samples (trimming, series, prompts, contexts)
   cli.py         agent-ecg prepare | baselines | evaluate | compare | opentslm-export | replay
 opentslm/        train.py, predict.py, replay.py, common.py (GPU only), and a dataset class for OpenTSLM's own trainer
-tests/           metric, parser, converter, monitor and baseline tests (uv run pytest)
-results/         baseline scores (Markdown + JSON)
+tests/           metric, parser, converter, monitor and benchmark tests (uv run pytest)
+results/         benchmark scores (Markdown + JSON)
 ```
 
 ## Licence
