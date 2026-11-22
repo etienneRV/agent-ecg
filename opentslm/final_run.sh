@@ -10,6 +10,9 @@
 # DRY_RUN=1 prints the commands instead of running them.
 set -uo pipefail
 cd "$(dirname "$0")/.."
+# A fresh tmux session may not have uv on its PATH yet (the installer puts it in ~/.local/bin).
+command -v uv >/dev/null 2>&1 || export PATH="$HOME/.local/bin:$PATH"
+command -v uv >/dev/null 2>&1 || { echo "uv not found: curl -LsSf https://astral.sh/uv/install.sh | sh" >&2; exit 1; }
 
 RUN=${1:-}
 case "$RUN" in
@@ -57,6 +60,10 @@ if [ -e "$R/best_model.pt" ] && [ "${DRY_RUN:-0}" != 1 ]; then
   exit 1
 fi
 [ -e data/checkpoints.parquet ] || { say "no data/checkpoints.parquet: run 'uv run --no-sync agent-ecg prepare' first"; exit 1; }
+if [ "${DRY_RUN:-0}" != 1 ]; then  # fail now, not mid-smoke-test, if the GPU packages or the GPU are missing
+  uv run --no-sync python -c "import torch, opentslm; assert torch.cuda.is_available(), 'no CUDA GPU visible'" \
+    || { say "GPU setup incomplete: 'uv pip install -r opentslm/requirements-gpu.txt' on a machine with a CUDA GPU"; exit 1; }
+fi
 
 # 1. The export (skipped when it already exists with these settings).
 if [ ! -e "$DATA/meta.json" ]; then
