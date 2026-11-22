@@ -384,7 +384,7 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
 
   <section class="section detail" id="d-training" role="tabpanel" aria-labelledby="tab-d-training" hidden><div class="container content">
       <h2 class="title">Training</h2>
-      <p>Each model was fine-tuned on one L40S. Training took 2.8&nbsp;h (ecg), 5.3&nbsp;h (ecg-thought) and 7.1&nbsp;h (ecg-full), 15.2 GPU-hours in all. OpenTSLM's eager attention ran out of memory on ecg-full's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half. The second round ran on one H100 each: 1.25&nbsp;h (ecg v2) and 2.69&nbsp;h (ecg-full v2).</p>
+      <p>Each model was fine-tuned on one L40S. Training took 2.8&nbsp;h (ecg), 5.3&nbsp;h (ecg-thought) and 7.1&nbsp;h (ecg-full), 15.2 GPU-hours of training (about 25 with scoring and replays). OpenTSLM's eager attention ran out of memory on ecg-full's long prompts; PyTorch SDPA (the same math) made it fit without gradient checkpointing, and it trained in 7.1&nbsp;h. The second round ran on one H100 each: 1.25&nbsp;h (ecg v2) and 2.69&nbsp;h (ecg-full v2) of training, about 5 GPU-hours in all.</p>
       <figure class="chart"><img src="figures/training_curves.svg" alt="Validation AUROC over training steps for the three TSLMs" loading="lazy"><figcaption>Validation AUROC during training; the ringed point is the checkpoint we kept. Validation runs are not the test set.</figcaption></figure>
   </div></section>
 

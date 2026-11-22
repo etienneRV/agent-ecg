@@ -377,7 +377,7 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
 
   <section class="section detail" id="d-training" role="tabpanel" aria-labelledby="tab-d-training" hidden><div class="container content">
       <h2 class="title">Training</h2>
-      <p>Each model was fine-tuned on one $gpu. Training took $h_c&nbsp;h ($label_c), $h_b&nbsp;h ($label_b) and $h_a&nbsp;h ($label_a), $gpu_hours GPU-hours in all. OpenTSLM's eager attention ran out of memory on $label_a's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half. The second round ran on one $r2_gpu each: $h_c2&nbsp;h ($label_c2) and $h_a2&nbsp;h ($label_a2).</p>
+      <p>Each model was fine-tuned on one $gpu. Training took $h_c&nbsp;h ($label_c), $h_b&nbsp;h ($label_b) and $h_a&nbsp;h ($label_a), $gpu_hours GPU-hours of training (about $gpu_total with scoring and replays). OpenTSLM's eager attention ran out of memory on $label_a's long prompts; PyTorch SDPA (the same math) made it fit without gradient checkpointing, and it trained in $h_a&nbsp;h. The second round ran on one $r2_gpu each: $h_c2&nbsp;h ($label_c2) and $h_a2&nbsp;h ($label_a2) of training, about $r2_gpu_total GPU-hours in all.</p>
       $fig_training
   </div></section>
 

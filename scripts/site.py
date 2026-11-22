@@ -151,8 +151,25 @@ def compute() -> dict:
     if not hit:
         raise SystemExit("could not find the compute line in results/SUMMARY.md; update compute()")
     c, b, a, total, gpu = hit.groups()
+    # all GPU time per round, from the ledger table under "Compute" (training, scoring, replays, smoke tests)
+    ledger = {
+        rnd: re.search(rf"^\| (\w+) \({rnd} round\) \|.*\| about ([\d.]+) GPU-hours \|$", text, flags=re.M)
+        for rnd in ("first", "second")
+    }
+    if not all(ledger.values()):
+        raise SystemExit("could not find the compute ledger in results/SUMMARY.md; update compute()")
     cfg = json.loads((charts.tslm_runs()["A"] / "config.json").read_text())
-    return {"h_c": c, "h_b": b, "h_a": a, "gpu_hours": total, "gpu": gpu, "base": cfg["init_from"], "llm": cfg["llm"]}
+    return {
+        "h_c": c,
+        "h_b": b,
+        "h_a": a,
+        "gpu_hours": total,
+        "gpu": gpu,
+        "gpu_total": ledger["first"].group(2),
+        "r2_gpu_total": ledger["second"].group(2),
+        "base": cfg["init_from"],
+        "llm": cfg["llm"],
+    }
 
 
 def other_tasks() -> dict:
