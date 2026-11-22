@@ -118,6 +118,8 @@ def monitor() -> dict:
         "mon_resolved": a["resolved"],
         "mon_rows": row(charts.MONITOR_MODEL, a) + row(charts.SIGNALS_BASELINE, s),
         "a_right": f"{a['right']:.0f}&nbsp;%",
+        "a_flagged": f"{a['flagged']:.0f}&nbsp;%",
+        "a_false": f"{a['false_alarms']:.0f}&nbsp;%",
         "a_median": a["median_step"],
         "s_median": s["median_step"],
         "natural": f"{m['natural']:.1f}&nbsp;%",
@@ -215,6 +217,29 @@ def _gains(path: Path) -> dict[int, tuple[float, float, float]]:
     return out
 
 
+def same_issue() -> dict:
+    """Pairs of runs on the same issue (`agent-ecg compare --same-issue`, results/same_issue/): only what a model
+    reads from the run counts there, not how hard the issue is."""
+    folder = RESULTS / "same_issue"
+    a = _gains(folder / "A_vs_issue_signals_thoughts.test.txt")
+    sig = _gains(folder / "signals_vs_chance.test.txt")
+    early = [k for k in charts.STEPS if k <= 20]
+    if not all(a[k][1] <= 0 <= a[k][2] for k in early):
+        raise SystemExit(
+            "the site says ecg-full is level with its baseline on same-issue pairs; the intervals disagree"
+        )
+    signed = lambda x: f"{x:+.3f}".replace("-", "&minus;")  # noqa: E731
+    history = json.loads((RESULTS / "opentslm" / "full-multi" / "history.json").read_text())
+    return {
+        "si_lo": signed(min(a[k][0] for k in early)),
+        "si_hi": signed(max(a[k][0] for k in early)),
+        "si_sig_first": f"{(0.5 + sig[charts.STEPS[0]][0]) * 100:.0f}&nbsp;%",
+        "si_sig_last": f"{(0.5 + sig[charts.STEPS[-1]][0]) * 100:.0f}&nbsp;%",
+        "a_val_evals": len(history),
+        "a_val_best": f"{max(h['val_auroc'] for h in history):.2f}",
+    }
+
+
 def second_round() -> dict:
     """The second-round runs (ecg v2, ecg-full v2): their gain over the original model and the pre-agreed verdict."""
     names = charts.tslm_labels()
@@ -283,6 +308,7 @@ def main() -> None:
         **showcase(),
         **compute(),
         **other_tasks(),
+        **same_issue(),
         **second_round(),
     }
     values["fig_hero"] = figure(
