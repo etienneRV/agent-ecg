@@ -253,13 +253,12 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <!-- limitations -->
   <section class="section light">
     <div class="narrow content">
-      <h2 class="title">Limitations and Next Steps</h2>
+      <h2 class="title">Limitations</h2>
       <ul class="findings">
         <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, gradient-boosted trees and logistic regression still score above each TSLM. TSLM&nbsp;A comes closest: within 0.03&ndash;0.04 AUROC at 5&ndash;20 steps, a gap that is not statistically significant.</li>
         <li><strong>The two monitors are complementary, but not additive yet.</strong> TSLM&nbsp;A and the CPU signals monitor flag mostly different failing runs, yet a simple average of their scores did not improve accuracy.</li>
         <li><strong>How much A uses the ECG is still open.</strong> A test that shuffles A's series between runs is planned. TSLM&nbsp;C, which reads only the ECG, scores above chance.</li>
         <li><strong>Late checkpoints have few test runs.</strong> Differences under about 0.05 AUROC on a single split should be read with care; the intervals in the chart show how wide they are.</li>
-        <li class="tslm"><strong>A second training round is under way.</strong> C2 adds three series that track progress (steps since the last success, tracebacks so far, code runs so far). A2 trains for one pass over the data with older thoughts shortened instead of dropped, to reduce overfitting.</li>
       </ul>
     </div>
   </section>
