@@ -1,5 +1,6 @@
 <title>Agent ECG</title>
 <meta name="claude:viewport-fit-sides" content="cover">
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
 <meta name="description" content="Reading a coding agent's run step by step to warn early when it is going to fail.">
 <meta property="og:title" content="Agent ECG: warning early when a coding agent is going to fail">
 <meta property="og:description" content="Reading a coding agent's run step by step to warn early when it is going to fail.">
@@ -116,10 +117,11 @@ td.reads { font-family: var(--sans); color: var(--muted); }
 td.best { font-weight: 600; color: var(--fg); background: var(--code-bg); }
 tr.tslm th { color: var(--primary); }
 .tag { font: 600 0.66rem/1 var(--mono); letter-spacing: 0.06em; padding: 0.2rem 0.35rem; border-radius: 4px; border: 1px solid currentColor; margin-right: 0.35rem; vertical-align: 2px; }
-tr.cpu .tag { color: var(--cpu); }
+tr.baseline .tag { color: var(--cpu); }
 .note { font-size: 0.88rem; color: var(--muted); margin-top: 0.6rem; }
 
 /* BibTeX */
+.reference { font-size: 0.95rem; color: var(--fg2); }
 .bibtex-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem; }
 .bibtex-header h2.title { margin: 0; }
 .copy-bibtex-btn { font: 600 0.9rem var(--sans); background: var(--primary); color: #ffffff; border: 0; border-radius: 10px; padding: 0.5rem 1rem; cursor: pointer; }
@@ -145,6 +147,9 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
       <p class="publication-authors"><span class="author-block">Barış Gürel,</span> <span class="author-block">Maximilian Lohscheller,</span> <span class="author-block">Ziyad Mellal,</span> <span class="author-block">Etienne Ritter Vidal</span></p>
       <p class="publication-venue">TimeNet Hackathon, Round 1 · 2026</p>
       <div class="publication-links">
+        <a class="button" href="https://github.com/etienneRV/agent-ecg" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8.6 16.6 4 12l4.6-4.6L7.2 6 1.2 12l6 6 1.4-1.4zm6.8 0L20 12l-4.6-4.6L16.8 6l6 6-6 6-1.4-1.4z"/></svg>
+          Code</a>
         <a class="button" href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2C6.5 2 3 3.8 3 6v12c0 2.2 3.5 4 9 4s9-1.8 9-4V6c0-2.2-3.5-4-9-4zm0 2c4.4 0 7 1.3 7 2s-2.6 2-7 2-7-1.3-7-2 2.6-2 7-2zm7 14c0 .7-2.6 2-7 2s-7-1.3-7-2v-2.3C6.6 16.5 9.1 17 12 17s5.4-.5 7-1.3V18zm0-6c0 .7-2.6 2-7 2s-7-1.3-7-2V9.7C6.6 10.5 9.1 11 12 11s5.4-.5 7-1.3V12z"/></svg>
           Dataset</a>
@@ -169,12 +174,12 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section light">
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
-      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of $n_ckpt checkpoints from $n_runs SWE-agent runs, where each checkpoint holds the first $k_first to $k_last steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three OpenTSLM models on different inputs and compare each with a CPU baseline that reads exactly the same inputs, on $test_runs runs from $test_repos repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within $gap_lo&ndash;$gap_hi AUROC of the best CPU model, though every TSLM stays below its CPU counterpart. Replayed as a live monitor on $mon_total unseen runs, TSLM&nbsp;A's alarms are right $a_right of the time and fire at a median step of $a_median.</p>
+      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of $n_ckpt checkpoints from $n_runs SWE-agent runs, where each checkpoint holds the first $k_first to $k_last steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on $test_runs runs from $test_repos repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within $gap_lo&ndash;$gap_hi AUROC of the best baseline, though every TSLM stays below the baseline with the same inputs. Replayed as a live monitor on $mon_total unseen runs, the alarms of our full model are right $a_right of the time and fire at a median step of $a_median.</p>
       <div class="stats">
         <div class="stat"><b>$n_runs</b><span>SWE-agent runs on real GitHub issues</span></div>
         <div class="stat"><b>$fail_first</b><span>of runs still going at step $k_first fail ($fail_last at step $k_last)</span></div>
-        <div class="stat tslm"><b>$a_right</b><span>of TSLM&nbsp;A's alarms were right</span></div>
-        <div class="stat alarm"><b>step $a_median</b><span>median alarm (CPU monitor: step $s_median)</span></div>
+        <div class="stat tslm"><b>$a_right</b><span>of $mon_name's alarms were right</span></div>
+        <div class="stat alarm"><b>step $a_median</b><span>median alarm (signals baseline: step $s_median)</span></div>
       </div>
     </div>
   </section>
@@ -184,9 +189,9 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     <div class="container">
       <h2 class="title centered">Demo</h2>
       <figure class="demo">
-        <video src="demo.mp4" autoplay muted loop playsinline controls preload="metadata"
+        <video src="demo.mp4" poster="demo_poster.jpg" autoplay muted loop playsinline controls preload="metadata"
           aria-label="Terminal demo: the agent's steps on the left, the monitor's heartbeat and health on the right"></video>
-        <figcaption class="subtitle">A recorded test run, replayed step by step. On the left is what the agent does; on the right is the monitor (TSLM&nbsp;A), which reads only the steps so far. It sounds the alarm at step $show_alarm, and the run indeed failed.</figcaption>
+        <figcaption class="subtitle">A recorded test run, replayed step by step: the agent on the left, the monitor on the right.</figcaption>
       </figure>
     </div>
   </section>
@@ -195,7 +200,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section light">
     <div class="narrow content">
       <h2 class="title">The Agent ECG</h2>
-      <p>Our TimeNet connector for <a href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories">nebius/SWE-agent-trajectories</a> (<a href="https://github.com/OpenTSLM/TimeNet/pull/832">TimeNet PR #832</a>) cuts every run into <strong>checkpoints</strong>: the first $k_first, 10, 15, 20 or $k_last steps of a run that is still going. A checkpoint never contains the end of the run, so no input gives the outcome away. The "ECG" is 19 series with one value per step. It is a multichannel event trace, not a waveform:</p>
+      <p>Our TimeNet connector for <a href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories">nebius/SWE-agent-trajectories</a> (<a href="https://github.com/OpenTSLM/TimeNet/pull/832">TimeNet PR #832</a>) cuts every run into <strong>checkpoints</strong>: the first $k_first, 10, 15, 20 or $k_last steps of a run that is still going. A checkpoint never contains the end of the run, so no input gives the outcome away. We call the 19 series recorded at every step the agent's <strong>ECG</strong>: like a heart ECG, a few lines over time that a trained reader scans for warning signs. It is a multichannel event trace, not a waveform:</p>
       <div class="channels">
         <div><h4>4 lengths</h4><p>the agent's thought, its command, the environment's reply, and the whole conversation so far</p></div>
         <div><h4>5 actions</h4><p>edit, create a file, run code, read, search</p></div>
@@ -210,11 +215,25 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     </div>
   </section>
 
-  <!-- pass/fail results -->
+  <!-- model -->
   <section class="section">
+    <div class="narrow content">
+      <h2 class="title">Model</h2>
+      <p>OpenTSLM (<a href="https://arxiv.org/abs/2510.02410">Langer et al., 2025</a>) extends pretrained language models to read time series as a native input. We use its SoftPrompt variant, which the paper recommends for short series: a small encoder turns each of our 19 series into tokens that sit in the prompt next to the text, and only the encoder, a projection layer and LoRA adapters are trained (about 14&nbsp;M parameters). We start from the released Llama&nbsp;3.2&nbsp;1B checkpoint at the end of the paper's training curriculum (<code>$base</code>).</p>
+      <p>We train three models on nested inputs: <strong>$label_c</strong> reads only the 19 series, <strong>$label_b</strong> adds the agent's thoughts, and <strong>$label_a</strong> adds the issue and learns two more tasks, how the run will end and a short status report.</p>
+    </div>
+    <div class="container">
+      <figure class="chart"><img src="opentslm_softprompt.png" alt="OpenTSLM-SoftPrompt architecture: a time-series encoder and projection layer turn series patches into tokens that join the text tokens in a pretrained LLM with LoRA adapters" loading="lazy">
+        <figcaption>OpenTSLM-SoftPrompt. In our case the text holds the setting and, depending on the model, the issue and the agent's thoughts, and the time series are our 19 per-step series. Figure from Langer et al. (2025), CC&nbsp;BY&nbsp;4.0.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- pass/fail results -->
+  <section class="section light">
     <div class="container content">
       <h2 class="title">Predicting Pass or Fail from the First Steps</h2>
-      <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a CPU baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
+      <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
       $fig_auroc
       <div class="table"><table>
         <thead><tr><th>Model</th><th>Reads</th>$auroc_head</tr></thead>
@@ -222,67 +241,65 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
       </table></div>
       <p class="note">Column headers are the number of steps seen. The shaded cell is the best score at that step.</p>
       <ul class="findings">
-        <li><strong>The behaviour signal grows over the run.</strong> The CPU model of the ECG signals climbs from $sig_first at $k_first steps to $sig_last at $k_last. A model that reads only the issue text stays flat between $iss_lo and $iss_hi.</li>
-        <li class="tslm"><strong>TSLM&nbsp;$label_a comes within $gap_lo&ndash;$gap_hi of the best CPU model</strong> at $early steps. The gap is not significant there (paired bootstrap over test repositories).</li>
-        <li><strong>Each TSLM scores below the CPU model with the same inputs.</strong> The ECG-only TSLM&nbsp;$label_c stays between $c_lo and $c_hi, about the level of the issue-only model.</li>
+        <li><strong>The behaviour signal grows over the run.</strong> The signals baseline climbs from $sig_first at $k_first steps to $sig_last at $k_last. A model that reads only the issue text stays flat between $iss_lo and $iss_hi.</li>
+        <li class="tslm"><strong>$label_a comes within $gap_lo&ndash;$gap_hi of the best baseline</strong> at $early steps. The gap is not significant there (paired bootstrap over test repositories).</li>
+        <li><strong>Each TSLM scores below the baseline with the same inputs.</strong> $label_c, which reads only the series, stays between $c_lo and $c_hi, about the level of the issue-only model.</li>
       </ul>
     </div>
   </section>
 
   <!-- live monitor -->
-  <section class="section light">
+  <section class="section">
     <div class="container content">
       <h2 class="title">As a Live Monitor</h2>
-      <p>A monitor turns each prediction into a health score from 0 to 100 and sounds the alarm after $hold critical steps in a row. We replayed $mon_total unseen test runs step by step through two monitors: TSLM&nbsp;A, and the CPU model of the signals. The runs were all $mon_resolved resolved test runs with at least 20 steps, plus $mon_failing random failing ones; neither monitor chose them.</p>
+      <p>A <strong>monitor</strong> sits on top of a model and turns its prediction at every step into something an operator can act on: a health score from 0 to 100 that compares the run with runs of the same age, a state (stable, watch, low, critical), and an alarm after $hold critical steps in a row. We replayed $mon_total unseen test runs step by step through two monitors: one on $mon_name, and one on the signals baseline. The runs were all $mon_resolved resolved test runs with at least 20 steps, plus $mon_failing random failing ones; neither monitor chose them.</p>
       $fig_monitor
       <div class="table"><table>
         <thead><tr><th>Monitor</th><th>Failing runs flagged</th><th>Median alarm step</th><th>False alarms</th><th>Alarms that were right*</th></tr></thead>
         <tbody>$mon_rows</tbody>
       </table></div>
       <p class="note">* At the natural share of resolved runs among runs that last 20 steps ($natural). False alarms are the share of resolved runs flagged.</p>
-      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: $a_only only by A, $s_only only by the signals monitor, and $both by both. Part of A's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The run in the teaser is one where A's alarm rests on behaviour, and A spares the other runs of the same issue.</p>
+      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: $a_only only by $mon_name, $s_only only by the signals baseline, and $both by both. Part of $mon_name's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The run in the teaser is one where $mon_name's alarm rests on behaviour, and $mon_name spares the other runs of the same issue.</p>
       $fig_runs
     </div>
   </section>
 
   <!-- other tasks -->
-  <section class="section">
+  <section class="section light">
     <div class="narrow content">
-      <h2 class="title">A's Other Two Tasks</h2>
-      <p>Besides pass or fail, TSLM&nbsp;A learns to predict how a run will end (one of six endings) and to write a short status report whose last sentence forecasts the rest of the run. Scores on $task_scope, pooled over checkpoints:</p>
+      <h2 class="title">$mon_name's Other Two Tasks</h2>
+      <p>Besides pass or fail, $mon_name learns to predict how a run will end (one of six endings) and to write a short status report whose last sentence forecasts the rest of the run. Scores on $task_scope, pooled over checkpoints:</p>
       <div class="table"><table>
-        <thead><tr><th>Model</th><th>Ending accuracy</th><th>Ending macro-F1</th><th>Report format followed</th><th>Remaining steps, mean (median) error</th><th>Pass/fail balanced accuracy</th></tr></thead>
+        <thead><tr><th>Model</th><th>Ending<br>accuracy</th><th>Ending<br>macro-F1</th><th>Report<br>format ok</th><th>Steps-left error<br>mean (median)</th><th>Pass/fail<br>bal. accuracy</th></tr></thead>
         <tbody>$task_rows</tbody>
       </table></div>
       <p class="note">The majority baseline always predicts the most common ending, the median remaining steps, and "will not resolve".</p>
-      <p style="margin-top:1.2rem">A is about level with the CPU signals model on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the CPU signals model.</p>
+      <p style="margin-top:1.2rem">$mon_name is about level with the signals baseline on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the signals baseline.</p>
     </div>
   </section>
 
   <!-- limitations -->
-  <section class="section light">
+  <section class="section">
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
-        <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, gradient-boosted trees and logistic regression still score above each TSLM. TSLM&nbsp;$label_a comes closest: within $gap_lo&ndash;$gap_hi AUROC at $early steps, a gap that is not statistically significant.</li>
-        <li><strong>The two monitors are complementary, but not additive yet.</strong> TSLM&nbsp;A and the CPU signals monitor flag mostly different failing runs, yet a simple average of their scores did not improve accuracy.</li>
-        <li><strong>How much A uses the ECG is still open.</strong> A test that shuffles A's series between runs is planned. TSLM&nbsp;$label_c, which reads only the ECG, scores above chance.</li>
-        <li><strong>Late checkpoints have few test runs.</strong> Differences under about 0.05 AUROC on a single split should be read with care; the intervals in the chart show how wide they are.</li>
+        <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, the classical baselines still score above each TSLM. $label_a comes closest: within $gap_lo&ndash;$gap_hi AUROC at $early steps, a gap that is not statistically significant.</li>
+        <li><strong>How much $label_a uses the ECG is still open.</strong> A test that shuffles its series between runs is planned. $label_c, which reads only the ECG, scores above chance.</li>
       </ul>
     </div>
   </section>
 
   <!-- training -->
-  <section class="section">
+  <section class="section light">
     <div class="container content">
       <h2 class="title">Training</h2>
-      <p>All three models are OpenTSLM-SP on <code>$llm</code>, fine-tuned from <code>$base</code> on one $gpu each. $label_c reads the ECG only, $label_b reads the agent's thoughts and the ECG, and $label_a reads the issue, the thoughts and the ECG and learns three tasks: pass or fail, how the run will end, and a short status report. Training took $h_c&nbsp;h (C), $h_b&nbsp;h (B) and $h_a&nbsp;h (A), $gpu_hours GPU-hours in all. OpenTSLM's eager attention ran out of memory on A's long prompts; switching to PyTorch SDPA (the same math) made A fit and cut its training time by more than half.</p>
+      <p>Each model was fine-tuned on one $gpu. Training took $h_c&nbsp;h ($label_c), $h_b&nbsp;h ($label_b) and $h_a&nbsp;h ($label_a), $gpu_hours GPU-hours in all. OpenTSLM's eager attention ran out of memory on $label_a's long prompts; switching to PyTorch SDPA (the same math) made it fit and cut its training time by more than half.</p>
       $fig_training
     </div>
   </section>
 
   <!-- BibTeX -->
-  <section class="section light" id="BibTeX">
+  <section class="section" id="BibTeX">
     <div class="narrow">
       <div class="bibtex-header">
         <h2 class="title">BibTeX</h2>
@@ -290,10 +307,13 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
       </div>
 <pre id="bibtex-code"><code>@misc{guerel2026agentecg,
   title  = {Agent ECG: Warning Early When a Coding Agent Is Going to Fail},
-  author = {G{\"u}rel, Bar{\i}{\c{s}} and Lohscheller, Maximilian and Mellal, Ziyad and Ritter Vidal, Etienne},
+  author = {G{\"u}rel, Bar{\i}{\c{s}} and Lohscheller, Maximilian and
+            Mellal, Ziyad and Ritter Vidal, Etienne},
   year   = {2026},
   note   = {TimeNet Hackathon, Round 1. Dataset: OpenTSLM/TimeNet\#832}
 }</code></pre>
+      <h3>References</h3>
+      <p class="reference">Langer, P., Kaar, T., Rosenblattl, M., Xu, M.&nbsp;A., et al. (2025). OpenTSLM: Time-Series Language Models for Reasoning over Multivariate Medical Text- and Time-Series Data. <a href="https://arxiv.org/abs/2510.02410" target="_blank" rel="noopener">arXiv:2510.02410</a>.</p>
     </div>
   </section>
 </main>

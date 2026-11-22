@@ -1,5 +1,7 @@
 import json
 
+import pytest
+
 from agent_ecg import demo
 from agent_ecg.demo import RawRun, Step, braille, heartbeat, outcome, parse_steps
 
@@ -82,3 +84,21 @@ def test_replay_files_load_by_run_and_step(tmp_path) -> None:
     path = tmp_path / "r.jsonl"
     path.write_text("\n".join(json.dumps({"run_id": "a", "step": k, "state": "stable"}) for k in (5, 6)) + "\n")
     assert list(demo.load_replay(path)["a"]) == [5, 6]
+
+
+def test_typical_failure_counts_validation_runs_still_going(tmp_path):
+    import pandas as pd
+
+    table = tmp_path / "checkpoints.parquet"
+    pd.DataFrame(
+        {
+            "split": ["validation"] * 4 + ["train"],
+            "k": [5, 5, 5, 10, 5],
+            "remaining": [3, 20, 30, 25, 40],  # runs of 8, 25 and 35 steps; the k=10 row repeats the second run
+            "resolved": [True, False, True, False, False],
+        }
+    ).to_parquet(table)
+    assert demo.typical_failure(6, table) == pytest.approx(1 / 3)  # all three validation runs still going, one fails
+    assert demo.typical_failure(10, table) == pytest.approx(0.5)  # the 8-step run has ended
+    assert demo.typical_failure(40, table) is None  # no validation run lasts that long
+    assert demo.typical_failure(6, tmp_path / "missing.parquet") is None

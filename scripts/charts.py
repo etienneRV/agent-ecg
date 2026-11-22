@@ -37,6 +37,10 @@ RESOLVED = "train-00000-of-00012:1738"
 STEPS = (5, 10, 15, 20, 30)
 
 W, H, DPI = 16, 9, 120  # 1920 x 1080
+# Website versions (figures/site/): no built-in title, subtitle or footer (the page has its own headings and
+# captions), cropped to the content, and a taller hero so its 19 row labels can be bigger.
+BARE = False
+HERO_H = 11
 
 
 # ---------------------------------------------------------------- theme
@@ -129,8 +133,10 @@ def setup(t: Theme) -> None:
     )
 
 
-def figure(t: Theme, title: str, subtitle: str = "") -> plt.Figure:
-    fig = plt.figure(figsize=(W, H), dpi=DPI)
+def figure(t: Theme, title: str, subtitle: str = "", height: float = H) -> plt.Figure:
+    fig = plt.figure(figsize=(W, height), dpi=DPI)
+    if BARE:
+        return fig
     fig.text(0.05, 0.935, title, fontsize=SIZE["title"], fontweight="bold", color=t.ink, va="baseline")
     if subtitle:
         fig.text(0.05, 0.89, subtitle, fontsize=SIZE["subtitle"], color=t.ink2, va="baseline")
@@ -138,6 +144,8 @@ def figure(t: Theme, title: str, subtitle: str = "") -> plt.Figure:
 
 
 def footer(fig: plt.Figure, t: Theme, text: str) -> None:
+    if BARE:
+        return
     fig.text(0.05, 0.022, text, fontsize=SIZE["note"], color=t.muted, va="bottom")
 
 
@@ -150,6 +158,11 @@ def style_axis(ax: plt.Axes, t: Theme) -> None:
 
 def save(fig: plt.Figure, out: Path, name: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
+    if BARE:
+        fig.savefig(out / f"{name}.svg", metadata={"Date": None}, bbox_inches="tight", pad_inches=0.15)
+        plt.close(fig)
+        print(f"  {out.relative_to(ROOT) / name}.svg")
+        return
     fig.savefig(out / f"{name}.png", dpi=DPI)
     fig.savefig(out / f"{name}.svg", metadata={"Date": None})  # no timestamp: reruns give the same file
     plt.close(fig)
@@ -237,6 +250,10 @@ def model_auroc(path: Path) -> dict[int, tuple[float, float, float]]:
 
 
 RUNS_FILE = ROOT / "figures" / "runs.json"
+# The live-monitor scan (results/opentslm/scan) and A's full-test report were made with run A (full-multi),
+# whatever figures/runs.json says, so the monitor charts name that model directly.
+MONITOR_MODEL = "ECG-Full"
+SIGNALS_BASELINE = "Signals baseline"
 
 
 def _runs() -> dict[str, dict]:
@@ -394,6 +411,7 @@ def hero_ecg(t: Theme, out: Path) -> None:
         t,
         "Agent ECG: a coding agent's run, read step by step",
         f"{row['instance_id']} · {n} steps · the run {outcome}. Top: monitor health. Bottom: the 19 series the model reads.",
+        height=HERO_H if BARE else H,
     )
     left, right = 0.17, 0.92
     ax = fig.add_axes([left, 0.565, right - left, 0.265])
@@ -422,9 +440,9 @@ def hero_ecg(t: Theme, out: Path) -> None:
         left,
         0.855,
         [
-            ("TSLM A (issue + thoughts + ECG)", {"segments": [t.stable, t.watch, t.low, t.critical]}),
+            (f"{MONITOR_MODEL} (issue + thoughts + ECG)", {"segments": [t.stable, t.watch, t.low, t.critical]}),
             (
-                "CPU signals monitor" + ("" if alarm_step(s) else ": no alarm"),
+                SIGNALS_BASELINE + ("" if alarm_step(s) else ": no alarm"),
                 {"color": t.cpu, "lw": 2, "ls": (0, (5, 3))},
             ),
         ],
@@ -455,7 +473,7 @@ def hero_ecg(t: Theme, out: Path) -> None:
             transform=lx.get_yaxis_transform(),
             ha="right",
             va="center",
-            fontsize=SIZE["note"] - 1,
+            fontsize=SIZE["small"] if BARE else SIZE["note"] - 1,
             color=t.ink2,
         )
     for b in (3.5, 4.5, 9.5, 14.5, 15.5):  # lengths | repeat | actions | replies | same file | targets
@@ -520,7 +538,7 @@ def failing_vs_resolved(t: Theme, out: Path) -> None:
         ax.text(
             1,
             1.06,
-            f"{say('TSLM A', sa, a)}  ·  {say('CPU signals', ss, s)}",
+            f"{say(MONITOR_MODEL, sa, a)}  ·  {say(SIGNALS_BASELINE, ss, s)}",
             transform=ax.transAxes,
             fontsize=SIZE["small"],
             color=t.ink2,
@@ -546,8 +564,8 @@ def failing_vs_resolved(t: Theme, out: Path) -> None:
         left,
         0.84,
         [
-            ("TSLM A, coloured by state", {"segments": [t.stable, t.watch, t.low, t.critical]}),
-            ("CPU signals monitor", {"color": t.cpu, "lw": 2, "ls": (0, (5, 3))}),
+            (f"{MONITOR_MODEL}, coloured by state", {"segments": [t.stable, t.watch, t.low, t.critical]}),
+            (SIGNALS_BASELINE, {"color": t.cpu, "lw": 2, "ls": (0, (5, 3))}),
         ],
     )
     footer(
@@ -566,23 +584,23 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         for n in ("signals", "signals_thoughts", "issue_signals_thoughts", "issue")
     }
     pairs = [
-        ("C", "ECG only", "signals", "CPU signals"),
-        ("B", "thoughts + ECG", "signals_thoughts", "CPU signals + thoughts"),
-        ("A", "issue + thoughts + ECG", "issue_signals_thoughts", "CPU issue + signals + thoughts"),
+        ("C", "ECG only", "signals", "signals baseline"),
+        ("B", "thoughts + ECG", "signals_thoughts", "signals + thoughts baseline"),
+        ("A", "issue + thoughts + ECG", "issue_signals_thoughts", "issue + signals + thoughts baseline"),
     ]
     early = [k for k in STEPS if k <= 20]
     gaps = [cpu["issue_signals_thoughts"][k][0] - tslm["A"][k][0] for k in early]
     all_below = all(tslm[m][k][0] < cpu[c][k][0] for m, _, c, _ in pairs for k in STEPS)
     sub = (
-        "Each TSLM stays below the CPU model with the same inputs; " if all_below else ""
+        "Each TSLM stays below the baseline with the same inputs; " if all_below else ""
     ) + f"{names['A']} comes within {min(gaps):.2f}-{max(gaps):.2f} ({early[0]}-{early[-1]} steps)."
     fig = figure(t, "Predicting pass / fail from the first steps (test AUROC)", sub)
     lo = min(min(v[0] for v in m.values()) for m in [*tslm.values(), *cpu.values()])
     hi = max(max(v[0] for v in m.values()) for m in [*tslm.values(), *cpu.values()])
     ylim = (min(0.47, lo - 0.03), max(0.76, hi + 0.03))
-    pw, gap, left = 0.235, 0.075, 0.075
+    pw, gap, left = 0.22, 0.095, 0.075
     for i, (m, reads, c, cname) in enumerate(pairs):
-        ax = fig.add_axes([left + i * (pw + gap), 0.16, pw, 0.53])
+        ax = fig.add_axes([left + i * (pw + gap), 0.16, pw, 0.495])
         style_axis(ax, t)
         ax.axhline(0.5, color=t.muted, lw=1.2, ls=(0, (1, 3)))
         ax.text(STEPS[-1], 0.5 + 0.004, "chance", color=t.muted, fontsize=SIZE["note"], ha="right", va="bottom")
@@ -606,8 +624,8 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         ax.set_axisbelow(True)
         ax.text(
             0,
-            1.1,
-            f"{names[m]}  ·  {reads}",
+            1.205,
+            f"{names[m]}",
             transform=ax.transAxes,
             fontsize=SIZE["label"],
             fontweight="bold",
@@ -615,17 +633,18 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         )
         ax.text(
             0,
-            1.035,
-            f"TSLM {names[m]} vs {cname}",
+            1.03,
+            f"reads {reads}\nvs {cname}",
             transform=ax.transAxes,
             fontsize=SIZE["small"],
             color=t.ink2,
             va="bottom",
+            linespacing=1.3,
         )
         # direct labels at the right end, nudged apart
         ends = {
-            "TSLM " + names[m]: (tslm[m][STEPS[-1]][0], t.tslm),
-            "CPU": (cpu[c][STEPS[-1]][0], t.cpu),
+            names[m]: (tslm[m][STEPS[-1]][0], t.tslm),
+            "baseline": (cpu[c][STEPS[-1]][0], t.cpu),
             "issue only": (iss[-1], t.muted),
         }
         placed: list[float] = []
@@ -653,8 +672,8 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         0.835,
         [
             ("TSLM (OpenTSLM, Llama 3.2 1B)", {"color": t.tslm, "lw": 3.4, "marker": "o", "ms": 7}),
-            ("CPU model, same inputs", {"color": t.cpu, "lw": 2.6, "marker": "o", "ms": 7}),
-            ("CPU issue text only", {"color": t.muted, "lw": 1.6, "ls": (0, (6, 4))}),
+            ("Baseline, same inputs", {"color": t.cpu, "lw": 2.6, "marker": "o", "ms": 7}),
+            ("Issue-only baseline", {"color": t.muted, "lw": 1.6, "ls": (0, (6, 4))}),
         ],
     )
     test = pd.read_parquet(CHECKPOINTS, columns=["run_id", "repository", "split"]).query("split == 'test'")
@@ -691,7 +710,7 @@ def monitor_numbers(t: Theme, out: Path) -> None:
             "median alarm step",
             f"{a['median_step']}",
             f"{s['median_step']}",
-            "part of A's head start comes from the issue",
+            "head start partly from the issue",
         ),
     ]
     x0, cw, ch, gap = 0.05, 0.44, 0.205, 0.035
@@ -711,9 +730,9 @@ def monitor_numbers(t: Theme, out: Path) -> None:
         )
         fig.text(x0 + 0.02, y + ch - 0.04, label, fontsize=SIZE["label"], fontweight="bold", color=t.ink, va="center")
         fig.text(x0 + 0.02, y + 0.075, va, fontsize=SIZE["big"] * 0.85, fontweight="bold", color=t.tslm, va="center")
-        fig.text(x0 + 0.02, y + 0.025, "TSLM A", fontsize=SIZE["small"], color=t.ink2, va="center")
+        fig.text(x0 + 0.02, y + 0.025, MONITOR_MODEL, fontsize=SIZE["small"], color=t.ink2, va="center")
         fig.text(x0 + 0.22, y + 0.075, vs, fontsize=SIZE["big"] * 0.85, fontweight="bold", color=t.cpu, va="center")
-        fig.text(x0 + 0.22, y + 0.025, "CPU signals", fontsize=SIZE["small"], color=t.ink2, va="center")
+        fig.text(x0 + 0.22, y + 0.025, SIGNALS_BASELINE, fontsize=SIZE["small"], color=t.ink2, va="center")
         fig.text(x0 + cw - 0.02, y + ch - 0.04, note, fontsize=SIZE["note"], color=t.muted, va="center", ha="right")
     # Venn
     ax = fig.add_axes([0.53, 0.1, 0.43, 0.74])
@@ -734,7 +753,7 @@ def monitor_numbers(t: Theme, out: Path) -> None:
         ha="center",
         va="center",
     )
-    ax.text(-d - 0.48, -0.35, "A only", fontsize=SIZE["small"], color=t.ink2, ha="center", va="center")
+    ax.text(-d - 0.48, -0.35, f"{MONITOR_MODEL} only", fontsize=SIZE["small"], color=t.ink2, ha="center", va="center")
     ax.text(
         0, 0.08, f"{m['both']}", fontsize=SIZE["big"] * 0.75, fontweight="bold", color=t.ink, ha="center", va="center"
     )
@@ -750,9 +769,11 @@ def monitor_numbers(t: Theme, out: Path) -> None:
         va="center",
     )
     ax.text(d + 0.48, -0.35, "signals only", fontsize=SIZE["small"], color=t.ink2, ha="center", va="center")
-    ax.text(-d, r + 0.16, "TSLM A", fontsize=SIZE["label"], fontweight="bold", color=t.tslm, ha="center", va="bottom")
     ax.text(
-        d, r + 0.16, "CPU signals", fontsize=SIZE["label"], fontweight="bold", color=t.cpu, ha="center", va="bottom"
+        -d, r + 0.16, MONITOR_MODEL, fontsize=SIZE["label"], fontweight="bold", color=t.tslm, ha="center", va="bottom"
+    )
+    ax.text(
+        d, r + 0.16, SIGNALS_BASELINE, fontsize=SIZE["label"], fontweight="bold", color=t.cpu, ha="center", va="bottom"
     )
     ax.text(
         0,
@@ -767,7 +788,7 @@ def monitor_numbers(t: Theme, out: Path) -> None:
     ax.text(
         0,
         -r - 0.22,
-        "They catch mostly different runs,\nyet averaging the two models adds no accuracy.",
+        "They catch mostly different runs.",
         fontsize=SIZE["small"],
         color=t.ink2,
         ha="center",
@@ -777,7 +798,7 @@ def monitor_numbers(t: Theme, out: Path) -> None:
     footer(
         fig,
         t,
-        "Source: results/opentslm/scan/summary.md (replays: opentslm/scan_summary.py); combination: results/ensemble/.",
+        "Source: results/opentslm/scan/summary.md (replays: opentslm/scan_summary.py).",
     )
     save(fig, out, "monitor_numbers")
 
@@ -820,7 +841,7 @@ def training_curves(t: Theme, out: Path) -> None:
         ax.text(
             1.01,
             y,
-            f"TSLM {tslm_labels()[k]}\n{reads[k]}",
+            f"{tslm_labels()[k]}\n{reads[k]}",
             transform=ax.get_yaxis_transform(),
             fontsize=SIZE["small"],
             color=t.ink2,
@@ -876,6 +897,11 @@ def main() -> None:
         for chart in CHARTS:
             chart(t, out)
         if t.name == "light":
+            global BARE
+            BARE = True
+            for chart in CHARTS:
+                chart(t, ROOT / "figures" / "site")
+            BARE = False
             social_preview(t)
 
 

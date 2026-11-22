@@ -16,6 +16,7 @@ It is a replay of a recorded run, not a live one, and the header says so.
 
 from __future__ import annotations
 
+import functools
 import io
 import json
 import re
@@ -46,6 +47,24 @@ STYLES = {"stable": "green", "watch": "yellow", "low": "dark_orange", "critical"
 _DOTS = ((0x01, 0x08), (0x02, 0x10), (0x04, 0x20), (0x40, 0x80))  # braille dot bits by [row][column]
 _BEAT = (0, 0, 0.06, 0.1, 0.06, 0, 0, -0.12, 1.0, -0.35, 0, 0, 0.12, 0.2, 0.12, 0, 0, 0)  # P wave, QRS, T wave
 _AGENT_STEPS = 3
+CHECKPOINTS_TABLE = Path("data/checkpoints.parquet")
+
+
+@functools.cache
+def typical_failure(step: int, table: Path = CHECKPOINTS_TABLE) -> float | None:
+    """The share of validation runs still going after ``step`` steps that fail; None without the data table.
+
+    Health compares a run with runs of the same age, so the demo shows this next to the run's own chance of
+    failure: at step 30, 96 % of the runs still going fail anyway, and 97 % there is no reason for alarm.
+    """
+    if not table.exists():
+        return None
+    import pandas as pd
+
+    t = pd.read_parquet(table, columns=["split", "k", "remaining", "resolved"])
+    first = t[(t["split"] == "validation") & (t["k"] == t["k"].min())]  # every run that reaches a checkpoint
+    going = first[first["k"] + first["remaining"] > step]
+    return float(1 - going["resolved"].mean()) if len(going) else None
 
 
 @dataclass(frozen=True)
@@ -217,7 +236,13 @@ def _step_text(index: int, step: Step, current: bool, width: int) -> Text:
 
 
 def frame(
-    run: RawRun, monitor: Mapping[int, Mapping], step: int, width: int = 150, height: int = 44, end: bool = False
+    run: RawRun,
+    monitor: Mapping[int, Mapping],
+    step: int,
+    width: int = 150,
+    height: int = 44,
+    end: bool = False,
+    chance: bool = True,
 ) -> Layout:
     """The screen at ``step``: the agent's latest steps on the left, the monitor on the right."""
     entry = monitor.get(step)
@@ -256,7 +281,12 @@ def frame(
     else:
         status.append(f"HEALTH {entry['health']:>3}", style=f"{style} bold")
         status.append("  /100\n", style="grey62")
-        status.append(f"chance of failure {1 - entry['p_calibrated']:.0%}\n", style="bold")
+        if chance:
+            status.append(f"chance of failure {1 - entry['p_calibrated']:.0%}", style="bold")
+            typical = typical_failure(step)
+            if typical is not None:
+                status.append(f"  (runs this far in: {typical:.0%})", style="grey62")
+            status.append("\n")
         status.append(f"state  {state.upper()}\n", style=style)
         if entry.get("events"):
             status.append("this step: " + ", ".join(entry["events"]) + "\n", style="grey70")
@@ -271,25 +301,35 @@ def frame(
     return layout
 
 
-def play(run: RawRun, monitor: Mapping[int, Mapping], pace: float = 2.0, console: Console | None = None) -> None:
+def play(
+    run: RawRun, monitor: Mapping[int, Mapping], pace: float = 2.0, console: Console | None = None, chance: bool = True
+) -> None:
     """Play the run full screen, one step every ``pace`` seconds, then leave the end card on screen."""
     console = console or Console()
     last = max(monitor)
     with Live(console=console, screen=True, auto_refresh=False) as live:
         for step in range(1, last + 1):
-            live.update(frame(run, monitor, step, console.width, console.height), refresh=True)
+            live.update(frame(run, monitor, step, console.width, console.height, chance=chance), refresh=True)
             time.sleep(pace)
-        live.update(frame(run, monitor, last, console.width, console.height, end=True), refresh=True)
+        live.update(frame(run, monitor, last, console.width, console.height, end=True, chance=chance), refresh=True)
         time.sleep(max(3.0, 2 * pace))
-    console.print(frame(run, monitor, last, console.width, console.height, end=True), height=console.height)
+    console.print(
+        frame(run, monitor, last, console.width, console.height, end=True, chance=chance), height=console.height
+    )
 
 
 def render(
-    run: RawRun, monitor: Mapping[int, Mapping], step: int, svg: Path | None = None, width: int = 150, height: int = 44
+    run: RawRun,
+    monitor: Mapping[int, Mapping],
+    step: int,
+    svg: Path | None = None,
+    width: int = 150,
+    height: int = 44,
+    chance: bool = True,
 ) -> str:
     """One frame as plain text, and optionally as an SVG image (for a post or the README)."""
     console = Console(record=True, width=width, height=height, file=io.StringIO(), force_terminal=True)
-    console.print(frame(run, monitor, step, width, height, end=step == max(monitor)), height=height)
+    console.print(frame(run, monitor, step, width, height, end=step == max(monitor), chance=chance), height=height)
     if svg is not None:
         console.save_svg(str(svg), title="Agent ECG", clear=False)
     return console.export_text()
