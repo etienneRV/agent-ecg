@@ -1,7 +1,7 @@
 """Build the project website (site/index.html) from the result files and the charts.
 
     uv run python scripts/charts.py --theme both   # first: the figures
-    uv run python scripts/site.py                   # then: site/index.html + site/figures/
+    uv run python scripts/site.py                   # then: site/index.html
 
 Every number on the page is read from results/ or data/checkpoints.parquet; rerun after they change.
 """
@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import re
-import shutil
 import sys
 from pathlib import Path
 from string import Template
@@ -255,7 +254,7 @@ def second_round() -> dict:
 
 
 def main() -> None:
-    missing = [n for n in FIGS if not (ROOT / "figures" / "site" / f"{n}.svg").exists()]
+    missing = [n for n in FIGS if not (SITE / "figures" / f"{n}.svg").exists()]
     if missing:
         raise SystemExit("figures missing; run: uv run python scripts/charts.py --theme both")
     values = {
@@ -299,15 +298,6 @@ def main() -> None:
     )
     values["site_url"] = SITE_URL
     html = Template((Path(__file__).parent / "site_template.html").read_text()).substitute(values)
-    shutil.rmtree(SITE / "figures", ignore_errors=True)
-    (SITE / "figures").mkdir(parents=True)
-    for n in FIGS:
-        svg = (ROOT / "figures" / "site" / f"{n}.svg").read_text()
-        # web hosts refuse SVGs with a DOCTYPE; matplotlib writes one we do not need
-        (SITE / "figures" / f"{n}.svg").write_text(re.sub(r"<!DOCTYPE[^>]*>\s*", "", svg))
-    preview = ROOT / "figures" / "social_preview.png"
-    if preview.exists():
-        shutil.copy(preview, SITE / "social_preview.png")
     # GitHub Pages serves site/index.html as is, so it gets the full document around the template;
     # the claude.ai preview adds that wrapper itself, so it gets the bare template (build/, git-ignored).
     head, sep, body = html.partition("</style>\n")
