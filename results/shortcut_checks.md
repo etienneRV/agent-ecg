@@ -13,11 +13,11 @@ an AUROC of 0.48-0.52 for the three TSLM runs. Test predictions: `results/opents
 | ecg (TSLM) | 0.583 / 0.611 / 0.616 / 0.620 / 0.615 | 0.586 / 0.613 / 0.617 / 0.618 / 0.614 |
 | ecg-thought (TSLM) | 0.624 / 0.638 / 0.643 / 0.647 / 0.596 | 0.619 / 0.630 / 0.634 / 0.640 / 0.599 |
 | ecg-full (TSLM) | 0.657 / 0.677 / 0.684 / 0.679 / 0.624 | 0.652 / 0.668 / 0.675 / 0.670 / 0.629 |
-| signals (benchmark) | 0.611 / 0.645 / 0.674 / 0.712 / 0.728 | 0.613 / 0.644 / 0.668 / 0.704 / 0.726 |
-| thoughts (benchmark) | 0.680 / 0.703 / 0.710 / 0.701 / 0.701 | 0.678 / 0.702 / 0.706 / 0.695 / 0.696 |
-| signals+thoughts (benchmark) | 0.672 / 0.692 / 0.710 / 0.712 / 0.699 | 0.671 / 0.688 / 0.703 / 0.700 / 0.691 |
-| issue+signals+thoughts (benchmark) | 0.691 / 0.709 / 0.720 / 0.719 / 0.701 | 0.692 / 0.707 / 0.713 / 0.708 / 0.691 |
-| issue (benchmark) | 0.613 / 0.619 / 0.612 / 0.616 / 0.614 | 0.613 / 0.620 / 0.611 / 0.614 / 0.609 |
+| signals (baseline) | 0.611 / 0.645 / 0.674 / 0.712 / 0.728 | 0.613 / 0.644 / 0.668 / 0.704 / 0.726 |
+| thoughts (baseline) | 0.680 / 0.703 / 0.710 / 0.701 / 0.701 | 0.678 / 0.702 / 0.706 / 0.695 / 0.696 |
+| signals+thoughts (baseline) | 0.672 / 0.692 / 0.710 / 0.712 / 0.699 | 0.671 / 0.688 / 0.703 / 0.700 / 0.691 |
+| issue+signals+thoughts (baseline) | 0.691 / 0.709 / 0.720 / 0.719 / 0.701 | 0.692 / 0.707 / 0.713 / 0.708 / 0.691 |
+| issue (baseline) | 0.613 / 0.619 / 0.612 / 0.616 / 0.614 | 0.613 / 0.620 / 0.611 / 0.614 / 0.609 |
 
 With 93 % of runs from one agent, this rules out inflation here; it says nothing about transfer to a
 different agent or scaffold.

@@ -234,7 +234,7 @@ def main() -> None:
     prepare.add_argument("--release", type=Path, help="use an already built release directory instead")
     prepare.set_defaults(run=_prepare)
 
-    run = commands.add_parser("baselines", help="fit the benchmarks and score them, or cross-validate them")
+    run = commands.add_parser("baselines", help="fit the baselines and score them, or cross-validate them")
     run.add_argument("--split", default="test", choices=("validation", "test"))
     run.add_argument(
         "--cv", type=int, metavar="FOLDS", help="instead, repository cross-validation over all checkpoints"

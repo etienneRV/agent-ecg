@@ -117,7 +117,7 @@ td.reads { font-family: var(--sans); color: var(--muted); }
 td.best { font-weight: 600; color: var(--fg); background: var(--code-bg); }
 tr.tslm th { color: var(--primary); }
 .tag { font: 600 0.66rem/1 var(--mono); letter-spacing: 0.06em; padding: 0.2rem 0.35rem; border-radius: 4px; border: 1px solid currentColor; margin-right: 0.35rem; vertical-align: 2px; }
-tr.benchmark .tag { color: var(--cpu); }
+tr.baseline .tag { color: var(--cpu); }
 .note { font-size: 0.88rem; color: var(--muted); margin-top: 0.6rem; }
 
 /* BibTeX */
@@ -174,12 +174,12 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section light">
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
-      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of $n_ckpt checkpoints from $n_runs SWE-agent runs, where each checkpoint holds the first $k_first to $k_last steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical benchmark that reads exactly the same inputs, on $test_runs runs from $test_repos repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within $gap_lo&ndash;$gap_hi AUROC of the best benchmark, though every TSLM stays below the benchmark with the same inputs. Replayed as a live monitor on $mon_total unseen runs, the alarms of our full model are right $a_right of the time and fire at a median step of $a_median.</p>
+      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of $n_ckpt checkpoints from $n_runs SWE-agent runs, where each checkpoint holds the first $k_first to $k_last steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on $test_runs runs from $test_repos repositories never seen in training. The behaviour signal grows over the run, and the best TSLM comes within $gap_lo&ndash;$gap_hi AUROC of the best baseline, though every TSLM stays below the baseline with the same inputs. Replayed as a live monitor on $mon_total unseen runs, the alarms of our full model are right $a_right of the time and fire at a median step of $a_median.</p>
       <div class="stats">
         <div class="stat"><b>$n_runs</b><span>SWE-agent runs on real GitHub issues</span></div>
         <div class="stat"><b>$fail_first</b><span>of runs still going at step $k_first fail ($fail_last at step $k_last)</span></div>
         <div class="stat tslm"><b>$a_right</b><span>of $mon_name's alarms were right</span></div>
-        <div class="stat alarm"><b>step $a_median</b><span>median alarm (signals benchmark: step $s_median)</span></div>
+        <div class="stat alarm"><b>step $a_median</b><span>median alarm (signals baseline: step $s_median)</span></div>
       </div>
     </div>
   </section>
@@ -233,7 +233,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section light">
     <div class="container content">
       <h2 class="title">Predicting Pass or Fail from the First Steps</h2>
-      <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical benchmark that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
+      <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
       $fig_auroc
       <div class="table"><table>
         <thead><tr><th>Model</th><th>Reads</th>$auroc_head</tr></thead>
@@ -241,9 +241,9 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
       </table></div>
       <p class="note">Column headers are the number of steps seen. The shaded cell is the best score at that step.</p>
       <ul class="findings">
-        <li><strong>The behaviour signal grows over the run.</strong> The signals benchmark climbs from $sig_first at $k_first steps to $sig_last at $k_last. A model that reads only the issue text stays flat between $iss_lo and $iss_hi.</li>
-        <li class="tslm"><strong>$label_a comes within $gap_lo&ndash;$gap_hi of the best benchmark</strong> at $early steps. The gap is not significant there (paired bootstrap over test repositories).</li>
-        <li><strong>Each TSLM scores below the benchmark with the same inputs.</strong> $label_c, which reads only the series, stays between $c_lo and $c_hi, about the level of the issue-only model.</li>
+        <li><strong>The behaviour signal grows over the run.</strong> The signals baseline climbs from $sig_first at $k_first steps to $sig_last at $k_last. A model that reads only the issue text stays flat between $iss_lo and $iss_hi.</li>
+        <li class="tslm"><strong>$label_a comes within $gap_lo&ndash;$gap_hi of the best baseline</strong> at $early steps. The gap is not significant there (paired bootstrap over test repositories).</li>
+        <li><strong>Each TSLM scores below the baseline with the same inputs.</strong> $label_c, which reads only the series, stays between $c_lo and $c_hi, about the level of the issue-only model.</li>
       </ul>
     </div>
   </section>
@@ -252,14 +252,14 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="section">
     <div class="container content">
       <h2 class="title">As a Live Monitor</h2>
-      <p>A <strong>monitor</strong> sits on top of a model and turns its prediction at every step into something an operator can act on: a health score from 0 to 100 that compares the run with runs of the same age, a state (stable, watch, low, critical), and an alarm after $hold critical steps in a row. We replayed $mon_total unseen test runs step by step through two monitors: one on $mon_name, and one on the signals benchmark. The runs were all $mon_resolved resolved test runs with at least 20 steps, plus $mon_failing random failing ones; neither monitor chose them.</p>
+      <p>A <strong>monitor</strong> sits on top of a model and turns its prediction at every step into something an operator can act on: a health score from 0 to 100 that compares the run with runs of the same age, a state (stable, watch, low, critical), and an alarm after $hold critical steps in a row. We replayed $mon_total unseen test runs step by step through two monitors: one on $mon_name, and one on the signals baseline. The runs were all $mon_resolved resolved test runs with at least 20 steps, plus $mon_failing random failing ones; neither monitor chose them.</p>
       $fig_monitor
       <div class="table"><table>
         <thead><tr><th>Monitor</th><th>Failing runs flagged</th><th>Median alarm step</th><th>False alarms</th><th>Alarms that were right*</th></tr></thead>
         <tbody>$mon_rows</tbody>
       </table></div>
       <p class="note">* At the natural share of resolved runs among runs that last 20 steps ($natural). False alarms are the share of resolved runs flagged.</p>
-      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: $a_only only by $mon_name, $s_only only by the signals benchmark, and $both by both. Part of $mon_name's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The run in the teaser is one where $mon_name's alarm rests on behaviour, and $mon_name spares the other runs of the same issue.</p>
+      <p style="margin-top:1.2rem">The two monitors flag mostly different runs: $a_only only by $mon_name, $s_only only by the signals baseline, and $both by both. Part of $mon_name's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The run in the teaser is one where $mon_name's alarm rests on behaviour, and $mon_name spares the other runs of the same issue.</p>
       $fig_runs
     </div>
   </section>
@@ -273,8 +273,8 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
         <thead><tr><th>Model</th><th>Ending<br>accuracy</th><th>Ending<br>macro-F1</th><th>Report<br>format ok</th><th>Steps-left error<br>mean (median)</th><th>Pass/fail<br>bal. accuracy</th></tr></thead>
         <tbody>$task_rows</tbody>
       </table></div>
-      <p class="note">The majority benchmark always predicts the most common ending, the median remaining steps, and "will not resolve".</p>
-      <p style="margin-top:1.2rem">$mon_name is about level with the signals benchmark on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the signals benchmark.</p>
+      <p class="note">The majority baseline always predicts the most common ending, the median remaining steps, and "will not resolve".</p>
+      <p style="margin-top:1.2rem">$mon_name is about level with the signals baseline on the ending and writes reports in the right format almost every time. Its forecast is weaker: its remaining-steps error and its pass/fail call in the report both trail the signals baseline.</p>
     </div>
   </section>
 
@@ -283,7 +283,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
-        <li><strong>Classical benchmarks are strong on this task.</strong> With the same inputs, the classical benchmarks still score above each TSLM. $label_a comes closest: within $gap_lo&ndash;$gap_hi AUROC at $early steps, a gap that is not statistically significant.</li>
+        <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, the classical baselines still score above each TSLM. $label_a comes closest: within $gap_lo&ndash;$gap_hi AUROC at $early steps, a gap that is not statistically significant.</li>
         <li><strong>How much $label_a uses the ECG is still open.</strong> A test that shuffles its series between runs is planned. $label_c, which reads only the ECG, scores above chance.</li>
       </ul>
     </div>

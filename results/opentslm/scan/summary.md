@@ -1,4 +1,4 @@
-# Live-monitor scan: ecg-full vs the signals benchmark
+# Live-monitor scan: ecg-full vs the signals baseline
 
 Both monitors replayed the same 600 test runs step by step (step 5 to the run's last visible step), as the
 live monitor would see them: all 239 resolved test runs with at least 20 steps, and 361 random failing ones
@@ -9,7 +9,7 @@ validation runs failed at least 95 % of the time, two steps in a row). Reproduce
 | monitor | failing / resolved runs | failing runs flagged | median alarm step | resolved runs flagged (false alarms) | alarms that were right, at the natural 7.1 % resolved |
 |---|---|---|---|---|---|
 | ecg-full (issue + thoughts + ECG, TSLM) | 361 / 239 | 32.4 % | 6 | 18.4 % | 95.8 % |
-| signals (benchmark) | 361 / 239 | 34.1 % | 9 | 14.6 % | 96.8 % |
+| signals (baseline) | 361 / 239 | 34.1 % | 9 | 14.6 % | 96.8 % |
 
 - **They catch different runs.** Of the failing runs, 51 are flagged by both, 66 only by ecg-full and 72 only by
   the signals monitor. When both flag a run, ecg-full is earlier in 27, the signals monitor in 12, the same step in 12.

@@ -2,7 +2,7 @@
 
 Each variant cuts every checkpoint's thoughts exactly as the OpenTSLM export would (the same tokenizer and,
 for the head + tail variants, ``opentslm_data.Trimmer.thoughts`` itself). A word-count model (the
-thoughts benchmark: hashed word and word-pair counts, TF-IDF, logistic regression with a fixed C) is fitted
+thoughts baseline: hashed word and word-pair counts, TF-IDF, logistic regression with a fixed C) is fitted
 on a fixed sample of training runs and scored on every validation checkpoint. The test split is never read.
 
     uv run python opentslm/thought_window_check.py [--train-runs 8000]

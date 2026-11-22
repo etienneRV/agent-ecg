@@ -115,7 +115,7 @@ run uv run --no-sync python opentslm/predict.py "$R" --split test --tasks outcom
   || { say "test predictions failed"; exit 1; }
 run uv run --no-sync agent-ecg evaluate "$R/predictions.test.parquet" --json "$R/report.test.json"
 
-# 5. The comparisons the decision rule uses: against the original run, and against the benchmark.
+# 5. The comparisons the decision rule uses: against the original run, and against the baseline.
 for OTHER in "$ORIGINAL" "$BASELINE"; do
   OUT="$R/compare_vs_$(basename "$(dirname "$OTHER")")_$(basename "$OTHER" .test.parquet).test.txt"
   if [ "${DRY_RUN:-0}" = 1 ]; then

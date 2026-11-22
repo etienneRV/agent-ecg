@@ -19,7 +19,7 @@ Until #832 is merged, the connector is installed from its PR branch (see `pyproj
 
 ```bash
 uv run agent-ecg prepare      # build the TimeNet release (1.1 GB download, ~5 min) and flatten it into data/
-uv run agent-ecg baselines    # fit the six benchmarks, score them on test, write results/ and data/models/
+uv run agent-ecg baselines    # fit the six baselines, score them on test, write results/ and data/models/
 uv run agent-ecg baselines --cv 5   # repository cross-validation over all checkpoints: steadier AUROCs
 uv run agent-ecg replay --top 3     # the live monitor on test runs, step by step (signals model)
 uv run agent-ecg evaluate my_predictions.parquet          # score any model on test
@@ -165,8 +165,8 @@ src/agent_ecg/
   opentslm_data.py  checkpoints -> OpenTSLM samples (trimming, series, prompts, contexts)
   cli.py         agent-ecg prepare | baselines | evaluate | compare | opentslm-export | replay
 opentslm/        train.py, predict.py, replay.py, common.py (GPU only), and a dataset class for OpenTSLM's own trainer
-tests/           metric, parser, converter, monitor and benchmark tests (uv run pytest)
-results/         benchmark scores (Markdown + JSON)
+tests/           metric, parser, converter, monitor and baseline tests (uv run pytest)
+results/         baseline scores (Markdown + JSON)
 ```
 
 ## Licence
