@@ -299,7 +299,7 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
       <h2 class="title">Limitations</h2>
       <ul class="findings">
         <li><strong>Classical baselines are strong on this task.</strong> With the same inputs, the classical baselines still score above each TSLM. $label_a comes closest: within $gap_lo&ndash;$gap_hi AUROC at $early steps, a gap that is not statistically significant.</li>
-        <li><strong>How much $label_a uses the ECG is still open.</strong> A test that shuffles its series between runs is planned. $label_c, which reads only the ECG, scores above chance.</li>
+        <li><strong>How much $label_a uses the ECG is untested.</strong> We did not run a test that shuffles its series between runs, so we do not claim $label_a relies on the ECG. $label_c, which reads only the ECG, scores above chance.</li>
       </ul>
     </div>
   </section>
