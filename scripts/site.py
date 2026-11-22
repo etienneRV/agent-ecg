@@ -96,6 +96,8 @@ def auroc_table() -> dict:
         "early": f"{early[0]}&ndash;{early[-1]}",
         "sig_first": f"{sig[charts.STEPS[0]][0]:.3f}",
         "sig_last": f"{sig[charts.STEPS[-1]][0]:.3f}",
+        "sig_first2": f"{sig[charts.STEPS[0]][0]:.2f}",
+        "sig_last2": f"{sig[charts.STEPS[-1]][0]:.2f}",
         "c_lo": f"{min(v[0] for v in tslm['C'].values()):.2f}",
         "c_hi": f"{max(v[0] for v in tslm['C'].values()):.2f}",
         "iss_lo": f"{min(v[0] for v in cpu['issue'].values()):.2f}",
@@ -269,7 +271,7 @@ def main() -> None:
     values["fig_hero"] = figure(
         "hero_ecg",
         "Health of one agent run over 30 steps, with the 19 input series below",
-        f"An unseen test run on <code>{values['show_issue']}</code>. {charts.MONITOR_MODEL}'s health falls through watch and low "
+        f"One example, chosen to illustrate: an unseen test run on <code>{values['show_issue']}</code>. {charts.MONITOR_MODEL}'s health falls through watch and low "
         f"while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at "
         f"step {values['show_alarm']}. The run went on to fail (it {values['show_end']}). The signals baseline "
         f"(grey, dashed) {values['show_signals']} on this run. Below it are the 19 series the model reads, one row each.",
