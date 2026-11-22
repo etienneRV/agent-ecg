@@ -1,7 +1,7 @@
 """Presentation charts for the video and the website, read from the result files.
 
-    uv run python scripts/charts.py                 # dark theme  -> figures/*.svg, figures/*.png
-    uv run python scripts/charts.py --theme light   # light theme -> figures/light/
+    uv run python scripts/charts.py                 # dark, for the video -> figures/*.png, figures/*.svg
+    uv run python scripts/charts.py --theme light   # light, for the website -> site/figures/*.svg, site/social_preview.png
     uv run python scripts/charts.py --theme both
 
 Every number is read from results/ (and the showcase run's channels from data/checkpoints.parquet); nothing
@@ -11,6 +11,7 @@ is typed in. Rerun after the result files change. See figures/README.md for what
 from __future__ import annotations
 
 import argparse
+import io
 import json
 import re
 from dataclasses import dataclass
@@ -37,7 +38,7 @@ RESOLVED = "train-00000-of-00012:1738"
 STEPS = (5, 10, 15, 20, 30)
 
 W, H, DPI = 16, 9, 120  # 1920 x 1080
-# Website versions (figures/site/): no built-in title, subtitle or footer (the page has its own headings and
+# Website versions (site/figures/): no built-in title, subtitle or footer (the page has its own headings and
 # captions), cropped to the content, and a taller hero so its 19 row labels can be bigger.
 BARE = False
 HERO_H = 11
@@ -159,8 +160,11 @@ def style_axis(ax: plt.Axes, t: Theme) -> None:
 def save(fig: plt.Figure, out: Path, name: str) -> None:
     out.mkdir(parents=True, exist_ok=True)
     if BARE:
-        fig.savefig(out / f"{name}.svg", metadata={"Date": None}, bbox_inches="tight", pad_inches=0.15)
+        buf = io.StringIO()
+        fig.savefig(buf, format="svg", metadata={"Date": None}, bbox_inches="tight", pad_inches=0.15)
         plt.close(fig)
+        # web hosts refuse SVGs with a DOCTYPE; matplotlib writes one the browser does not need
+        (out / f"{name}.svg").write_text(re.sub(r"<!DOCTYPE[^>]*>\s*", "", buf.getvalue()))
         print(f"  {out.relative_to(ROOT) / name}.svg")
         return
     fig.savefig(out / f"{name}.png", dpi=DPI)
@@ -880,9 +884,9 @@ def social_preview(t: Theme) -> None:
     if step is not None:
         ax.texts[-1].set_text(f"step {step}: stop the agent")
         ax.texts[-1].set_fontsize(20)
-    fig.savefig(ROOT / "figures" / "social_preview.png", dpi=DPI)
+    fig.savefig(ROOT / "site" / "social_preview.png", dpi=DPI)
     plt.close(fig)
-    print("  figures/social_preview.png")
+    print("  site/social_preview.png")
 
 
 def main() -> None:
@@ -890,17 +894,17 @@ def main() -> None:
     p.add_argument("--theme", choices=["dark", "light", "both"], default="dark")
     args = p.parse_args()
     themes = [DARK, LIGHT] if args.theme == "both" else [DARK if args.theme == "dark" else LIGHT]
+    global BARE
     for t in themes:
         setup(t)
-        out = ROOT / "figures" if t.name == "dark" else ROOT / "figures" / "light"
         print(f"{t.name}:")
-        for chart in CHARTS:
-            chart(t, out)
-        if t.name == "light":
-            global BARE
+        if t.name == "dark":  # full 1920 x 1080 charts with titles, for the video
+            for chart in CHARTS:
+                chart(t, ROOT / "figures")
+        else:  # the website's charts and its link-preview card
             BARE = True
             for chart in CHARTS:
-                chart(t, ROOT / "figures" / "site")
+                chart(t, ROOT / "site" / "figures")
             BARE = False
             social_preview(t)
 

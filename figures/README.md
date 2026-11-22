@@ -3,13 +3,15 @@
 Presentation charts for the video and the website, made by `scripts/charts.py` from the result files. No number
 is typed in by hand: rerun the script whenever `results/` changes.
 
-    uv run python scripts/charts.py                # dark "heart monitor" theme -> figures/
-    uv run python scripts/charts.py --theme light  # light theme for the website -> figures/light/
+    uv run python scripts/charts.py                # dark "heart monitor" theme, for the video -> figures/
+    uv run python scripts/charts.py --theme light  # light theme, for the website -> site/figures/
     uv run python scripts/charts.py --theme both
 
-Each chart comes as SVG (text as outlines, so it renders without the font) and as a 1920x1080 PNG.
-The light run also writes `figures/site/`: the same charts without their built-in title and footer, cropped to
-the content (the website has its own headings and captions), and `figures/social_preview.png`, the link-preview card.
+The video charts come as SVG (text as outlines, so it renders without the font) and as a 1920x1080 PNG. The
+website's charts (`site/figures/`, light) are the same charts without their built-in title and footer, cropped to
+the content, since the page has its own headings and captions; the light run also writes
+`site/social_preview.png`, the card LinkedIn and others show for a link to the site. Then run
+`scripts/site.py` to rebuild the page.
 
 Legend: TSLM models are blue, baselines are grey (dashed for the signals baseline monitor). Health states are
 green for stable (60 and up), amber for watch (30-60), orange for low (under 30) and red for critical (15 or

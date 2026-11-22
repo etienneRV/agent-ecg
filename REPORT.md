@@ -1,10 +1,11 @@
 # Agent ECG: warning early when a coding agent is going to fail
 
-*Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-21*
+*Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-22*
 
 > **Status:** dataset contributed to TimeNet ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832),
-> awaiting review) · evaluation and baselines done (this report) · OpenTSLM fine-tune: next, on
-> Nebius compute.
+> awaiting review) · evaluation and baselines done · three OpenTSLM models fine-tuned and scored on test,
+> plus a second round that brought no gain · live monitor replayed on 600 test runs. Every headline
+> number: [results/SUMMARY.md](results/SUMMARY.md); project page: https://etiennerv.github.io/agent-ecg/.
 
 ## 1. In one paragraph
 
@@ -16,7 +17,10 @@ per-step signals, the agent's own reasoning and the issue, and must predict whet
 resolve the issue, how it will end, and write a short status report. On held-out repositories, a
 simple model of the agent's thoughts reaches AUROC 0.68-0.71 at every checkpoint, against 0.61-0.62 for a
 model that reads only the issue: the agent's behaviour carries signal beyond how hard the issue is.
-That is the bar our OpenTSLM model has to clear.
+That was the bar for our OpenTSLM models. None cleared it: each scores below the baseline that reads the
+same inputs, and the closest, ecg-full, is 0.03-0.04 AUROC behind the best baseline at 5-20 steps (not
+significant). Replayed as a live monitor on 600 unseen runs, ecg-full's alarms are right 96 % of the time
+and fire at a median step of 6 (section 6, [results/SUMMARY.md](results/SUMMARY.md)).
 
 ## 2. The problem
 
