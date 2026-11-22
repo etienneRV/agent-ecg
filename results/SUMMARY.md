@@ -22,7 +22,7 @@ multichannel event trace, not a waveform.
 |---|---|---|---|---|---|---|
 | baseline: signals | ECG signals | 0.611 | 0.645 | 0.674 | 0.712 | 0.728 |
 | baseline: thoughts | agent's thoughts | 0.680 | 0.703 | 0.710 | 0.701 | 0.701 |
-| baseline: issue + signals + thoughts | all | 0.691 | 0.709 | 0.720 | 0.719 | 0.701 |
+| baseline: issue + signals + thoughts | all | 0.691 | 0.709 | 0.720 | 0.719 | 0.700 |
 | baseline: issue only | issue text | 0.613 | 0.619 | 0.612 | 0.616 | 0.614 |
 | ecg | ECG | 0.583 | 0.611 | 0.616 | 0.620 | 0.615 |
 | ecg-thought | thoughts + ECG | 0.624 | 0.638 | 0.643 | 0.647 | 0.596 |
@@ -107,8 +107,8 @@ Second round on H100: 1.25 h (ecg v2) and 2.69 h (ecg-full v2). Results:
   (within 0.012); issue difficulty partly does; run length is handled by per-checkpoint scores.
 - **Channel hunt** ([channels.md](channels.md)): 15 more per-step channels (test results, exception types, edit
   sizes, ...) were screened on train + validation; none improved prediction.
-- **Not yet run:** a test that shuffles ecg-full's series between runs. Until then, say that ecg reads the ECG; do not
-  claim ecg-full relies on it.
+- **Not run:** a test that shuffles ecg-full's series between runs, so we do not claim ecg-full relies on the ECG;
+  ecg, which reads only the ECG, scores above chance.
 
 ## Compute
 

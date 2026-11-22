@@ -157,23 +157,22 @@ what the model reads from the run itself counts.
 
 ```
 src/agent_ecg/
-  data.py              build the release, flatten it, load it
-  status.py            read and write the status report's sentences
-  metrics.py           the evaluation (all tasks), including same-issue pairs
-  baselines.py         majority, signals, thoughts, signals+thoughts, issue, issue+signals+thoughts; repository CV
-  channels.py          the channel hunt: candidate per-step channels, screened on train + validation
-  monitor.py           calibration, health, critical alerts, step-by-step replay
-  demo.py              the terminal ECG: a replayed run beside its monitor
-  opentslm_data.py     checkpoints -> OpenTSLM samples (trimming, series, prompts, contexts)
-  opentslm_samples.py  choose, weight and label the samples for training (no PyTorch, so tested anywhere)
-  cli.py               agent-ecg prepare | baselines | evaluate | compare | opentslm-export | replay | demo | channels
-opentslm/          train.py, predict.py, replay.py, common.py (GPU only), scan_summary.py, and a dataset class
-                   for OpenTSLM's own trainer
-tests/             metric, parser, converter, monitor, demo and baseline tests (uv run pytest)
-results/           every score on test: baselines, the TSLMs, the live-monitor scan (start at results/SUMMARY.md)
-scripts/           charts.py (presentation charts) and site.py (the project website), both read from results/
-figures/           the charts for the video (1920 x 1080, dark), see figures/README.md
-site/              the project website, published to GitHub Pages by .github/workflows/pages.yml
+  data.py        build the release, flatten it, load it
+  status.py      read and write the status report's sentences
+  metrics.py     the evaluation (all tasks), including same-issue pairs
+  baselines.py   majority, signals, thoughts, signals+thoughts, issue, issue+signals+thoughts; repository CV
+  monitor.py     calibration, health, critical alerts, step-by-step replay
+  demo.py        the terminal ECG: replays a recorded run beside the monitor
+  channels.py    the channel hunt (extra per-step channels, screened on train + validation)
+  opentslm_data.py  checkpoints -> OpenTSLM samples (trimming, series, prompts, count channels)
+  cli.py         agent-ecg prepare | baselines | evaluate | compare | opentslm-export | replay | demo | channels
+opentslm/        train.py, predict.py, replay.py, common.py (GPU only); final_run.sh (second round);
+                 scan_summary.py and thought_window_check.py (analyses); a dataset class for OpenTSLM's trainer
+tests/           metric, parser, converter, monitor, channel and baseline tests (uv run pytest)
+results/         every score, prediction file and comparison; start at results/SUMMARY.md
+scripts/         charts.py and site.py: build figures/ and the website in site/ from results/
+figures/         charts in dark and light themes (figures/README.md says what each shows)
+site/            the project website, published to GitHub Pages from main
 ```
 
 ## Licence

@@ -3,9 +3,8 @@
 *Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-22*
 
 > **Status:** dataset contributed to TimeNet ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832),
-> awaiting review) · evaluation and baselines done · three OpenTSLM models fine-tuned and scored on test,
-> plus a second round that brought no gain · live monitor replayed on 600 test runs. Every headline
-> number: [results/SUMMARY.md](results/SUMMARY.md); project page: https://etiennerv.github.io/agent-ecg/.
+> awaiting review) · baselines, three fine-tuned OpenTSLM models, a live-monitor replay and a second round of
+> two runs, all scored on test (this report; every number in [results/SUMMARY.md](results/SUMMARY.md)).
 
 ## 1. In one paragraph
 
@@ -17,10 +16,9 @@ per-step signals, the agent's own reasoning and the issue, and must predict whet
 resolve the issue, how it will end, and write a short status report. On held-out repositories, a
 simple model of the agent's thoughts reaches AUROC 0.68-0.71 at every checkpoint, against 0.61-0.62 for a
 model that reads only the issue: the agent's behaviour carries signal beyond how hard the issue is.
-That was the bar for our OpenTSLM models. None cleared it: each scores below the baseline that reads the
-same inputs, and the closest, ecg-full, is 0.03-0.04 AUROC behind the best baseline at 5-20 steps (not
-significant). Replayed as a live monitor on 600 unseen runs, ecg-full's alarms are right 96 % of the time
-and fire at a median step of 6 (section 6, [results/SUMMARY.md](results/SUMMARY.md)).
+That is the bar our OpenTSLM models had to clear. The best of them, ecg-full, comes within 0.03-0.04 AUROC of
+the baseline that reads the same inputs at 5-20 steps (not a significant gap) but does not beat it; as a live
+monitor it flags about a third of the runs that go on to fail, as the signals baseline does.
 
 ## 2. The problem
 
@@ -213,7 +211,7 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
 - **No counts in the series labels.** An earlier export labelled each 0/1 series with its count ("2
   of 5 steps"), so the model could answer from the text and never read the series. The labels now
   say only what a 1 means.
-- **Runs, in order** (`GPU.md`), all starting from OpenTSLM's ECG model (`OpenTSLM/llama-3.2-1b-ecg-sp`,
+- **Runs** (`GPU.md`), all starting from OpenTSLM's ECG model (`OpenTSLM/llama-3.2-1b-ecg-sp`,
   the last stage of its curriculum, which reads 12 labelled leads at once):
   1. **ecg: the ECG alone, pass/fail.** Whatever it gets right, it read from the trace; this is the
      demo's model.
@@ -233,6 +231,41 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
   0.70 / 0.70); for ecg-full, issue+signals+thoughts (0.69 / 0.71 / 0.72 / 0.72 / 0.70). And always clearly
   above the issue-only model (0.61-0.62), so the gain comes from watching the agent.
 
+
+### Results on test
+
+| Model | Inputs | 5 steps | 10 steps | 15 steps | 20 steps | 30 steps |
+|---|---|---|---|---|---|---|
+| ecg | the ECG | 0.583 | 0.611 | 0.616 | 0.620 | 0.615 |
+| ecg-thought | thoughts + ECG | 0.624 | 0.638 | 0.643 | 0.647 | 0.596 |
+| ecg-full (3 tasks) | issue + thoughts + ECG | 0.657 | 0.677 | 0.684 | 0.679 | 0.624 |
+| signals baseline (bar for ecg) | the signals | 0.611 | 0.645 | 0.674 | 0.712 | 0.728 |
+| thoughts baseline (bar for ecg-thought) | thoughts | 0.680 | 0.703 | 0.710 | 0.701 | 0.701 |
+| issue+signals+thoughts baseline (bar for ecg-full) | all | 0.691 | 0.709 | 0.720 | 0.719 | 0.700 |
+
+- **No model clears its bar.** ecg-full comes closest: 0.03-0.04 below at 5-20 steps, inside the paired
+  repository-bootstrap interval, and significantly below at 30. ecg-thought and ecg are significantly below theirs
+  at most checkpoints. Averaging ecg-full with its baseline adds nothing (+0.004 at most).
+- **Early the text carries the signal, later the behaviour does.** The signals baseline climbs from 0.611 to 0.728
+  as runs get longer; ecg stays flat at about 0.61-0.62, so the TSLM does not use the longer trace.
+- **As a live monitor** (600 unseen test runs replayed step by step), ecg-full flags 32 % of the runs that go on to
+  fail, with a median alarm at step 6 and 18 % false alarms on resolved runs; the signals baseline flags 34 %, at
+  step 9, with 15 %. They flag mostly different runs. Half of ecg-full's alarms fire at the earliest possible step
+  and cluster by issue, so part of its head start comes from how hard the issue is.
+- **ecg-full's other two tasks:** it predicts the ending as well as the signals baseline (accuracy 0.662 against
+  0.655) and writes status reports in the right format 99.7 % of the time, but their forecast is weaker
+  (remaining steps off by 9 at the median, against 6).
+- **A second round of two runs** fixed what validation checks pointed to: ecg v2 adds three count channels the
+  model was not forming (steps since the last success, tracebacks so far, code runs so far), and ecg-full v2 trains
+  against overfitting and keeps the first thoughts of long runs. Judged by rules fixed before training, neither
+  improved significantly: ecg v2 changed little, and ecg-full v2 gained +0.018 at 20 steps and +0.036 at 30, as
+  expected, but within intervals of 0.05-0.12. ecg-full v2's gap to its baseline is no longer significant at any
+  checkpoint.
+- **Shortcut checks:** which agent LLM wrote a run does not drive any score (within 0.012 within each agent);
+  run length is handled by per-checkpoint scores ([results/shortcut_checks.md](results/shortcut_checks.md)).
+
+Every number, with intervals and sources: [results/SUMMARY.md](results/SUMMARY.md); training details: `GPU.md`.
+
 ## 7. Limitations
 
 - One agent framework (SWE-agent) and one model family (Llama 3.1; 93 % of runs from the 70B model).
@@ -241,6 +274,12 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
   template, not an expert's assessment.
 - The label is the release's test result, which can miss correct fixes or accept incomplete ones.
 - No baseline reads the steps as a sequence; that is the TSLM's job.
+- The baselines win: no fine-tuned model beats the baseline that reads its inputs. We did not vary the base model
+  (Llama 3.2 1B), the starting checkpoint or the training setup, so we cannot say which of these limits the TSLM.
+- Whether ecg-full relies on the ECG is untested: a test that shuffles its series between runs was not run. ecg,
+  which reads only the ECG, scores above chance.
+- The test set is small for differences between models: paired intervals are 0.02-0.12 wide, so gains of
+  +0.02-0.04, like the second round's, can be neither confirmed nor ruled out.
 
 ## 8. Reproduce
 
@@ -252,3 +291,7 @@ uv run agent-ecg baselines --cv 5   # ~10 min, peak 4.0 GB
 uv run agent-ecg replay --top 3  # the live monitor on test runs
 uv run agent-ecg channels        # the channel hunt, ~70 min on 5 CPU threads
 ```
+
+Fine-tuning needs a GPU: `GPU.md` (runs ecg, ecg-thought, ecg-full) and `opentslm/final_run.sh c2|a2` (the second
+round). The website is built from `results/` with `uv run python scripts/charts.py --theme both` and
+`uv run python scripts/site.py`.
