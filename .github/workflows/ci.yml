@@ -1,0 +1,21 @@
+# Lint and test on every push and pull request. Tests that need the built release or a raw shard skip themselves.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --locked
+      - run: uv run ruff format --check src tests opentslm scripts
+      - run: uv run ruff check src tests opentslm scripts
+      - run: uv run pytest -q

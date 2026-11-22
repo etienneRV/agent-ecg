@@ -37,8 +37,9 @@ from timenet_connectors.datasets.nebius.swe_agent_trajectories.source import (
     split_message,
 )
 
-DATASET = "nebius/SWE-agent-trajectories"
-REVISION = "68195a1450865274106246d0d0296a1d6807b88e"  # the revision the connector pins
+from agent_ecg import data
+
+DATASET, REVISION = data.RAW_DATASET, data.RAW_REVISION  # the revision the connector pins
 _COLUMNS = ["instance_id", "model_name", "target", "trajectory", "exit_status"]
 _FOOTER = re.compile(r"\s*\(Open file: [^)\n]*\)\s*\(Current directory: [^)\n]*\)\s*bash-\$\s*$")
 _NO_FILE = "n/a"
@@ -51,12 +52,14 @@ CHECKPOINTS_TABLE = Path("data/checkpoints.parquet")
 
 
 @functools.cache
-def typical_failure(step: int, table: Path = CHECKPOINTS_TABLE) -> float | None:
+def typical_failure(step: int, table: Path | None = None) -> float | None:
     """The share of validation runs still going after ``step`` steps that fail; None without the data table.
 
-    Health compares a run with runs of the same age, so the demo shows this next to the run's own chance of
-    failure: at step 30, 96 % of the runs still going fail anyway, and 97 % there is no reason for alarm.
+    Health compares a run with runs of the same age, so the demo shows this beside the run's own chance of
+    failure: at step 30, 96 % of the runs still going fail anyway, so a high chance of failure alone is no
+    reason for an alarm. ``table`` defaults to ``CHECKPOINTS_TABLE``, which ``agent-ecg demo`` points at ``--data``.
     """
+    table = table or CHECKPOINTS_TABLE
     if not table.exists():
         return None
     import pandas as pd

@@ -133,12 +133,15 @@ class Monitor:
         return sum(w * float(np.interp(score, *self.calibration[c])) for c, w in self._around(k))
 
     def critical_health(self, k: int) -> float:
-        """The health at or under which step ``k`` is critical; -1 where it never is."""
-        limits = []
-        for c, w in self._around(k):
-            threshold = self.critical[c]
-            limits.append(w * (self._health_at(threshold, c) if threshold is not None else -1.0))
-        return sum(limits)
+        """The health at or under which step ``k`` is critical; -1 where it never is.
+
+        Between two fitted checkpoints the limit is interpolated, but only when both alert: next to a checkpoint
+        where no group of validation runs reached the failure target, the step never alerts.
+        """
+        around = self._around(k)
+        if any(self.critical[c] is None for c, _ in around):
+            return -1.0
+        return sum(w * self._health_at(self.critical[c], c) for c, w in around)
 
     def alert_precision(self, k: int) -> float | None:
         """The validation failure rate behind an alert at step ``k`` (nearest checkpoint that alerts)."""

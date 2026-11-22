@@ -20,6 +20,7 @@ case "$RUN" in
     NAME=ecg-counts
     DATA=data/opentslm-none-counts
     EXPORT=(--context none --count-channels)
+    SETTINGS='{"context": "none", "head_thought_tokens": 0, "thought_tokens": 1024, "count_channels": true}'
     TRAIN=(--tasks outcome)  # everything else as ecg
     ORIGINAL=results/opentslm/ecg-only/predictions.test.parquet
     BASELINE=results/baselines/signals.test.parquet
@@ -28,6 +29,7 @@ case "$RUN" in
     NAME=full-multi-a2
     DATA=data/opentslm-a2
     EXPORT=(--head-thought-tokens 512 --thought-tokens 1536)
+    SETTINGS='{"context": "full", "head_thought_tokens": 512, "thought_tokens": 1536, "count_channels": false}'
     TRAIN=(--epochs 1 --resolved-share 0.17 --lora-dropout 0.1 --eval-every 250 --val-checkpoints 4000)
     ORIGINAL=results/opentslm/full-multi/predictions.test.parquet
     BASELINE=results/baselines/issue_signals_thoughts.test.parquet
@@ -65,8 +67,15 @@ if [ "${DRY_RUN:-0}" != 1 ]; then  # fail now, not mid-smoke-test, if the GPU pa
     || { say "GPU setup incomplete: 'uv pip install -r opentslm/requirements-gpu.txt' on a machine with a CUDA GPU"; exit 1; }
 fi
 
-# 1. The export (skipped when it already exists with these settings).
-if [ ! -e "$DATA/meta.json" ]; then
+# 1. The export. An existing one is reused only when its meta.json (written last, so a partial export has none)
+# records exactly this run's settings; any other export in $DATA stops the run.
+if [ -e "$DATA/meta.json" ]; then
+  if ! uv run --no-sync python -c 'import json, sys; sys.exit(json.load(open(sys.argv[1])) != json.loads(sys.argv[2]))' \
+    "$DATA/meta.json" "$SETTINGS"; then
+    say "$DATA holds an export with other settings ($(cat "$DATA/meta.json" | tr -d '\n ')); move it away and rerun"
+    exit 1
+  fi
+else
   run uv run --no-sync agent-ecg opentslm-export "${EXPORT[@]}" --out "$DATA" || { say "export failed"; exit 1; }
 fi
 

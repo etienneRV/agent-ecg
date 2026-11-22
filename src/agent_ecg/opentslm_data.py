@@ -354,7 +354,6 @@ def export(
         "thought_tokens": prompts.tail_tokens,
         "count_channels": count_channels,
     }
-    (out / "meta.json").write_text(json.dumps(settings, indent=2))
     stats = []
     for split, table in checkpoints.groupby("split"):
         rows, split_stats = [], []
@@ -383,4 +382,6 @@ def export(
         stats += split_stats
         pd.DataFrame(rows).to_parquet(out / f"{split}.parquet", index=False)
         print(f"  {split}: {len(rows)} checkpoints", flush=True)
+    # Written last: an export without meta.json is incomplete (opentslm/final_run.sh relies on this).
+    (out / "meta.json").write_text(json.dumps(settings, indent=2))
     return pd.DataFrame(stats)

@@ -120,8 +120,8 @@ uv run --no-sync python opentslm/predict.py $R --split validation --tasks outcom
 uv run --no-sync python opentslm/predict.py $R --split test --tasks outcome \
     --threshold-from $R/predictions.validation.parquet --calibrate-from $R/predictions.validation.parquet
 uv run --no-sync agent-ecg evaluate $R/predictions.test.parquet --json $R/report.test.json
-uv run --no-sync agent-ecg compare $R/predictions.test.parquet data/predictions/signals.test.parquet  # vs the baseline with the same inputs
-uv run --no-sync agent-ecg compare $R/predictions.test.parquet data/predictions/issue.test.parquet    # vs the issue alone
+uv run --no-sync agent-ecg compare $R/predictions.test.parquet results/baselines/signals.test.parquet  # vs the baseline with the same inputs
+uv run --no-sync agent-ecg compare $R/predictions.test.parquet results/baselines/issue.test.parquet    # vs the issue alone
 ```
 
 - `predict.py` reads the samples the run trained on (`config.json`), so an ECG-only model is
@@ -318,7 +318,7 @@ Compare a TSLM with the baseline rows on the same test split, as above.
 | Weight pass/fail more in multi-task training | `--task-weights outcome=3` |
 | More or fewer successes in training | `--resolved-share 0.5` (0 = the natural share, 17 % of training runs) |
 | One fixed checkpoint per run | `--one-per-run` (does not reduce repetition: the sampler already weights runs equally) |
-| Longer thought history | raise `THOUGHT_TOKENS` in `src/agent_ecg/opentslm_data.py`, re-run `opentslm-export` |
+| Longer thought history | `opentslm-export --thought-tokens 2048 --out data/opentslm-long` (and `--head-thought-tokens` to keep the first ones too) |
 | More training | `--epochs 3 --samples-per-epoch 120000` |
 
 Every run is scored by the same `agent-ecg evaluate`, so results stay comparable.

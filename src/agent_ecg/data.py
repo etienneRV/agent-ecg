@@ -19,6 +19,9 @@ from pathlib import Path
 import pandas as pd
 
 DATASET = "nebius/swe_agent_trajectories"
+# The raw Hugging Face dataset behind the release, at the revision the connector pins (the demo and the channel
+# hunt read step text from it).
+RAW_DATASET, RAW_REVISION = "nebius/SWE-agent-trajectories", "68195a1450865274106246d0d0296a1d6807b88e"
 SIGNALS = (
     "thought_chars",
     "action_chars",

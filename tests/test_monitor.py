@@ -112,3 +112,17 @@ def test_a_thrashing_run_falls_from_stable_to_critical(tmp_path) -> None:
 def test_a_run_shorter_than_the_first_step_cannot_be_replayed() -> None:
     with pytest.raises(ValueError, match="fewer than"):
         monitor.prefixes(_thrashing_run(steps=4))
+
+
+def test_a_step_next_to_a_checkpoint_that_never_alerts_never_turns_critical() -> None:
+    # k=10 alerts at a real threshold, k=15 never does: steps 11-14 lie between them and must not alert.
+    grid = np.linspace(0, 1, 101).tolist()
+    fitted = Monitor(
+        quantiles={10: grid, 15: grid},
+        calibration={10: ([0.0, 1.0], [0.0, 1.0]), 15: ([0.0, 1.0], [0.0, 1.0])},
+        critical={10: 0.10, 15: None},
+        precision={10: 0.97, 15: None},
+        recall={10: 0.3, 15: None},
+    )
+    assert fitted.critical_health(10) > 0
+    assert all(fitted.critical_health(k) == -1 for k in range(11, 16))

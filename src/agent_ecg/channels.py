@@ -24,8 +24,8 @@ five steps, last value, maximum), on identical seeded repository folds over trai
   more checkpoints, and its shuffled control does not pass. A second proxy reads raw per-step values.
 - **Stage C:** greedy forward selection, only if two or more channels pass.
 
-The thresholds are fixed in :data:`RULES` and were set before any result was seen. Every stage stops
-starting new fits after the deadline and writes what it has.
+The thresholds are fixed in :data:`RULES` and were set before any result was seen. With ``--deadline``,
+every stage stops starting new fits after that time and writes what it has; by default there is no limit.
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ EARLY = (5, 10, 15)
 FOLDS = 5
 BOOTSTRAP = 1000
 MAX_STEPS = max(CHECKPOINTS)
-DEADLINE = "2026-11-22T09:00:00+01:00"  # Sunday 09:00 Zurich: a ~3 h retrain still fits after it
+DEADLINE = None  # no limit by default; the hackathon run used --deadline 2026-11-22T09:00:00+01:00
 RULES = {
     "advance": 8,  # finalists from stage A
     "ci_above_zero_at_least": 2,  # of the early checkpoints
@@ -320,7 +320,7 @@ CANDIDATES = (*TEXT_CHANNELS, *SIGNAL_CHANNELS)
 
 # --- reading the text -----------------------------------------------------------------------------------
 
-DATASET, REVISION = "nebius/SWE-agent-trajectories", "68195a1450865274106246d0d0296a1d6807b88e"
+DATASET, REVISION = data.RAW_DATASET, data.RAW_REVISION
 TEXT_COLUMNS = ["trajectory"]  # the only column read from the shards
 
 
@@ -705,7 +705,7 @@ class Hunt:
         table: pd.DataFrame,
         text: tuple[list[str], np.ndarray],
         work: Path,
-        deadline: datetime,
+        deadline: datetime | None,
         started: float,
         sample: float | None = None,
     ) -> None:
@@ -773,7 +773,7 @@ class Hunt:
         if path.exists():
             p = np.load(path)
         else:
-            if datetime.now().astimezone() > self.deadline:
+            if self.deadline is not None and datetime.now().astimezone() > self.deadline:
                 raise DeadlineReached(name)
             begun = time.perf_counter()
             p = out_of_fold(X(), self.y, self.w, self.folds(seed), categorical)
@@ -1149,7 +1149,7 @@ def run(
     sample: float | None = RULES["screening_sample"],
     raw: Path | None = None,
     workers: int = 4,
-    deadline: str = DEADLINE,
+    deadline: str | None = DEADLINE,
     work: Path = Path("data/channels"),
 ) -> dict:
     """Run the hunt up to ``stage`` and write ``results/channels.json`` and ``results/channels.md`` after
@@ -1162,7 +1162,7 @@ def run(
     out_json, out_md = Path("results/channels.json"), Path("results/channels.md")
     report: dict = _intkeys(json.loads(out_json.read_text())) if out_json.exists() and stage != "all" else {}
     previous = report.get("meta", {}).get("minutes", 0.0) if stage != "all" else 0.0
-    due = datetime.fromisoformat(deadline)
+    due = datetime.fromisoformat(deadline) if deadline else None
 
     table = development_rows(data.load_checkpoints(data_dir))
     missing = [name for name in data.SIGNALS if name not in table]

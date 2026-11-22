@@ -30,7 +30,7 @@ uv run agent-ecg baselines --cv 5   # repository cross-validation over all check
 uv run agent-ecg replay --top 3     # the live monitor on test runs, step by step (signals model)
 uv run agent-ecg evaluate my_predictions.parquet          # score any model on test
 uv run agent-ecg evaluate my_predictions.csv --split validation --json report.json
-uv run agent-ecg compare mine.parquet data/predictions/thoughts.test.parquet   # paired AUROC gain per checkpoint
+uv run agent-ecg compare mine.parquet results/baselines/thoughts.test.parquet   # paired AUROC gain per checkpoint
 ```
 
 `prepare` writes three tables under `data/` (git-ignored):
@@ -87,7 +87,8 @@ values), median / 99th percentile:
 | full (issue and thoughts) | 994 / 1,496 | 1,389 / 1,966 | 1,649 / 2,085 | 1,747 / 2,128 | 1,839 / 2,213 |
 
 At 30 steps the thoughts budget drops the oldest 15 steps' thoughts for the median checkpoint; raise
-`THOUGHT_TOKENS` in `opentslm_data.py` if the GPU has memory to spare.
+the budget with `opentslm-export --thought-tokens N --out <dir>` (default `THOUGHT_TOKENS` in `opentslm_data.py`) if
+the GPU has memory to spare.
 
 ## Fine-tuning OpenTSLM
 

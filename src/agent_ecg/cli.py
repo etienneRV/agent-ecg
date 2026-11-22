@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import shutil
 from pathlib import Path
 
 import pandas as pd
@@ -75,6 +76,10 @@ def _baselines(args: argparse.Namespace) -> None:
         (RESULTS / f"{name.replace('+', '_')}.{args.split}.json").write_text(json.dumps(report, indent=2))
         sections.append((name, report))
     (RESULTS / f"baselines.{args.split}.md").write_text(metrics.concat_reports(sections))
+    # The test predictions go to results/baselines/ as well: compare commands and opentslm/final_run.sh read them there.
+    (RESULTS / "baselines").mkdir(exist_ok=True)
+    for path in sorted((args.data / "predictions").glob("*.test.parquet")):
+        shutil.copy2(path, RESULTS / "baselines" / path.name)
     print(metrics.concat_reports(sections))
     summary = Monitor.from_json(args.data / "models" / "signals.monitor.json").summary()
     (RESULTS / "monitor.signals.md").write_text(
@@ -134,9 +139,12 @@ def _demo(args: argparse.Namespace) -> None:
     if run_id not in replays:
         raise SystemExit(f"{run_id} is not in {args.replay}, which holds {sorted(replays)}")
     monitor = replays[run_id]
+    demo.CHECKPOINTS_TABLE = args.data / "checkpoints.parquet"
+    if args.at is not None and not min(monitor) <= args.at <= max(monitor):
+        raise SystemExit(f"--at {args.at} is outside this replay: steps {min(monitor)} to {max(monitor)}")
     run = demo.fetch_run(run_id)
     if args.at is not None or args.svg is not None:
-        step = args.at or demo.first_alarm(monitor) or max(monitor)
+        step = args.at if args.at is not None else demo.first_alarm(monitor) or max(monitor)
         print(
             demo.render(
                 run, monitor, step, svg=args.svg, width=args.width, height=args.height, chance=not args.no_chance
@@ -182,16 +190,20 @@ def _opentslm_export(args: argparse.Namespace) -> None:
     from agent_ecg import opentslm_data
 
     default = "data/opentslm" if args.context == "full" else f"data/opentslm-{args.context}"
-    custom = args.count_channels or args.head_thought_tokens or args.thought_tokens != opentslm_data.THOUGHT_TOKENS
+    head = opentslm_data.HEAD_THOUGHT_TOKENS if args.head_thought_tokens is None else args.head_thought_tokens
+    tail = opentslm_data.THOUGHT_TOKENS if args.thought_tokens is None else args.thought_tokens
+    custom = args.count_channels or head != opentslm_data.HEAD_THOUGHT_TOKENS or tail != opentslm_data.THOUGHT_TOKENS
     if custom and args.out is None:
-        raise SystemExit("pass --out for an export with non-default settings, so it never overwrites runs A-C's data")
+        raise SystemExit(
+            "pass --out for an export with non-default settings, so it never overwrites the default export"
+        )
     out = args.out or Path(default)
     stats = opentslm_data.export(
         args.data,
         out,
         context=args.context,
-        head_thought_tokens=args.head_thought_tokens,
-        thought_tokens=args.thought_tokens,
+        head_thought_tokens=head,
+        thought_tokens=tail,
         count_channels=args.count_channels,
     )
     print(json.dumps(opentslm_data.export_settings(out / "meta.json")))
@@ -287,10 +299,14 @@ def main() -> None:
         "--count-channels", action="store_true", help="ecg v2: add 3 count channels (fixed scales) to the 19 series"
     )
     export.add_argument(
-        "--head-thought-tokens", type=int, default=0, help="also keep the earliest thoughts, up to this many tokens"
+        "--head-thought-tokens",
+        type=int,
+        help="also keep the earliest thoughts, up to this many tokens (default: none)",
     )
     export.add_argument(
-        "--thought-tokens", type=int, default=1024, help="the latest thoughts kept, up to this many tokens"
+        "--thought-tokens",
+        type=int,
+        help="the latest thoughts kept, up to this many tokens (default: THOUGHT_TOKENS, 1024)",
     )
     export.set_defaults(run=_opentslm_export)
 
@@ -307,7 +323,10 @@ def main() -> None:
     hunt.add_argument("--sample", type=float, default=0.3, help="share of repositories for screening; 0 = all")
     hunt.add_argument("--raw", type=Path, help="folder with the release's parquet shards (default: download them)")
     hunt.add_argument("--workers", type=int, default=4, help="shards read in parallel")
-    hunt.add_argument("--deadline", default="2026-11-22T09:00:00+01:00", help="start no new fit after this time")
+    hunt.add_argument(
+        "--deadline",
+        help="start no new fit after this time (ISO 8601, e.g. 2026-11-22T09:00:00+01:00); default: no limit",
+    )
     hunt.set_defaults(run=_channels)
 
     args = parser.parse_args()
