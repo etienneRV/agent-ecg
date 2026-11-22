@@ -1,10 +1,10 @@
 """Pick the scan's runs, or summarise two replays of them (results/opentslm/scan/summary.md).
 
-    python opentslm/scan_summary.py pick data/checkpoints.parquet ids.txt
-    ARGS=$(sed 's/^/--run-id /' ids.txt | tr '\n' ' ')
-    uv run agent-ecg replay $ARGS --out signals.jsonl
-    uv run python opentslm/replay.py runs/full-multi $ARGS --out A.jsonl
-    python opentslm/scan_summary.py score data/checkpoints.parquet ids.txt A=A.jsonl signals=signals.jsonl
+python opentslm/scan_summary.py pick data/checkpoints.parquet ids.txt
+ARGS=$(sed 's/^/--run-id /' ids.txt | tr '\n' ' ')
+uv run agent-ecg replay $ARGS --out signals.jsonl
+uv run python opentslm/replay.py runs/full-multi $ARGS --out A.jsonl
+python opentslm/scan_summary.py score data/checkpoints.parquet ids.txt A=A.jsonl signals=signals.jsonl
 """
 
 import json
