@@ -23,6 +23,7 @@ import charts
 ROOT = charts.ROOT
 RESULTS = charts.RESULTS
 SITE = ROOT / "site"
+SITE_URL = "https://etiennerv.github.io/agent-ecg/"  # GitHub Pages address of the repo; used for link previews
 FIGS = ("hero_ecg", "auroc_by_step", "monitor_numbers", "failing_vs_resolved", "training_curves")
 ENDINGS = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
 
@@ -216,6 +217,7 @@ def main() -> None:
         "Validation AUROC over training steps for TSLMs A, B and C",
         "Validation AUROC during training; the ringed point is the checkpoint we kept. Validation runs are not the test set.",
     )
+    values["site_url"] = SITE_URL
     html = Template((Path(__file__).parent / "site_template.html").read_text()).substitute(values)
     if SITE.exists():
         shutil.rmtree(SITE / "figures", ignore_errors=True)
@@ -225,7 +227,22 @@ def main() -> None:
             svg = (ROOT / "figures" / sub / f"{n}.svg").read_text()
             # web hosts refuse SVGs with a DOCTYPE; matplotlib writes one we do not need
             (SITE / "figures" / sub / f"{n}.svg").write_text(re.sub(r"<!DOCTYPE[^>]*>\s*", "", svg))
-    (SITE / "index.html").write_text(html)
+    preview = ROOT / "figures" / "social_preview.png"
+    if preview.exists():
+        shutil.copy(preview, SITE / "social_preview.png")
+    # GitHub Pages serves site/index.html as is, so it gets the full document around the template;
+    # the claude.ai preview adds that wrapper itself, so it gets the bare template (build/, git-ignored).
+    head, sep, body = html.partition("</style>\n")
+    if not sep:
+        raise SystemExit("site_template.html must end its head part with </style>")
+    page = (
+        '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
+        '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+        f"{head}{sep}</head>\n<body>\n{body}</body>\n</html>\n"
+    )
+    (SITE / "index.html").write_text(page)
+    (ROOT / "build").mkdir(exist_ok=True)
+    (ROOT / "build" / "site-fragment.html").write_text(html)
     print(f"wrote {(SITE / 'index.html').relative_to(ROOT)} and {2 * len(FIGS)} figures")
 
 

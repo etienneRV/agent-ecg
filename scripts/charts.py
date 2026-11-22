@@ -838,6 +838,32 @@ def training_curves(t: Theme, out: Path) -> None:
 CHARTS = [hero_ecg, failing_vs_resolved, auroc_by_step, monitor_numbers, training_curves]
 
 
+def social_preview(t: Theme) -> None:
+    """The 1200 x 630 card LinkedIn and others show for a link to the site: title and the showcase run's health."""
+    a = replay(SCAN / "replay.showcase.A.jsonl", SHOWCASE)
+    fig = plt.figure(figsize=(10, 5.25), dpi=DPI)
+    fig.text(0.06, 0.86, "Agent ECG", fontsize=40, fontweight="bold", color=t.ink, va="baseline")
+    fig.text(
+        0.06, 0.765, "Warning early when a coding agent is going to fail", fontsize=19, color=t.ink2, va="baseline"
+    )
+    ax = fig.add_axes([0.06, 0.1, 0.82, 0.56])
+    bands(ax, t)
+    health_line(ax, t, a, lw=4)
+    health_axis(ax, t, (int(a["step"].min()), int(a["step"].max())))
+    ax.set_ylabel("")
+    ax.set_yticks([])
+    ax.spines["left"].set_visible(False)
+    ax.set_xticks([])
+    ax.spines["bottom"].set_visible(False)
+    step = alarm(ax, t, a, "")
+    if step is not None:
+        ax.texts[-1].set_text(f"step {step}: stop the agent")
+        ax.texts[-1].set_fontsize(20)
+    fig.savefig(ROOT / "figures" / "social_preview.png", dpi=DPI)
+    plt.close(fig)
+    print("  figures/social_preview.png")
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument("--theme", choices=["dark", "light", "both"], default="dark")
@@ -849,6 +875,8 @@ def main() -> None:
         print(f"{t.name}:")
         for chart in CHARTS:
             chart(t, out)
+        if t.name == "light":
+            social_preview(t)
 
 
 if __name__ == "__main__":

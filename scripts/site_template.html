@@ -3,6 +3,13 @@
 <meta name="description" content="Reading a coding agent's run step by step to warn early when it is going to fail.">
 <meta property="og:title" content="Agent ECG: warning early when a coding agent is going to fail">
 <meta property="og:description" content="Reading a coding agent's run step by step to warn early when it is going to fail.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="$site_url">
+<meta property="og:image" content="${site_url}social_preview.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="${site_url}social_preview.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap">
 <style>
@@ -31,7 +38,9 @@
   --mono: "JetBrains Mono", "SF Mono", Monaco, "Cascadia Code", monospace;
 }
 
-body { background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--sans); }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--sans); }
+*, *::before, *::after { box-sizing: border-box; }
+img, video { max-width: 100%; }
 .section { padding-block: 3.5rem; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
 .section.light { background: var(--band); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .container { max-width: 960px; margin-inline: auto; }
@@ -44,6 +53,7 @@ body { background: var(--bg); color: var(--fg); font: 400 16px/1.6 var(--sans); 
 .publication-title .beat { color: var(--alarm); }
 .publication-authors { font-size: 1.25rem; font-weight: 500; margin: 0; }
 .author-block { white-space: nowrap; }
+.publication-note { color: var(--muted); font-size: 0.85rem; margin: 0.2rem 0 0; }
 .publication-venue { color: var(--muted); font-size: 1.05rem; margin: 0.3rem 0 0; }
 .publication-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 0.6rem; margin-top: 1.6rem; }
 .button { display: inline-flex; align-items: center; gap: 0.5rem; background: var(--button); color: var(--button-fg); text-decoration: none;
@@ -133,7 +143,8 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
   <section class="hero section centered">
     <div class="container">
       <h1 class="publication-title">Agent <span class="beat">ECG</span>: Warning Early When a Coding Agent Is Going to Fail</h1>
-      <p class="publication-authors"><span class="author-block">Maximilian Lohscheller,</span> <span class="author-block">Ziyad Mellal,</span> <span class="author-block">Etienne Ritter Vidal,</span> <span class="author-block">Barış Gürel</span></p>
+      <p class="publication-authors"><span class="author-block">Barış Gürel,</span> <span class="author-block">Maximilian Lohscheller,</span> <span class="author-block">Ziyad Mellal,</span> <span class="author-block">Etienne Ritter Vidal</span></p>
+      <p class="publication-note">Authors listed alphabetically</p>
       <p class="publication-venue">TimeNet Hackathon, Round 1 · 2026</p>
       <div class="publication-links">
         <a class="button" href="https://huggingface.co/datasets/nebius/SWE-agent-trajectories" target="_blank" rel="noopener">
@@ -279,9 +290,9 @@ pre code { font-size: 0.9rem; line-height: 1.6; color: var(--fg); }
         <h2 class="title">BibTeX</h2>
         <button class="copy-bibtex-btn" id="copy-bibtex" type="button">Copy</button>
       </div>
-<pre id="bibtex-code"><code>@misc{lohscheller2026agentecg,
+<pre id="bibtex-code"><code>@misc{guerel2026agentecg,
   title  = {Agent ECG: Warning Early When a Coding Agent Is Going to Fail},
-  author = {Lohscheller, Maximilian and Mellal, Ziyad and Ritter Vidal, Etienne and G{\"u}rel, Bar{\i}{\c{s}}},
+  author = {G{\"u}rel, Bar{\i}{\c{s}} and Lohscheller, Maximilian and Mellal, Ziyad and Ritter Vidal, Etienne},
   year   = {2026},
   note   = {TimeNet Hackathon, Round 1. Dataset: OpenTSLM/TimeNet\#832}
 }</code></pre>
