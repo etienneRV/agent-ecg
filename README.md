@@ -5,7 +5,13 @@ resolve its GitHub issue. Built on the TimeNet dataset `nebius/swe_agent_traject
 ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832)). Team RAMadan, TimeNet
 hackathon Round 1.
 
-**Read [REPORT.md](REPORT.md)** for the problem, the data, the evaluation protocol and the results.
+## Start here
+
+- [Watch the replay](https://etiennerv.github.io/agent-ecg/) to see Agent-ECG flag a held-out Scanpy run at step 12. The video plays in the browser without setup.
+- [See the results](results/SUMMARY.md) for held-out AUROC, the CPU baselines, and the 600-run alert comparison.
+- [Review the TimeNet connector](https://github.com/OpenTSLM/TimeNet/pull/832) for the data source, checkpoint construction, and repository split.
+
+[Read the full report](REPORT.md) for the evaluation protocol and limitations.
 
 ## Setup
 
