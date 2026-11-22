@@ -24,6 +24,7 @@ RESULTS = charts.RESULTS
 SITE = ROOT / "site"
 SITE_URL = "https://etiennerv.github.io/agent-ecg/"  # GitHub Pages address of the repo; used for link previews
 FIGS = ("hero_ecg", "auroc_by_step", "monitor_numbers", "failing_vs_resolved", "training_curves")
+PAPER_FIGS = ("same_issue", "paper_results")  # scripts/paper_figures.py
 ENDINGS = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
 
 
@@ -301,6 +302,8 @@ def main() -> None:
     missing = [n for n in FIGS if not (SITE / "figures" / f"{n}.svg").exists()]
     if missing:
         raise SystemExit("figures missing; run: uv run python scripts/charts.py --theme both")
+    if not all((SITE / "figures" / f"{n}.svg").exists() for n in PAPER_FIGS):
+        raise SystemExit("figures missing; run: uv run python scripts/paper_figures.py")
     values = {
         **data_numbers(),
         **auroc_table(),
@@ -340,6 +343,22 @@ def main() -> None:
         "training_curves",
         "Validation AUROC over training steps for the three TSLMs",
         "Validation AUROC during training; the ringed point is the checkpoint we kept. Validation runs are not the test set.",
+    )
+    values["fig_same_issue"] = figure(
+        "same_issue",
+        "Two panels: the gap between ecg-full and its baseline over all runs and on same-issue pairs, and the share of same-issue pairs each model ranks right",
+        f"(a) {values['label_a']} minus the issue + signals + thoughts baseline at each checkpoint: pink over all test "
+        "runs (AUROC), blue on pairs of a resolved and an unresolved run on the same issue. Bars: 95&nbsp;% intervals "
+        "from resampling test repositories. (b) The share of such pairs where a model scores the resolved run higher. "
+        "The issue text alone scores 0.50 by construction; the band is the ECG baseline's 95&nbsp;% interval. "
+        "Sources: <code>results/same_issue/</code>.",
+    )
+    values["fig_paper"] = figure(
+        "paper_results",
+        "Four panels: test AUROC by steps seen, the same-issue gap, the same-issue pair share, and the live monitor's rates",
+        "(a) Test AUROC by steps seen, with 95&nbsp;% intervals for the two models with the same inputs. (b) and (c) as in "
+        "the Results section. (d) The live monitor on the replayed test runs. Style after figures4papers "
+        '(Chen Liu). Download: <a href="figures/paper_results.pdf">PDF</a>.',
     )
     values["site_url"] = SITE_URL
     html = Template((Path(__file__).parent / "site_template.html").read_text()).substitute(values)
