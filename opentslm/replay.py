@@ -43,8 +43,10 @@ def main() -> None:
 
     config = json.loads((args.run / "config.json").read_text())
     exported = args.data or Path(config["data"])
-    meta = exported / "meta.json"
-    context = json.loads(meta.read_text())["context"] if meta.exists() else "full"
+    # The prompts must be built exactly as the run's training samples were: same context, thought
+    # budgets and channels (meta.json; older exports default to runs A-C's settings).
+    settings = opentslm_data.export_settings(exported / "meta.json")
+    context = settings["context"]
     post = samples.post_prompts(exported)
     predictions = pd.read_parquet(args.predictions or args.run / "predictions.validation.parquet")
     gold = pd.read_parquet(exported / "validation.parquet", columns=["run_id", "k", "resolved"])
@@ -56,7 +58,9 @@ def main() -> None:
     missing = [run for run in args.run_id if run not in longest.index]
     if missing:
         raise SystemExit(f"unknown run ids: {missing}")
-    prompts = opentslm_data.Prompts(args.tables, context)
+    prompts = opentslm_data.Prompts(
+        args.tables, context, head_tokens=settings["head_thought_tokens"], tail_tokens=settings["thought_tokens"]
+    )
     device = pick_device(args.device)
     model = load_model(config["llm"], device, init_from=config.get("init_from"), lora=not config.get("no_lora", False))
     model.load_from_file(str(args.run / "best_model.pt"))
@@ -66,7 +70,7 @@ def main() -> None:
         rows = []
         for cut in cuts:
             text, _ = prompts(cut["run_id"], cut["issue_id"], cut["k"])
-            series_text, series = opentslm_data.time_series(cut)
+            series_text, series = opentslm_data.time_series(cut, count_channels=settings["count_channels"])
             rows.append({"pre_prompt": text, "time_series_text": series_text, "time_series": series})
         return p_resolved(model, rows, post)
 
