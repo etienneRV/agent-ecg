@@ -217,12 +217,29 @@ issue and plans (6 % of checkpoints at 10 steps, 77 % at 20, 97 % at 30), while 
 everything. Two fixes were weighed:
 
 - **A tiered budget** (the latest 10 steps in full, older steps cut to their first 32 tokens), proposed first.
-- **The first 512 plus the latest 1,536 tokens** (head + tail), chosen. With a word-count model, head + tail
-  matched keeping every thought (0.697 vs 0.701 AUROC at 30 steps), while the latest 2,048 alone still lost
-  the first step on 61 % of 30-step checkpoints. It is one export setting, and the defaults reproduce runs
-  A-C byte for byte.
+- **The first 512 plus the latest 1,536 tokens** (head + tail), chosen. It is one export setting, and the
+  defaults reproduce runs A-C byte for byte.
 
-Both follow the same published findings:
+A validation check settled it (`opentslm/thought_window_check.py`, results in
+[results/thought_window_check.json](results/thought_window_check.json)): the CPU thoughts model, fitted on
+8,000 training runs with a fixed C and scored on all 22,418 validation checkpoints, with each variant cutting
+the thoughts exactly as the export does. Test was not read.
+
+| Thoughts kept | AUROC at 5 / 10 / 15 / 20 / 30 steps (validation) |
+| --- | --- |
+| latest 1,024 (runs A, B) | 0.681 / 0.728 / 0.720 / 0.722 / 0.683 |
+| latest 2,048 | 0.683 / 0.729 / 0.721 / 0.732 / 0.752 |
+| first 512 + latest 1,024 | 0.683 / 0.730 / 0.720 / 0.729 / 0.749 |
+| **first 512 + latest 1,536 (run A2)** | **0.683 / 0.730 / 0.721 / 0.733 / 0.757** |
+| tiered (latest 10 steps in full, older cut to 32 tokens) | 0.684 / 0.730 / 0.714 / 0.720 / 0.729 |
+| all thoughts, uncut | 0.683 / 0.730 / 0.719 / 0.732 / 0.753 |
+
+A2's window is best or tied at every checkpoint and recovers what keeping every thought gives: +0.07 over A's
+window at 30 steps, +0.01 at 20, nothing at 5-15, where nothing was cut. The tiered design loses information
+by cutting older thoughts to 32 tokens. This is a word-count model, not the TSLM, and the top variants differ
+by under 0.01.
+
+Both designs follow published findings:
 
 1. Keeping the beginning and the end of a long text beat keeping either alone for BERT classification
    ([Sun et al. 2019](https://arxiv.org/abs/1905.05583)); later work finds the beginning alone can do as well,
@@ -234,10 +251,9 @@ Both follow the same published findings:
    and the best window was setup-specific
    ([Lindenbauer et al. 2025, *The Complexity Trap*](https://arxiv.org/abs/2508.21433)).
 
-None of these covers our case (a fine-tuned model classifying a run from its thoughts). One caveat: the
-word-count comparison that picked head + tail was scored on the test split, the only choice in this round
-that looked at test. A2 is judged on the same split at 15 / 20 / 30 steps, so read a small A2 gain there
-with extra care, and report the validation numbers beside it.
+None of these covers our case (a fine-tuned model classifying a run from its thoughts), which is why the
+choice rests on the validation check above. (The first comparison, in PR #4, scored test; the validation
+check alone picks the same window, so the choice no longer depends on test.)
 
 ## Results
 
