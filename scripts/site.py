@@ -61,6 +61,7 @@ def data_numbers() -> dict:
 
 def auroc_table() -> dict:
     tslm = {k: charts.model_auroc(p / "report.test.json") for k, p in charts.tslm_runs().items()}
+    names = charts.tslm_labels()
     cpu = {
         n: charts.model_auroc(RESULTS / f"{n}.test.json")
         for n in ("signals", "thoughts", "issue_signals_thoughts", "issue")
@@ -70,9 +71,9 @@ def auroc_table() -> dict:
         ("CPU", "thoughts", "the agent's thoughts", cpu["thoughts"]),
         ("CPU", "issue + signals + thoughts", "everything", cpu["issue_signals_thoughts"]),
         ("CPU", "issue only", "the issue text", cpu["issue"]),
-        ("TSLM", "C", "the ECG", tslm["C"]),
-        ("TSLM", "B", "thoughts + ECG", tslm["B"]),
-        ("TSLM", "A (3 tasks)", "issue + thoughts + ECG", tslm["A"]),
+        ("TSLM", names["C"], "the ECG", tslm["C"]),
+        ("TSLM", names["B"], "thoughts + ECG", tslm["B"]),
+        ("TSLM", f"{names['A']} (3 tasks)", "issue + thoughts + ECG", tslm["A"]),
     ]
     best = {k: max(m[3][k][0] for m in models) for k in charts.STEPS}
     rows = []
@@ -85,6 +86,9 @@ def auroc_table() -> dict:
     gaps = [cpu["issue_signals_thoughts"][k][0] - tslm["A"][k][0] for k in early]
     sig = cpu["signals"]
     return {
+        "label_a": names["A"],
+        "label_b": names["B"],
+        "label_c": names["C"],
         "auroc_head": "".join(f"<th>{k}</th>" for k in charts.STEPS),
         "auroc_rows": "".join(rows),
         "gap_lo": f"{min(gaps):.2f}",

@@ -236,22 +236,27 @@ def model_auroc(path: Path) -> dict[int, tuple[float, float, float]]:
     return {k: (out[f"k={k}"]["auroc"], *out[f"k={k}"]["auroc_95"]) for k in STEPS if f"k={k}" in out}
 
 
+RUNS_FILE = ROOT / "figures" / "runs.json"
+
+
+def _runs() -> dict[str, dict]:
+    runs = {k: v for k, v in json.loads(RUNS_FILE.read_text()).items() if not k.startswith("_")}
+    if set(runs) != {"A", "B", "C"}:
+        raise SystemExit(f"{RUNS_FILE.relative_to(ROOT)} must name runs for A, B and C")
+    for slot, r in runs.items():
+        if not (RESULTS / "opentslm" / r["dir"] / "report.test.json").exists():
+            raise SystemExit(f"TSLM {slot}: results/opentslm/{r['dir']}/report.test.json not found")
+    return runs
+
+
 def tslm_runs() -> dict[str, Path]:
-    """TSLM letter -> run directory, from each run's config.json (C reads the ECG only, B thoughts, A all)."""
-    out = {}
-    for cfg in sorted((RESULTS / "opentslm").glob("*/config.json")):
-        c = json.loads(cfg.read_text())
-        data, tasks = Path(c["data"]).name, c["tasks"]
-        if data == "opentslm-none" and tasks == "outcome":
-            out["C"] = cfg.parent
-        elif data == "opentslm-thoughts" and tasks == "outcome":
-            out["B"] = cfg.parent
-        elif data == "opentslm" and "," in tasks:
-            out["A"] = cfg.parent
-    missing = {"A", "B", "C"} - set(out)
-    if missing:
-        raise SystemExit(f"no run found for TSLM {sorted(missing)}")
-    return out
+    """TSLM slot (A: issue + thoughts + ECG, B: thoughts + ECG, C: ECG only) -> run directory, from figures/runs.json."""
+    return {slot: RESULTS / "opentslm" / r["dir"] for slot, r in _runs().items()}
+
+
+def tslm_labels() -> dict[str, str]:
+    """TSLM slot -> the name shown on charts and the site (A, or A2 for a second-round run)."""
+    return {slot: r["label"] for slot, r in _runs().items()}
 
 
 def scan_summary() -> dict:
@@ -555,6 +560,7 @@ def failing_vs_resolved(t: Theme, out: Path) -> None:
 
 def auroc_by_step(t: Theme, out: Path) -> None:
     tslm = {k: model_auroc(p / "report.test.json") for k, p in tslm_runs().items()}
+    names = tslm_labels()
     cpu = {
         n: model_auroc(RESULTS / f"{n}.test.json")
         for n in ("signals", "signals_thoughts", "issue_signals_thoughts", "issue")
@@ -569,7 +575,7 @@ def auroc_by_step(t: Theme, out: Path) -> None:
     all_below = all(tslm[m][k][0] < cpu[c][k][0] for m, _, c, _ in pairs for k in STEPS)
     sub = (
         "Each TSLM stays below the CPU model with the same inputs; " if all_below else ""
-    ) + f"A comes within {min(gaps):.2f}-{max(gaps):.2f} ({early[0]}-{early[-1]} steps)."
+    ) + f"{names['A']} comes within {min(gaps):.2f}-{max(gaps):.2f} ({early[0]}-{early[-1]} steps)."
     fig = figure(t, "Predicting pass / fail from the first steps (test AUROC)", sub)
     lo = min(min(v[0] for v in m.values()) for m in [*tslm.values(), *cpu.values()])
     hi = max(max(v[0] for v in m.values()) for m in [*tslm.values(), *cpu.values()])
@@ -599,14 +605,26 @@ def auroc_by_step(t: Theme, out: Path) -> None:
         ax.yaxis.grid(True, color=t.grid, lw=1)
         ax.set_axisbelow(True)
         ax.text(
-            0, 1.1, f"{m}  ·  {reads}", transform=ax.transAxes, fontsize=SIZE["label"], fontweight="bold", va="bottom"
+            0,
+            1.1,
+            f"{names[m]}  ·  {reads}",
+            transform=ax.transAxes,
+            fontsize=SIZE["label"],
+            fontweight="bold",
+            va="bottom",
         )
         ax.text(
-            0, 1.035, f"TSLM {m} vs {cname}", transform=ax.transAxes, fontsize=SIZE["small"], color=t.ink2, va="bottom"
+            0,
+            1.035,
+            f"TSLM {names[m]} vs {cname}",
+            transform=ax.transAxes,
+            fontsize=SIZE["small"],
+            color=t.ink2,
+            va="bottom",
         )
         # direct labels at the right end, nudged apart
         ends = {
-            "TSLM " + m: (tslm[m][STEPS[-1]][0], t.tslm),
+            "TSLM " + names[m]: (tslm[m][STEPS[-1]][0], t.tslm),
             "CPU": (cpu[c][STEPS[-1]][0], t.cpu),
             "issue only": (iss[-1], t.muted),
         }
@@ -802,7 +820,7 @@ def training_curves(t: Theme, out: Path) -> None:
         ax.text(
             1.01,
             y,
-            f"TSLM {k}\n{reads[k]}",
+            f"TSLM {tslm_labels()[k]}\n{reads[k]}",
             transform=ax.get_yaxis_transform(),
             fontsize=SIZE["small"],
             color=t.ink2,

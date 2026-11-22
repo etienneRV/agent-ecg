@@ -23,3 +23,11 @@ under for 2 steps in a row, which fires the alarm). Each state also has a text l
 
 The script fails loudly if a source file changes shape: the summary table can no longer be parsed, a TSLM run is
 missing, or the showcase runs are not in the replays.
+
+## Swapping in a second-round run
+
+`figures/runs.json` says which run in `results/opentslm/` fills each TSLM slot (A, B, C) and what it is called.
+To show a new run, point its slot at the run's directory, give it its own label (for example `A2`), and rerun
+`scripts/charts.py --theme both` and `scripts/site.py`. The live-monitor charts and sections read the 600-run scan
+in `results/opentslm/scan/`, which was made with run A; they change only when that scan is redone with the new
+model.
