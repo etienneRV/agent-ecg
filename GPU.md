@@ -146,16 +146,25 @@ save credits: ... failed 97 % of the time") once the state is critical. That is 
 shows. The alarm goes on when health is at most 15 in a zone where at least 95 % of validation runs
 failed, two steps in a row, and holds until health is back to 30.
 
-## Results to fill in
+## Results
 
 | Run | Text beside the ECG | Tasks | AUROC 5 / 10 / 15 / 20 / 30 steps (test) | Same-issue pairs, 10 steps | Brier, calibrated, 10 steps |
 | --- | --- | --- | --- | --- | --- |
 | CPU: signals (same inputs as C) | none | pass/fail | 0.611 / 0.645 / 0.674 / 0.712 / 0.728 | 0.610 | 0.1196 |
 | CPU: thoughts (the bar for B) | thoughts | pass/fail | 0.680 / 0.703 / 0.710 / 0.701 / 0.701 | 0.562 | 0.1139 |
 | CPU: issue+signals+thoughts (the bar for A) | issue, thoughts | pass/fail | 0.691 / 0.709 / 0.720 / 0.719 / 0.700 | 0.605 | 0.1126 |
-| C ecg-only | none | pass/fail | | | |
-| B thoughts-outcome | thoughts | pass/fail | | | |
-| A full-multi | issue, thoughts | all three | | | |
+| C ecg-only | none | pass/fail | 0.583 / 0.611 / 0.616 / 0.620 / 0.615 | 0.552 | 0.1195 |
+| B thoughts-outcome | thoughts | pass/fail | 0.624 / 0.638 / 0.643 / 0.647 / 0.596 | 0.520 | 0.1189 |
+| A full-multi | issue, thoughts | all three | 0.657 / 0.677 / 0.684 / 0.679 / 0.624 | 0.596 | 0.1184 |
+
+Each run is below its CPU bar. A is closest: 0.03-0.04 under issue+signals+thoughts, inside the paired
+repository-bootstrap interval at 5-20 steps and outside it at 30. B and C are significantly below theirs at
+most checkpoints. A beats B by 0.03-0.04 at every checkpoint (borderline at 10 and 15 steps), but A differs
+in two ways at once (the issue, and three tasks instead of one), so the gain cannot be credited to either.
+C trained with eager attention, B and A with SDPA (same math). Reports, predictions, `compare` outputs and
+configs: [results/opentslm/](results/opentslm/). As a live monitor (600 test runs replayed step by step), A
+and the signals monitor each flag about a third of the failing runs, mostly different ones; see
+[results/opentslm/scan/summary.md](results/opentslm/scan/summary.md).
 
 The test split is a hard draw for the signals: repository cross-validation (`agent-ecg baselines
 --cv 5`) gives them 0.663 / 0.711 / 0.729 / 0.747 / 0.775 and same-issue pairs of 0.615 at 10 steps.
