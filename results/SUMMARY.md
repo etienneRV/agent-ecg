@@ -43,6 +43,46 @@ Sources: [baselines.test.md](baselines.test.md), [baselines/](baselines/), [open
 - Early on, the text carries most of the signal (the issue and thoughts are complete from step 1); later, the
   behaviour does: the signals baseline climbs from 0.611 to 0.728 while ecg stays flat.
 
+## Same-issue pairs: where the baselines' lead comes from
+
+AUROC over all test runs rewards two things: telling hard issues from easy ones (the issue text alone scores 0.61)
+and telling a good run from a bad one. The same-issue pair share keeps only the second: over pairs of a resolved and
+an unresolved run on the same issue, the share where the resolved run scores higher (chance 0.5; the issue-only
+baseline is 0.5 by construction). It is the question only a monitor can answer: is *this* attempt going well?
+Paired repository bootstrap: `agent-ecg compare --same-issue` ([same_issue/](same_issue/)).
+
+| model | 5 | 10 | 15 | 20 | 30 |
+|---|---|---|---|---|---|
+| baseline: issue + signals + thoughts | 0.571 | 0.605 | 0.593 | 0.570 | 0.601 |
+| ecg-full | 0.569 | 0.596 | 0.597 | 0.601 | 0.539 |
+| ecg-full v2 | 0.550 | 0.591 | 0.582 | 0.586 | 0.612 |
+| baseline: signals (the ECG) | 0.543 | 0.610 | 0.593 | 0.601 | 0.651 |
+| baseline: thoughts | 0.544 | 0.562 | 0.576 | 0.572 | 0.576 |
+| ecg (the ECG) | 0.534 | 0.552 | 0.537 | 0.544 | 0.582 |
+| baseline: issue only | 0.500 | 0.500 | 0.500 | 0.500 | 0.500 |
+| pairs | 27,526 | 17,091 | 6,964 | 3,203 | 1,223 |
+
+Gaps with 95 % intervals (bold: the interval excludes zero):
+
+| comparison | 5 | 10 | 15 | 20 | 30 |
+|---|---|---|---|---|---|
+| ecg-full − baseline (all inputs), AUROC over all runs | -0.034 [-0.086, +0.014] | -0.032 [-0.079, +0.019] | -0.036 [-0.079, +0.009] | -0.041 [-0.092, +0.009] | **-0.077 [-0.158, -0.001]** |
+| ecg-full − baseline (all inputs), same-issue pairs | -0.001 [-0.035, +0.035] | -0.009 [-0.041, +0.017] | +0.004 [-0.039, +0.045] | +0.031 [-0.018, +0.091] | -0.062 [-0.138, +0.041] |
+| ecg-full v2 − baseline (all inputs), same-issue pairs | -0.021 [-0.050, +0.010] | -0.014 [-0.048, +0.017] | -0.011 [-0.046, +0.023] | +0.017 [-0.025, +0.044] | +0.011 [-0.071, +0.076] |
+| signals − chance, same-issue pairs | **+0.043 [+0.001, +0.090]** | **+0.110 [+0.056, +0.157]** | **+0.093 [+0.003, +0.178]** | +0.101 [-0.023, +0.236] | **+0.151 [+0.016, +0.314]** |
+| signals − thoughts, same-issue pairs | -0.001 [-0.030, +0.028] | **+0.049 [+0.005, +0.094]** | +0.017 [-0.028, +0.067] | +0.029 [-0.057, +0.133] | +0.075 [-0.028, +0.206] |
+| ecg − signals, same-issue pairs | -0.008 [-0.032, +0.020] | **-0.058 [-0.109, -0.014]** | -0.056 [-0.123, +0.005] | -0.057 [-0.170, +0.038] | **-0.069 [-0.162, -0.007]** |
+
+- **On same-issue pairs, ecg-full is level with the baseline that reads the same inputs** at every checkpoint
+  (ecg-full v2 too). Over all runs the gap is 0.03-0.04 at 5-20 steps; on same-issue pairs it is -0.009 to +0.031.
+  Most of the baseline's lead therefore comes from telling hard issues from easy ones (point estimates: the
+  intervals of the two gaps overlap).
+- **The ECG alone tells two attempts at the same issue apart,** above chance at 5, 10, 15 and 30 steps, and ahead of
+  the thoughts at 10 steps; its lead over the thoughts is larger later (+0.03, +0.08) but not significant.
+- **The TSLM reads the ECG less well than trees do:** ecg is below the signals baseline on same-issue pairs,
+  significantly at 10 and 30 steps.
+- Why the baselines win, in four points: [REPORT.md, section 6](../REPORT.md#why-the-baselines-win).
+
 ## ecg-full's other two tasks (full test split, 23,520 checkpoints)
 
 - **Ending** (6 classes): accuracy 0.662, macro-F1 0.222; signals baseline 0.655 / 0.225; majority 0.494 / 0.110.

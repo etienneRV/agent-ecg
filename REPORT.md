@@ -1,6 +1,6 @@
 # Agent ECG: warning early when a coding agent is going to fail
 
-*Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-22*
+*Team RAMadan · TimeNet hackathon, Round 1 · living report, last updated 2026-11-23*
 
 > **Status:** dataset contributed to TimeNet ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832),
 > awaiting review) · baselines, three fine-tuned OpenTSLM models, a live-monitor replay and a second round of
@@ -17,8 +17,10 @@ resolve the issue, how it will end, and write a short status report. On held-out
 simple model of the agent's thoughts reaches AUROC 0.68-0.71 at every checkpoint, against 0.61-0.62 for a
 model that reads only the issue: the agent's behaviour carries signal beyond how hard the issue is.
 That is the bar our OpenTSLM models had to clear. The best of them, ecg-full, comes within 0.03-0.04 AUROC of
-the baseline that reads the same inputs at 5-20 steps (not a significant gap) but does not beat it; as a live
-monitor it flags about a third of the runs that go on to fail, as the signals baseline does.
+the baseline that reads the same inputs at 5-20 steps (not a significant gap) but does not beat it. On pairs of
+runs on the same issue, where the issue text cannot help, the two are level: the baseline's lead comes mostly from
+telling hard issues from easy ones. As a live monitor it flags about a third of the runs that go on to fail, as the
+signals baseline does.
 
 ## 2. The problem
 
@@ -246,6 +248,15 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
 - **No model clears its bar.** ecg-full comes closest: 0.03-0.04 below at 5-20 steps, inside the paired
   repository-bootstrap interval, and significantly below at 30. ecg-thought and ecg are significantly below theirs
   at most checkpoints. Averaging ecg-full with its baseline adds nothing (+0.004 at most).
+- **On pairs of runs on the same issue, ecg-full is level with its baseline.** AUROC over all runs also rewards
+  telling hard issues from easy ones, which the issue text alone does (0.61). On pairs of a resolved and an
+  unresolved run on the same issue, only what a model reads from the run counts: there ecg-full and the
+  issue+signals+thoughts baseline differ by -0.009 to +0.031 at 5-20 steps, every interval around zero
+  (`agent-ecg compare --same-issue`, [results/same_issue/](results/same_issue/)). Over all runs the gap at those
+  steps is 0.03-0.04, so most of the baseline's lead comes from telling issues apart (point estimates).
+- **The ECG alone tells two attempts at the same issue apart:** the signals baseline picks the run that succeeds
+  in 54 % of such pairs at 5 steps and 65 % at 30 (chance 50 %; above chance at 5, 10, 15 and 30 steps). ecg, which
+  reads the same series, is below it on these pairs at every checkpoint, significantly at 10 and 30 steps.
 - **Early the text carries the signal, later the behaviour does.** The signals baseline climbs from 0.611 to 0.728
   as runs get longer; ecg stays flat at about 0.61-0.62, so the TSLM does not use the longer trace.
 - **As a live monitor** (600 unseen test runs replayed step by step), ecg-full flags 32 % of the runs that go on to
@@ -266,6 +277,23 @@ Full tables: [`results/baselines.test.md`](results/baselines.test.md); JSON per 
 
 Every number, with intervals and sources: [results/SUMMARY.md](results/SUMMARY.md); training details: `GPU.md`.
 
+### Why the baselines win
+
+- **Early in a run, most of the signal is how hard the issue is,** and that shows in the words used. A linear
+  model of word counts over the whole issue and every thought does this well. The TSLM reads a trimmed prompt and
+  has 2,853 training issues to learn it from. On same-issue pairs, where difficulty cancels out, it is level.
+- **Later, the behaviour carries the signal.** The trees get summaries we designed (the share of each kind of step,
+  over the run and over its last five steps). The TSLM must form them from raw series, four steps per patch,
+  through an encoder pretrained on heart ECG waveforms. ecg reads the ECG less well than the trees, and handing it
+  the counts as extra series (ecg v2) did not help, although the same counts help a simple outside model.
+- **The kept checkpoint was picked on a noisy score.** ecg-full's validation AUROC moved between 0.71 and 0.77 from
+  one evaluation to the next (2,000 checkpoints each), and the best of 15 was kept: 0.768, against 0.66-0.68 on test at 5-20 steps.
+  ecg-full v2, scored on 4,000 validation checkpoints, peaked at 0.739.
+- **Others find the same.** Removing the language model from LLM-based forecasters does not hurt them
+  ([Tan et al., NeurIPS 2024](https://arxiv.org/abs/2406.16964)), and tree-based models still beat deep networks on
+  tabular data ([Grinsztajn et al., NeurIPS 2022](https://arxiv.org/abs/2207.08815)). The signals baseline's inputs
+  are such tabular summaries.
+
 ## 7. Limitations
 
 - One agent framework (SWE-agent) and one model family (Llama 3.1; 93 % of runs from the 70B model).
@@ -274,7 +302,8 @@ Every number, with intervals and sources: [results/SUMMARY.md](results/SUMMARY.m
   template, not an expert's assessment.
 - The label is the release's test result, which can miss correct fixes or accept incomplete ones.
 - No baseline reads the steps as a sequence; that is the TSLM's job.
-- The baselines win: no fine-tuned model beats the baseline that reads its inputs. We did not vary the base model
+- The baselines win: no fine-tuned model beats the baseline that reads its inputs (on same-issue pairs, ecg-full
+  is level with it). We did not vary the base model
   (Llama 3.2 1B), the starting checkpoint or the training setup, so we cannot say which of these limits the TSLM.
 - Whether ecg-full relies on the ECG is untested: a test that shuffles its series between runs was not run. ecg,
   which reads only the ECG, scores above chance.
