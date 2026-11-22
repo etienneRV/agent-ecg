@@ -61,7 +61,11 @@ Sources: [baselines.test.md](baselines.test.md), [baselines/](baselines/), [open
 They flag mostly different runs, but combining them adds no accuracy (above). Half of A's alarms fire at the
 earliest possible step and cluster by issue: A partly reads how hard the issue is. Demo run resting on
 behaviour: `train-00010-of-00012:721` (A alarms at step 12, the signals monitor never, and A spares the 5 other
-runs of the same issue). Source: [opentslm/scan/summary.md](opentslm/scan/summary.md); CPU monitor replays:
+runs of the same issue); at step 12 it is re-editing the same file after the linter rejected a syntax error
+([frame](opentslm/scan/demo.A.showcase.step12.svg), replays for both monitors:
+[A](opentslm/scan/replay.showcase.A.jsonl), [signals](opentslm/scan/replay.showcase.signals.jsonl); play it with
+`agent-ecg demo results/opentslm/scan/replay.showcase.A.jsonl --run-id train-00010-of-00012:721`). Source:
+[opentslm/scan/summary.md](opentslm/scan/summary.md); CPU monitor replays:
 [replay.signals.falling.jsonl](replay.signals.falling.jsonl), [demo.falling.step15.svg](demo.falling.step15.svg).
 
 ## Checks
