@@ -2,8 +2,7 @@
 
 An "ECG" for coding agents: read the first steps of a SWE-agent run and warn early whether it will
 resolve its GitHub issue. Built on the TimeNet dataset `nebius/swe_agent_trajectories`
-([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832)). Team RAMadan, TimeNet
-hackathon Round 1.
+([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832)).
 
 https://github.com/user-attachments/assets/2428ea1f-d6d5-4f16-8782-0e795f7c1f60
 
