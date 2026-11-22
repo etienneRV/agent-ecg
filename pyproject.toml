@@ -23,7 +23,11 @@ dependencies = [
 agent-ecg = "agent_ecg.cli:main"
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.14"]
+dev = [
+    "matplotlib>=3.11.2",
+    "pytest>=8",
+ "ruff>=0.14",
+]
 
 [build-system]
 requires = ["hatchling"]
