@@ -1,6 +1,7 @@
 """Publication-style figures of the main results, for the paper, slides and posts.
 
     uv run python scripts/paper_figures.py      # -> results/figures/{results,social}.{png,pdf,svg}
+                                                #    and the website's copies in site/figures/
 
 The house style follows figures4papers' scientific-figure-making guide (Chen Liu,
 https://github.com/ChenLiu-1996/figures4papers): Helvetica/Arial, no top or right spines, frameless
@@ -13,7 +14,9 @@ comparisons (`agent-ecg compare`, with and without `--same-issue`) and the live-
 
 from __future__ import annotations
 
+import io
 import re
+import shutil
 import sys
 from pathlib import Path
 
@@ -29,6 +32,7 @@ import charts
 
 RESULTS = charts.RESULTS
 OUT = RESULTS / "figures"
+SITE_FIGS = charts.ROOT / "site" / "figures"
 STEPS = charts.STEPS
 
 PALETTE = {
@@ -256,11 +260,23 @@ def panel_monitor(ax, d: dict) -> None:
 
 
 def save(fig, name: str) -> None:
+    """The paper copies: 300 dpi PNG, PDF and SVG with editable text, without timestamps (reruns give the same files)."""
     OUT.mkdir(parents=True, exist_ok=True)
-    for ext in ("png", "pdf", "svg"):
-        fig.savefig(OUT / f"{name}.{ext}", dpi=300, facecolor="white")
-    plt.close(fig)
+    fig.savefig(OUT / f"{name}.png", dpi=300, facecolor="white")
+    fig.savefig(OUT / f"{name}.pdf", facecolor="white", metadata={"CreationDate": None})
+    fig.savefig(OUT / f"{name}.svg", facecolor="white", metadata={"Date": None})
     print(f"wrote {OUT.relative_to(charts.ROOT)}/{name}.png|pdf|svg")
+
+
+def save_web(fig, name: str) -> None:
+    """The website's copy: SVG with text as outlines, so it looks the same without the fonts installed, and no
+    DOCTYPE, which web hosts refuse (as scripts/charts.py does)."""
+    SITE_FIGS.mkdir(parents=True, exist_ok=True)
+    buf = io.StringIO()
+    with plt.rc_context({"svg.fonttype": "path", "svg.hashsalt": "agent-ecg"}):
+        fig.savefig(buf, format="svg", facecolor="white", metadata={"Date": None}, bbox_inches="tight", pad_inches=0.15)
+    (SITE_FIGS / f"{name}.svg").write_text(re.sub(r"<!DOCTYPE[^>]*>\s*", "", buf.getvalue()))
+    print(f"wrote {SITE_FIGS.relative_to(charts.ROOT)}/{name}.svg")
 
 
 def results_figure(d: dict) -> None:
@@ -275,6 +291,9 @@ def results_figure(d: dict) -> None:
         y=0.045,
     )
     save(fig, "results")
+    save_web(fig, "paper_results")
+    plt.close(fig)
+    shutil.copyfile(OUT / "results.pdf", SITE_FIGS / "paper_results.pdf")  # the site links it for download
 
 
 def social_figure(d: dict) -> None:
@@ -301,6 +320,20 @@ def social_figure(d: dict) -> None:
     )
     banner(fig, "The baseline wins by spotting hard issues. On the same issue, our TSLM is level.", y=0.06)
     save(fig, "social")
+    plt.close(fig)
+
+
+def site_same_issue(d: dict) -> None:
+    """The website's same-issue chart: the social card's two panels, without its title and banner (the page has
+    its own heading and caption)."""
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6.6))
+    fig.subplots_adjust(left=0.08, right=0.98, top=0.86, bottom=0.14, wspace=0.28)
+    panel_gap(axes[0], d)
+    panel_same(axes[1], d)
+    for ax, tag in zip(axes, "ab", strict=True):
+        letter(ax, tag)
+    save_web(fig, "same_issue")
+    plt.close(fig)
 
 
 def main() -> None:
@@ -308,6 +341,7 @@ def main() -> None:
     d = load()
     results_figure(d)
     social_figure(d)
+    site_same_issue(d)
 
 
 if __name__ == "__main__":
