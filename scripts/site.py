@@ -88,6 +88,7 @@ def auroc_table() -> dict:
     return {
         "sig_first_pct": f"{100 * sig[charts.STEPS[0]][0]:.0f}&nbsp;%",
         "a_first_pct": f"{100 * tslm['A'][charts.STEPS[0]][0]:.0f}&nbsp;%",
+        "iss_first_pct": f"{100 * cpu['issue'][charts.STEPS[0]][0]:.0f}&nbsp;%",
         "sig_last_pct": f"{100 * sig[charts.STEPS[-1]][0]:.0f}&nbsp;%",
         "gap_lo_pts": f"{100 * min(gaps):.0f}",
         "gap_hi_pts": f"{100 * max(gaps):.0f}",

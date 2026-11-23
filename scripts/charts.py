@@ -896,9 +896,7 @@ def social_preview(t: Theme) -> None:
     a = replay(SCAN / "replay.showcase.A.jsonl", SHOWCASE)
     fig = plt.figure(figsize=(10, 5.25), dpi=DPI)
     fig.text(0.06, 0.86, "Agent ECG", fontsize=40, fontweight="bold", color=t.ink, va="baseline")
-    fig.text(
-        0.06, 0.765, "Warning early when a coding agent is going to fail", fontsize=19, color=t.ink2, va="baseline"
-    )
+    fig.text(0.06, 0.765, "Catch a failing coding agent mid-run", fontsize=19, color=t.ink2, va="baseline")
     ax = fig.add_axes([0.06, 0.1, 0.82, 0.56])
     bands(ax, t)
     health_line(ax, t, a, lw=4)
