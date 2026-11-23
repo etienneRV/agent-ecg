@@ -204,13 +204,14 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
     <div class="container">
       <h2 class="title centered">What It Reads: The Agent's ECG</h2>
       <div class="narrow">
-        <p class="lead">Every step of a run adds one beat to 19 time series: how long the agent thinks, what it types and what comes back, what it does, and how the environment answers. Stacked together they form the run's ECG. Our TimeNet dataset records it for all $n_runs runs, and the monitor reads it one step at a time, while the run is still going.</p>
+        <p class="lead">Every step of a run adds one beat to 19 time series, read straight from the agent's log: what it does, what comes back, how much is said, and whether it is repeating itself. Stacked together they form the run's ECG. Our TimeNet dataset records it for all $n_runs runs, and the monitor reads it one step at a time, while the run is still going.</p>
         <div class="channels">
-          <div><h4>4 lengths</h4><p>the agent's thought, its command, the environment's reply, and the whole conversation so far</p></div>
-          <div><h4>5 actions</h4><p>edit, create a file, run code, read, search</p></div>
-          <div><h4>5 replies</h4><p>rejected edit, traceback, command error, timeout, silent success</p></div>
-          <div><h4>5 patterns</h4><p>repeated command, same file as the last edit, and whether an edit touches a source, test or own file</p></div>
+          <div><h4>What it does</h4><p>5 signals: edit, create a file, run code, read, search</p></div>
+          <div><h4>What comes back</h4><p>5 signals: rejected edit, traceback, command error, timeout, silent success</p></div>
+          <div><h4>How much is said</h4><p>4 signals: the length of the agent's thought, its command, the reply, and the whole conversation so far</p></div>
+          <div><h4>Repeats and edits</h4><p>5 signals: the same command again, the same file edited again, and whether an edit touches source code, a test, or a file the agent created</p></div>
         </div>
+        <p class="lead">Why these 19: together they cover every part of a step in the log (the thought, the command and the reply), plus the repeats that show an agent going in circles. We also tried 15 more signals, such as test results, error types and edit sizes; none improved the predictions.</p>
       </div>
       $fig_hero
     </div>

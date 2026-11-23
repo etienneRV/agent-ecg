@@ -384,7 +384,16 @@ def alarm(ax: plt.Axes, t: Theme, df: pd.DataFrame, text: str) -> int | None:
 ENDING_TEXT = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
 
 
-def after_alarm(ax: plt.Axes, t: Theme, step: int, last: int, row: pd.Series | None = None) -> None:
+def after_alarm(
+    ax: plt.Axes,
+    t: Theme,
+    step: int,
+    last: int,
+    row: pd.Series | None = None,
+    y: float = 21,
+    extra: str = "",
+    brief: bool = False,
+) -> None:
     """Fade everything after the alarm: in use the run is stopped there, so what follows is what stopping saves.
     With ``row`` (the run's longest checkpoint), also say what the run did when left running."""
     ax.axvspan(step + 0.05, last + 0.6, color=t.bg, alpha=0.68, lw=0, zorder=5.5)
@@ -393,10 +402,13 @@ def after_alarm(ax: plt.Axes, t: Theme, step: int, last: int, row: pd.Series | N
     total = len(row["action_kind"]) + int(row["remaining"])
     ending = ENDING_TEXT.get(row["ending"], str(row["ending"]).replace("_", " "))
     fixed = "and fixed the issue" if row["resolved"] else "without fixing the issue"
+    note = f"Left running: {total - step} more steps (to step {total}),\nthen it {ending} {fixed}{extra}"
+    if brief:  # one line, for small charts
+        note = f"Left running, it {'succeeded' if row['resolved'] else 'failed'} {total - step} steps later"
     ax.text(
         last + 0.4,
-        21,
-        f"Left running: {total - step} more steps (to step {total}),\nthen it {ending} {fixed}",
+        y,
+        note,
         ha="right",
         va="center",
         fontsize=SIZE["small"],
@@ -404,6 +416,61 @@ def after_alarm(ax: plt.Axes, t: Theme, step: int, last: int, row: pd.Series | N
         zorder=7,
         linespacing=1.3,
     )
+
+
+def typical_chance() -> tuple[list[int], list[float]]:
+    """Share of test runs still going at each checkpoint that go on to succeed, in percent."""
+    out = json.loads((RESULTS / "issue_signals_thoughts.test.json").read_text())["outcome"]
+    return list(STEPS), [100 * out[f"k={k}"]["resolved_rate"] for k in STEPS]
+
+
+def chance_panel(ax: plt.Axes, t: Theme, a: pd.DataFrame, last: int, label_size: float = SIZE["label"]) -> int | None:
+    """Our model's chance that the run succeeds at each step (coloured by the monitor's state up to the alarm, grey
+    after it), a typical run still going at that step (dashed), and the alarm. Returns the alarm step."""
+    step = alarm_step(a)
+    x, y = a["step"].to_numpy(float), 100 * a["p_calibrated"].to_numpy(float)
+    live = [step is None or s <= step for s in x]
+    colors = [t.state(st) if ok else t.muted for st, ok in zip(a["state"], live, strict=True)]
+    segs = np.stack([np.column_stack([x[:-1], y[:-1]]), np.column_stack([x[1:], y[1:]])], axis=1)
+    ax.add_collection(LineCollection(segs, colors=colors[1:], linewidths=3.2, capstyle="round", zorder=4))
+    ax.scatter(x, y, s=22, c=colors, zorder=5, linewidths=0)
+    ks, base = typical_chance()
+    ax.plot(ks, base, color=t.cpu, lw=2, ls=(0, (5, 3)), marker="o", ms=5, zorder=3)
+    top = max(32.0, float(y.max()) * 1.15)
+    ax.set_xlim(0.5, last + 0.5)
+    ax.set_ylim(0, top)
+    ticks = [v for v in (0, 10, 20, 30, 40) if v <= top]
+    ax.set_yticks(ticks, [f"{v} %" for v in ticks])
+    ax.set_ylabel("chance it succeeds", labelpad=10)
+    style_axis(ax, t)
+    if step is not None:
+        h = float(100 * a.loc[a["step"] == step, "p_calibrated"].iloc[0])
+        ax.scatter([step], [h], s=420, facecolors="none", edgecolors=t.critical, linewidths=3, zorder=6)
+        ax.annotate(
+            f"step {step}: stop the agent",
+            (step, h),
+            xytext=(step + 1.2, h + 22),
+            color=t.critical,
+            fontsize=label_size,
+            fontweight="bold",
+            ha="left",
+            va="center",
+            zorder=7,
+            arrowprops={"arrowstyle": "-", "color": t.critical, "lw": 2, "shrinkA": 4, "shrinkB": 14},
+        )
+    return step
+
+
+def never_above(a: pd.DataFrame, step: int) -> str:
+    """The note after the alarm: the highest chance the model gave the run once the stop was called."""
+    after = 100 * a.loc[a["step"] > step, "p_calibrated"]
+    n = round(after.max()) if len(after) else 0
+    return f"\nOur model never gave it more than {a_or_an(n)} {n} % chance again" if len(after) else ""
+
+
+def a_or_an(n: int) -> str:
+    """The article before a number said aloud: an 8, an 11, an 18, an 80-something; a for the rest."""
+    return "an" if str(n).startswith("8") or n in (11, 18) else "a"
 
 
 def legend_line(fig: plt.Figure, t: Theme, x: float, y: float, items: list[tuple[str, dict]]) -> None:
@@ -430,32 +497,55 @@ def legend_line(fig: plt.Figure, t: Theme, x: float, y: float, items: list[tuple
 # ---------------------------------------------------------------- charts
 
 
+HERO_ORDER = (  # the website's boxes: what it does, what comes back, how much is said, repeats and what it edits
+    "edit",
+    "create file",
+    "run code",
+    "read",
+    "search",
+    "rejected edit",
+    "traceback",
+    "command error",
+    "timeout",
+    "silent success",
+    "thought length",
+    "command length",
+    "reply length",
+    "conversation length",
+    "repeated command",
+    "same file again",
+    "edits source",
+    "edits test",
+    "edits own file",
+)
+HERO_NAMES = {
+    "repeated command": "same command again",
+    "same file again": "same file edited again",
+    "edits source": "edits source code",
+    "edits test": "edits a test",
+    "edits own file": "edits a file it created",
+}
+
+
 def hero_ecg(t: Theme, out: Path) -> None:
     a = replay(SCAN / "replay.showcase.A.jsonl", SHOWCASE)
-    s = replay(SCAN / "replay.showcase.signals.jsonl", SHOWCASE)
     row = run_row(SHOWCASE)
     n = len(row["action_kind"])
     outcome = "resolved" if row["resolved"] else "failed"
     fig = figure(
         t,
         "Agent ECG: a coding agent's run, read step by step",
-        f"{row['instance_id']} · {n} steps · the run {outcome}. Top: monitor health. Bottom: the 19 series the model reads.",
+        f"{row['instance_id']} · {n} steps · the run {outcome}. Top: our model's chance that the run succeeds. Bottom: the 19 series it reads.",
         height=HERO_H if BARE else H,
     )
     left, right = 0.17, 0.92
     ax = fig.add_axes([left, 0.565, right - left, 0.265])
-    bands(ax, t)
-    cpu_line(ax, t, s)
-    health_line(ax, t, a)
-    health_axis(ax, t, (1, n))
+    step = chance_panel(ax, t, a, n)
     ax.set_xticks([])
     ax.spines["bottom"].set_visible(False)
-    step = alarm(ax, t, a, "")
-    if step is not None:
-        ax.texts[-1].set_text(f"step {step}: stop the agent")
     ax.text(
         a["step"].iloc[0] - 0.6,
-        45,
+        5,
         f"monitor\nstarts at\nstep {a['step'].iloc[0]}",
         ha="right",
         va="center",
@@ -469,16 +559,14 @@ def hero_ecg(t: Theme, out: Path) -> None:
         left,
         0.855,
         [
-            (f"our model ({MONITOR_MODEL})", {"segments": [t.stable, t.watch, t.low, t.critical]}),
-            (
-                "simple model, actions only" + ("" if alarm_step(s) else ": no alarm"),
-                {"color": t.cpu, "lw": 2, "ls": (0, (5, 3))},
-            ),
+            ("our model: chance the run succeeds", {"segments": [t.stable, t.watch, t.low, t.critical]}),
+            ("a typical run still going at that step", {"color": t.cpu, "lw": 2, "ls": (0, (5, 3))}),
         ],
     )
 
-    # the leads
-    series = leads(row)
+    # the leads, in the order of the website's boxes, with plain names
+    by_name = {name: (name, is_len, v) for name, is_len, v in leads(row)}
+    series = [(HERO_NAMES.get(nm, nm), *by_name[nm][1:]) for nm in HERO_ORDER]
     lx = fig.add_axes([left, 0.135, right - left, 0.41])
     style_axis(lx, t)
     rows = len(series)
@@ -505,12 +593,12 @@ def hero_ecg(t: Theme, out: Path) -> None:
             fontsize=SIZE["small"] if BARE else SIZE["note"] - 1,
             color=t.ink2,
         )
-    for b in (3.5, 4.5, 9.5, 14.5, 15.5):  # lengths | repeat | actions | replies | same file | targets
+    for b in (4.5, 9.5, 13.5):  # does | comes back | how much | repeats and edits
         lx.axhline(b, color=t.grid, lw=1, zorder=1)
     if step is not None:
         lx.axvline(step, color=t.critical, lw=1.5, alpha=0.7, zorder=1)
         ax.axvline(step, color=t.critical, lw=1.5, alpha=0.4, zorder=1)
-        after_alarm(ax, t, step, n, row)
+        after_alarm(ax, t, step, n, row, y=16, extra=never_above(a, step))
         lx.axvspan(step + 0.5, n + 0.6, color=t.bg, alpha=0.6, lw=0, zorder=3)
     lx.set_yticks([])
     lx.set_xticks([1, 5, 10, 15, 20, 25, n] if n not in (25, 26) else [1, 5, 10, 15, 20, n])
@@ -897,20 +985,15 @@ def social_preview(t: Theme) -> None:
     fig = plt.figure(figsize=(10, 5.25), dpi=DPI)
     fig.text(0.06, 0.86, "Agent ECG", fontsize=40, fontweight="bold", color=t.ink, va="baseline")
     fig.text(0.06, 0.765, "Catch a failing coding agent mid-run", fontsize=19, color=t.ink2, va="baseline")
-    ax = fig.add_axes([0.06, 0.1, 0.82, 0.56])
-    bands(ax, t)
-    health_line(ax, t, a, lw=4)
-    health_axis(ax, t, (int(a["step"].min()), int(a["step"].max())))
-    ax.set_ylabel("")
-    ax.set_yticks([])
-    ax.spines["left"].set_visible(False)
+    ax = fig.add_axes([0.1, 0.1, 0.84, 0.56])
+    last = int(a["step"].max())
+    step = chance_panel(ax, t, a, last, label_size=20)
+    ax.set_xlim(int(a["step"].min()) - 0.5, last + 0.5)
     ax.set_xticks([])
     ax.spines["bottom"].set_visible(False)
-    step = alarm(ax, t, a, "")
+    ax.set_ylabel("")
     if step is not None:
-        ax.texts[-1].set_text(f"step {step}: stop the agent")
-        ax.texts[-1].set_fontsize(20)
-        after_alarm(ax, t, step, int(a["step"].max()), run_row(SHOWCASE))
+        after_alarm(ax, t, step, last, run_row(SHOWCASE), y=17, brief=True)
     fig.savefig(ROOT / "site" / "social_preview.png", dpi=DPI)
     plt.close(fig)
     print("  site/social_preview.png")

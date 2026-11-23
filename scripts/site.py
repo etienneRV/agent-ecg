@@ -148,7 +148,11 @@ def showcase() -> dict:
     step = charts.alarm_step(a)
     total = len(row["action_kind"]) + int(row["remaining"])
     late = json.loads((RESULTS / "issue_signals_thoughts.test.json").read_text())["outcome"]["k=15"]["resolved_rate"]
+    chance = 100 * a.set_index("step")["p_calibrated"]
     return {
+        "show_start": f"{chance.iloc[0]:.0f}",
+        "show_low": f"{chance.loc[step]:.0f}",
+        "show_max_after": f"{charts.a_or_an(round(chance.loc[chance.index > step].max()))} {chance.loc[chance.index > step].max():.0f}",
         "show_saved": total - step,
         "show_fixed": "and fixed the issue" if row["resolved"] else "without fixing the issue",
         "late_fail": f"{round(10 * (1 - late))} in 10",
@@ -336,14 +340,14 @@ def main() -> None:
     values["fig_hero"] = figure(
         "hero_ecg",
         "Health of one agent run over 30 steps, with the 19 input series below",
-        f"One example, chosen to illustrate: an unseen test run on <code>{values['show_issue']}</code>. Our model's health "
-        f"falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, "
-        f"and the alarm fires at step {values['show_alarm']}. In use, the run would be stopped there; the faded part shows "
-        f"what it did instead. It went on for {values['show_saved']} more steps and {values['show_end']} "
-        f"{values['show_fixed']}. Health climbs back once the agent stops repeating the rejected edit, because it ranks "
-        f"the run against others that have lasted as long, and by step 15 about {values['late_fail']} of those fail too: "
-        f"a stable reading late in a run is no promise of success. The simple model reading only the actions (grey, "
-        f"dashed) {values['show_signals']} on this run. Below are the 19 series the model reads, one row each.",
+        f"One example, chosen to illustrate: an unseen test run on <code>{values['show_issue']}</code>. Top: our model's "
+        f"chance that the run succeeds, step by step, next to a typical run still going at that step (dashed). It starts "
+        f"at {values['show_start']}&nbsp;%, above a typical run, and falls to {values['show_low']}&nbsp;% while the agent "
+        f"keeps re-editing the same file after the linter rejects its edits; the monitor calls the stop at step "
+        f"{values['show_alarm']}. Left running, the run went on for {values['show_saved']} more steps and "
+        f"{values['show_end']} {values['show_fixed']}, and the model never gave it more than "
+        f"{values['show_max_after']}&nbsp;% chance again. Bottom: the 19 signals it reads, one row each, grouped as in "
+        "the boxes above.",
     )
     values["fig_auroc"] = figure(
         "auroc_paper",

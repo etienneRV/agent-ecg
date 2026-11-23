@@ -211,15 +211,16 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
     <div class="container">
       <h2 class="title centered">What It Reads: The Agent's ECG</h2>
       <div class="narrow">
-        <p class="lead">Every step of a run adds one beat to 19 time series: how long the agent thinks, what it types and what comes back, what it does, and how the environment answers. Stacked together they form the run's ECG. Our TimeNet dataset records it for all 76,182 runs, and the monitor reads it one step at a time, while the run is still going.</p>
+        <p class="lead">Every step of a run adds one beat to 19 time series, read straight from the agent's log: what it does, what comes back, how much is said, and whether it is repeating itself. Stacked together they form the run's ECG. Our TimeNet dataset records it for all 76,182 runs, and the monitor reads it one step at a time, while the run is still going.</p>
         <div class="channels">
-          <div><h4>4 lengths</h4><p>the agent's thought, its command, the environment's reply, and the whole conversation so far</p></div>
-          <div><h4>5 actions</h4><p>edit, create a file, run code, read, search</p></div>
-          <div><h4>5 replies</h4><p>rejected edit, traceback, command error, timeout, silent success</p></div>
-          <div><h4>5 patterns</h4><p>repeated command, same file as the last edit, and whether an edit touches a source, test or own file</p></div>
+          <div><h4>What it does</h4><p>5 signals: edit, create a file, run code, read, search</p></div>
+          <div><h4>What comes back</h4><p>5 signals: rejected edit, traceback, command error, timeout, silent success</p></div>
+          <div><h4>How much is said</h4><p>4 signals: the length of the agent's thought, its command, the reply, and the whole conversation so far</p></div>
+          <div><h4>Repeats and edits</h4><p>5 signals: the same command again, the same file edited again, and whether an edit touches source code, a test, or a file the agent created</p></div>
         </div>
+        <p class="lead">Why these 19: together they cover every part of a step in the log (the thought, the command and the reply), plus the repeats that show an agent going in circles. We also tried 15 more signals, such as test results, error types and edit sizes; none improved the predictions.</p>
       </div>
-      <figure class="chart"><img src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>One example, chosen to illustrate: an unseen test run on <code>scverse__scanpy-2859</code>. Our model's health falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at step 12. In use, the run would be stopped there; the faded part shows what it did instead. It went on for 33 more steps and ran out of context without fixing the issue. Health climbs back once the agent stops repeating the rejected edit, because it ranks the run against others that have lasted as long, and by step 15 about 9 in 10 of those fail too: a stable reading late in a run is no promise of success. The simple model reading only the actions (grey, dashed) never alarms on this run. Below are the 19 series the model reads, one row each.</figcaption></figure>
+      <figure class="chart"><img src="figures/hero_ecg.svg" alt="Health of one agent run over 30 steps, with the 19 input series below" loading="lazy"><figcaption>One example, chosen to illustrate: an unseen test run on <code>scverse__scanpy-2859</code>. Top: our model's chance that the run succeeds, step by step, next to a typical run still going at that step (dashed). It starts at 28&nbsp;%, above a typical run, and falls to 3&nbsp;% while the agent keeps re-editing the same file after the linter rejects its edits; the monitor calls the stop at step 12. Left running, the run went on for 33 more steps and ran out of context without fixing the issue, and the model never gave it more than an 11&nbsp;% chance again. Bottom: the 19 signals it reads, one row each, grouped as in the boxes above.</figcaption></figure>
     </div>
   </section>
 
