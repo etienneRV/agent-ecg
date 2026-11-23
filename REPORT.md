@@ -294,6 +294,27 @@ Every number, with intervals and sources: [results/SUMMARY.md](results/SUMMARY.m
   tabular data ([Grinsztajn et al., NeurIPS 2022](https://arxiv.org/abs/2207.08815)). The signals baseline's inputs
   are such tabular summaries.
 
+### Why predicting failure early is hard, and what remembering earlier attempts gains
+
+Computed by `scripts/history_monitor.py`; every number is in [results/history_monitor.md](results/history_monitor.md).
+
+- **The issue decides most of the outcome.** 77 % of the 3,586 issues are never solved in any attempt, 1 % always,
+  22 % sometimes; which issue it is explains 52 % of the variance in outcomes. The success rate of the other
+  attempts at the same issue ranks a test run with AUROC 0.93 at 5 steps (0.87 at 30); our model reaches 0.66.
+- **The first steps reveal little of it.** On pairs of attempts at the same issue, every model ranks only 54 to 57 %
+  of pairs right at 5 steps (section 6, same-issue pairs); the attempts drift apart later.
+- **The training data is smaller than it looks for this.** 60,985 training runs, but 2,853 issues, of which only 659
+  were ever solved: a 1B model learns which issues are solvable from a few hundred examples and memorizes them
+  (its validation AUROC peaks early, and test is about 0.09 below validation).
+- **OpenTSLM's encoder fits this data poorly.** It was pretrained on heart ECG waveforms, and it groups steps in
+  patches of four, padded with zeros without a mask: in a 5-step snapshot, 3 of the 8 positions are padding that
+  looks like "nothing happened". The ECG-only TSLM stays flat while trees on simple counts climb.
+- **Memory across attempts works.** An attempt succeeds 16.6 % of the time, but 8.1 % after one failed attempt at the
+  same issue, 3.4 % after three and 2.0 % after five. Combining our model with the outcome of three earlier attempts
+  (drawn at random among the other attempts at the issue; logistic regression cross-fitted over two halves of the
+  test repositories) lifts AUROC from 0.657 to 0.852 at 5 steps, +0.195 [+0.139, +0.250]; the gain is significant
+  at every checkpoint. Three earlier attempts alone already reach 0.848: the history carries most of it.
+
 ## 7. Limitations
 
 - One agent framework (SWE-agent) and one model family (Llama 3.1; 93 % of runs from the 70B model).
@@ -307,6 +328,10 @@ Every number, with intervals and sources: [results/SUMMARY.md](results/SUMMARY.m
   (Llama 3.2 1B), the starting checkpoint or the training setup, so we cannot say which of these limits the TSLM.
 - Whether ecg-full relies on the ECG is untested: a test that shuffles its series between runs was not run. ecg,
   which reads only the ECG, scores above chance.
+- We did not weight training by issue, mask the zero padding of OpenTSLM's four-step patches, try a per-step
+  encoder, or run several seeds and a hyperparameter search; each could matter given the diagnosis above.
+- The history-aware monitor needs several attempts at the same issue, and draws "earlier" attempts at random
+  among the others, which assumes attempts are interchangeable.
 - The test set is small for differences between models: paired intervals are 0.02-0.12 wide, so gains of
   +0.02-0.04, like the second round's, can be neither confirmed nor ruled out.
 

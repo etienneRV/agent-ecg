@@ -24,7 +24,7 @@ RESULTS = charts.RESULTS
 SITE = ROOT / "site"
 SITE_URL = "https://etiennerv.github.io/agent-ecg/"  # GitHub Pages address of the repo; used for link previews
 FIGS = ("hero_ecg", "auroc_by_step", "monitor_numbers", "failing_vs_resolved", "training_curves")
-PAPER_FIGS = ("same_issue", "paper_results", "monitor_paper", "auroc_paper")  # scripts/paper_figures.py
+PAPER_FIGS = ("same_issue", "paper_results", "monitor_paper", "auroc_paper", "history")  # scripts/paper_figures.py
 ENDINGS = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
 
 
@@ -88,6 +88,7 @@ def auroc_table() -> dict:
     return {
         "sig_first_pct": f"{100 * sig[charts.STEPS[0]][0]:.0f}&nbsp;%",
         "a_first_pct": f"{100 * tslm['A'][charts.STEPS[0]][0]:.0f}&nbsp;%",
+        "a_first_num": f"{100 * tslm['A'][charts.STEPS[0]][0]:.0f}",
         "iss_first_pct": f"{100 * cpu['issue'][charts.STEPS[0]][0]:.0f}&nbsp;%",
         "sig_last_pct": f"{100 * sig[charts.STEPS[-1]][0]:.0f}&nbsp;%",
         "gap_lo_pts": f"{100 * min(gaps):.0f}",
@@ -264,6 +265,26 @@ def same_issue() -> dict:
     }
 
 
+def history() -> dict:
+    """The history-aware monitor (results/history_monitor.md, written by scripts/history_monitor.py)."""
+    from history_numbers import history_numbers
+
+    h = history_numbers()
+    return {
+        "hist_never": f"{h['never']}&nbsp;%",
+        "hist_share": f"{h['issue_share']}&nbsp;%",
+        "hist_sibling5": f"{100 * h['sibling'][0]:.0f}",
+        "hist_train_runs": h["train_runs"],
+        "hist_train_issues": h["train_issues"],
+        "hist_train_solved": h["train_solved"],
+        "hist_base": f"{h['after'][0]:.1f}&nbsp;%",
+        "hist_after3": f"{h['after'][3]:.1f}&nbsp;%",
+        "hist_ours5": f"{100 * h['ours'][0]:.0f}",
+        "hist_with3": f"{100 * h['with'][3][0]:.0f}",
+        "hist_with5": f"{100 * h['with'][5][0]:.0f}",
+    }
+
+
 def second_round() -> dict:
     """The second-round runs (ecg v2, ecg-full v2): their gain over the original model and the pre-agreed verdict."""
     names = charts.tslm_labels()
@@ -335,6 +356,7 @@ def main() -> None:
         **compute(),
         **other_tasks(),
         **same_issue(),
+        **history(),
         **second_round(),
     }
     values["fig_hero"] = figure(
@@ -390,6 +412,14 @@ def main() -> None:
         "(a) Test AUROC by steps seen, with 95&nbsp;% intervals for the two models with the same inputs. (b) and (c) as in "
         "the Results section. (d) The live monitor on the replayed test runs. Style after figures4papers "
         '(Chen Liu). Download: <a href="figures/paper_results.pdf">PDF</a>.',
+    )
+    values["fig_history"] = figure(
+        "history",
+        "Two bar charts: the chance the next attempt succeeds after failed attempts at the same issue, and the monitor's score at step 5 with and without them",
+        "Left: the chance an attempt succeeds when other attempts at the same issue, drawn at random, all failed. "
+        "Right: the monitor's score at step 5, on our model alone and combined with the outcome of earlier attempts "
+        "(100 is perfect, 50 a coin flip; the combination is fitted on half of the test repositories and scored on "
+        "the other half). Data: <code>results/history_monitor.md</code>.",
     )
     values["site_url"] = SITE_URL
     html = Template((Path(__file__).parent / "site_template.html").read_text()).substitute(values)

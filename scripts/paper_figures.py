@@ -420,6 +420,63 @@ def site_auroc(d: dict) -> None:
     plt.close(fig)
 
 
+def site_history() -> None:
+    """The website's history chart: the chance the next attempt succeeds after failed attempts at the same issue,
+    and the monitor's score at step 5 with and without those earlier attempts."""
+    from history_numbers import history_numbers
+
+    h = history_numbers()
+    fig, axes = plt.subplots(1, 2, figsize=(16, 6.2))
+    fig.subplots_adjust(left=0.07, right=0.98, top=0.82, bottom=0.17, wspace=0.28)
+    ax = axes[0]
+    labels = ["no history", "1 failed", "3 failed", "5 failed"]
+    vals = [h["after"][m] for m in (0, 1, 3, 5)]
+    bars = ax.bar(
+        range(4), vals, width=0.62, color=[PALETTE["neutral"]] + [PALETTE["red_2"]] * 3, edgecolor=PALETTE["ink"], lw=2
+    )
+    for b, v in zip(bars, vals, strict=True):
+        ax.text(
+            b.get_x() + b.get_width() / 2,
+            v + 0.4,
+            f"{v:.1f}%",
+            ha="center",
+            va="bottom",
+            fontsize=16,
+            fontweight="bold",
+        )
+    ax.set_xticks(range(4), labels)
+    ax.tick_params(axis="x", length=0, labelsize=14)
+    ax.set_ylim(0, max(vals) * 1.25)
+    ax.set_ylabel("Chance the next attempt succeeds (%)")
+    ax.set_title("Earlier attempts at the same issue all failed", fontsize=17, pad=12)
+    letter(ax, "a")
+    ax = axes[1]
+    labels = ["our model\nalone", "+ 1 earlier\nattempt", "+ 3 earlier\nattempts", "+ 5 earlier\nattempts"]
+    vals = [100 * h["ours"][0]] + [100 * h["with"][m][0] for m in (1, 3, 5)]
+    bars = ax.bar(
+        range(4),
+        vals,
+        width=0.62,
+        color=[PALETTE["blue_secondary"]] + [PALETTE["blue_main"]] * 3,
+        edgecolor=PALETTE["ink"],
+        lw=2,
+    )
+    for b, v in zip(bars, vals, strict=True):
+        ax.text(
+            b.get_x() + b.get_width() / 2, v + 0.8, f"{v:.0f}", ha="center", va="bottom", fontsize=16, fontweight="bold"
+        )
+    ax.axhline(50, color=PALETTE["gray"], lw=1.6, ls=":")
+    ax.text(3.55, 50, "coin flip", ha="left", va="center", fontsize=12, color=PALETTE["gray"], clip_on=False)
+    ax.set_xticks(range(4), labels)
+    ax.tick_params(axis="x", length=0, labelsize=13.5)
+    ax.set_ylim(45, 100)
+    ax.set_ylabel("Score at step 5 (100 = perfect)")
+    ax.set_title("The monitor, with and without that memory", fontsize=17, pad=12)
+    letter(ax, "b")
+    save_web(fig, "history")
+    plt.close(fig)
+
+
 def site_monitor(d: dict) -> None:
     """The website's live-monitor chart: how early each monitor flags failing runs, and which ones each catches."""
     m = d["monitor"]
@@ -483,6 +540,7 @@ def main() -> None:
     site_same_issue(d)
     site_monitor(d)
     site_auroc(d)
+    site_history()
 
 
 if __name__ == "__main__":
