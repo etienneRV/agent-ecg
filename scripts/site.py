@@ -141,7 +141,12 @@ def showcase() -> dict:
     s = charts.replay(charts.SCAN / "replay.showcase.signals.jsonl", charts.SHOWCASE)
     row = charts.run_row(charts.SHOWCASE)
     step = charts.alarm_step(a)
+    total = len(row["action_kind"]) + int(row["remaining"])
+    late = json.loads((RESULTS / "issue_signals_thoughts.test.json").read_text())["outcome"]["k=15"]["resolved_rate"]
     return {
+        "show_saved": total - step,
+        "show_fixed": "and fixed the issue" if row["resolved"] else "without fixing the issue",
+        "late_fail": f"{round(10 * (1 - late))} in 10",
         "show_issue": row["instance_id"],
         "show_steps": len(row["action_kind"]),
         "show_alarm": step,
@@ -324,10 +329,14 @@ def main() -> None:
     values["fig_hero"] = figure(
         "hero_ecg",
         "Health of one agent run over 30 steps, with the 19 input series below",
-        f"One example, chosen to illustrate: an unseen test run on <code>{values['show_issue']}</code>. {charts.MONITOR_MODEL}'s health falls through watch and low "
-        f"while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at "
-        f"step {values['show_alarm']}. The run went on to fail (it {values['show_end']}). The signals baseline "
-        f"(grey, dashed) {values['show_signals']} on this run. Below it are the 19 series the model reads, one row each.",
+        f"One example, chosen to illustrate: an unseen test run on <code>{values['show_issue']}</code>. Our model's health "
+        f"falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, "
+        f"and the alarm fires at step {values['show_alarm']}. In use, the run would be stopped there; the faded part shows "
+        f"what it did instead. It went on for {values['show_saved']} more steps and {values['show_end']} "
+        f"{values['show_fixed']}. Health climbs back once the agent stops repeating the rejected edit, because it ranks "
+        f"the run against others that have lasted as long, and by step 15 about {values['late_fail']} of those fail too: "
+        f"a stable reading late in a run is no promise of success. The simple model reading only the actions (grey, "
+        f"dashed) {values['show_signals']} on this run. Below are the 19 series the model reads, one row each.",
     )
     values["fig_auroc"] = figure(
         "auroc_paper",
@@ -346,7 +355,8 @@ def main() -> None:
     values["fig_runs"] = figure(
         "failing_vs_resolved",
         "Health over time for a failing and a resolved run, both monitors",
-        f"The showcase failing run and a resolved run. {charts.MONITOR_MODEL} stays stable on the resolved run until a dip to watch "
+        f"The showcase failing run and a resolved run. After the alarm the failing run is faded: in use it would be "
+        f"stopped there. {charts.MONITOR_MODEL} stays stable on the resolved run until a dip to watch "
         "at the end; the signals baseline reads it as low early on.",
     )
     values["fig_training"] = figure(

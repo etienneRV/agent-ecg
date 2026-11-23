@@ -273,11 +273,8 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
         <div class="key tslm"><b>&asymp;&nbsp;0</b><h3>Same issue, same score</h3><p>Part of the simple model's lead is guessing which issues are hard, which the issue text alone gives away. Compare only two attempts at the same issue, where that guess cannot help, and the gap disappears: up to 20 steps it stays between $si_lo_pts and $si_hi_pts points, with no clear winner.</p></div>
         <div class="key"><b>step $a_median</b><h3>Early alarms</h3><p>We replayed $mon_total runs the model had never seen. It raised the alarm on $a_flagged of the runs that went on to fail, half of them by step $a_median (the actions-only model: step $s_median). It also raised false alarms on $a_false of the runs that succeeded.</p></div>
       </div>
-      <h3 class="finding-title" style="margin-top:2.6rem">The longer you watch, the more the agent's actions tell you</h3>
-      <p class="lead">The score is the chance of telling a failing run from a succeeding one: 0.5 is a coin flip, 1 is perfect. All runs come from repositories the models never saw in training. The model that reads only the agent's actions keeps improving as the run goes on; our models stay a little below the simple ones.</p>
-      $fig_auroc
       <h3 class="finding-title" style="margin-top:2.6rem">On two attempts at the same issue, our model keeps up</h3>
-      <p class="lead">Some issues are harder than others, and the issue text alone gives that away before the agent even starts. That is where the simple model gets its lead. Compare only two attempts at the same issue and the gap disappears (left). Only what happens during the run can tell them apart: reading just the agent's actions, a model picks the attempt that will succeed $si_sig_first of the time after $k_first steps and $si_sig_last after $k_last (right).</p>
+      <p class="lead">Overall, our model scores $gap_lo_pts to $gap_hi_pts points below a simple model that reads the same inputs (left, pink). Some issues are harder than others, and the issue text alone gives that away before the agent even starts: that is where the simple model gets its lead. Compare only two attempts at the same issue and the gap disappears (left, blue). Only what happens during the run can tell them apart: reading just the agent's actions, a model picks the attempt that will succeed $si_sig_first of the time after $k_first steps and $si_sig_last after $k_last (right).</p>
       $fig_same_issue
       <h3 class="finding-title" style="margin-top:2.6rem">As a live monitor, ours warns earlier but raises a few more false alarms</h3>
       <p class="lead">We replayed $mon_total test runs step by step, as if each monitor were watching them live.</p>
@@ -332,6 +329,9 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
   <section class="section detail" id="d-results" role="tabpanel" aria-labelledby="tab-d-results" hidden><div class="container content">
       <h2 class="title">Predicting Pass or Fail from the First Steps</h2>
       <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
+      <h3 style="margin-top:1.8rem">The longer you watch, the more the agent's actions tell you</h3>
+      <p>Each of our three models next to the simple model that reads the same inputs. The model that reads only the agent's actions keeps improving as the run goes on; ours stay a little below the simple ones, and furthest below when they read the ECG alone.</p>
+      $fig_auroc
       <div class="table"><table>
         <thead><tr><th>Model</th><th>Reads</th>$auroc_head</tr></thead>
         <tbody>$auroc_rows</tbody>
