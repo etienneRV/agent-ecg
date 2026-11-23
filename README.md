@@ -1,7 +1,7 @@
 # agent-ecg
 
-An "ECG" for coding agents: read the first steps of a SWE-agent run and warn early whether it will
-resolve its GitHub issue. Built on the TimeNet dataset `nebius/swe_agent_trajectories`
+A heart monitor for AI coding agents: it reads a SWE-agent run step by step and flags runs that are
+going to fail, three steps before a classical monitor. Built on the TimeNet dataset `nebius/swe_agent_trajectories`
 ([OpenTSLM/TimeNet#832](https://github.com/OpenTSLM/TimeNet/pull/832)).
 
 https://github.com/user-attachments/assets/2428ea1f-d6d5-4f16-8782-0e795f7c1f60
