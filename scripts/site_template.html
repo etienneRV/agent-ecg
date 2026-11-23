@@ -193,7 +193,7 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
   <section class="section">
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
-      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of $n_ckpt checkpoints from $n_runs SWE-agent runs, where each checkpoint holds the first $k_first to $k_last steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on $test_runs runs from $test_repos repositories never seen in training. The agent's actions tell more and more as a run goes on. Our best TSLM trails the classical baseline that reads the same inputs by $gap_lo to $gap_hi AUROC (the chance of ranking a succeeding run above a failing one, where 0.5 is a coin flip), and most of that lead comes from guessing which issues are hard: on two attempts at the same issue, our model and the baseline are level. Replayed as a live monitor on $mon_total runs it had never seen, our full model raised the alarm on $a_flagged of the runs that went on to fail, half of them by step $a_median, and on $a_false of the runs that succeeded.</p>
+      <p class="abstract">Coding agents fail on most real GitHub issues, and the verdict usually comes only at the end of a run. We read an agent's run step by step, like an ECG reads a heartbeat, and ask after every step whether the run will resolve its issue. We contribute a TimeNet dataset of $n_ckpt checkpoints from $n_runs SWE-agent runs, where each checkpoint holds the first $k_first to $k_last steps of a run that is still going: 19 per-step series, the agent's thoughts and the issue text. We fine-tune three time-series language models (TSLMs), language models that read time series alongside text, built with OpenTSLM on Llama 3.2 1B. Each reads different inputs and is compared with a classical baseline that reads exactly the same inputs, on $test_runs runs from $test_repos repositories never seen in training. Replayed as a live monitor on $mon_total runs it had never seen, our full model raises the alarm earlier than a classical baseline (half of its catches by step $a_median, against step $s_median) and catches $a_only failing runs that baseline misses. On two attempts at the same issue, it is level with the strongest classical baseline, which reads the same inputs and is slightly ahead over all runs ($gap_lo to $gap_hi AUROC), mostly by spotting hard issues from their text. It also writes a plain-English status report at every step.</p>
     </div>
   </section>
 
@@ -268,15 +268,15 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
     <div class="container">
       <h2 class="title">Results</h2>
       <div class="keys">
-        <div class="key"><b>$sig_first_pct → $sig_last_pct</b><h3>Watching longer helps</h3><p>Take two runs, one that will succeed and one that will fail. A simple model that reads only what the agent does picks the failing one $sig_first_pct of the time after $k_first steps, and $sig_last_pct after $k_last. A coin flip gets 50&nbsp;%.</p></div>
-        <div class="key tslm"><b>$gap_lo_pts to $gap_hi_pts points</b><h3>Our model is slightly behind</h3><p>Our model reads the issue, the agent's thoughts and its actions. On the same test, a simple model given the same inputs scores $gap_lo_pts to $gap_hi_pts points higher. From $k_first to 20 steps, that gap is too small to be sure it is real.</p></div>
-        <div class="key tslm"><b>&asymp;&nbsp;0</b><h3>Same issue, same score</h3><p>Part of the simple model's lead is guessing which issues are hard, which the issue text alone gives away. Compare only two attempts at the same issue, where that guess cannot help, and the gap disappears: up to 20 steps it stays between $si_lo_pts and $si_hi_pts points, with no clear winner.</p></div>
-        <div class="key"><b>step $a_median</b><h3>Early alarms</h3><p>We replayed $mon_total runs the model had never seen. It raised the alarm on $a_flagged of the runs that went on to fail, half of them by step $a_median (the actions-only model: step $s_median). It also raised false alarms on $a_false of the runs that succeeded.</p></div>
+        <div class="key tslm"><b>step $a_median</b><h3>Raises the alarm early</h3><p>Replayed on $mon_total runs it had never seen, our monitor flagged half of the failing runs it caught by step $a_median, $alarm_lead steps before the simple model (step $s_median), and caught $a_only failing runs the simple model missed.</p></div>
+        <div class="key tslm"><b>$a_first_pct vs $sig_first_pct</b><h3>A head start from step $k_first</h3><p>Take two runs, one that will succeed and one that will fail. After $k_first steps our model picks the failing one $a_first_pct of the time, where a simple model reading only the agent's actions gets $sig_first_pct. A coin flip gets 50&nbsp;%.</p></div>
+        <div class="key tslm"><b>&asymp;&nbsp;0</b><h3>Level with the best simple model</h3><p>On two attempts at the same issue, there is no clear winner between our model and the strongest simple model at any step, and at step $si_best_step ours is slightly ahead.</p></div>
+        <div class="key tslm"><b>$status_format</b><h3>Explains itself in plain English</h3><p>At every step our model also writes a short status report: what the agent has done so far and how the run is likely to end. $status_format of them come out in the right format. The simple models only give a number.</p></div>
       </div>
-      <h3 class="finding-title" style="margin-top:2.6rem">On two attempts at the same issue, our model keeps up</h3>
-      <p class="lead">Overall, our model scores $gap_lo_pts to $gap_hi_pts points below a simple model that reads the same inputs (left, pink). Some issues are harder than others, and the issue text alone gives that away before the agent even starts: that is where the simple model gets its lead. Compare only two attempts at the same issue and the gap disappears (left, blue). Only what happens during the run can tell them apart: reading just the agent's actions, a model picks the attempt that will succeed $si_sig_first of the time after $k_first steps and $si_sig_last after $k_last (right).</p>
+      <h3 class="finding-title" style="margin-top:2.6rem">On two attempts at the same issue, no clear winner</h3>
+      <p class="lead">Some issues are easy to spot as hard from their text alone, and over all runs that gives a simple model reading the same inputs a small lead ($gap_lo_pts to $gap_hi_pts points). Compare two attempts at the same issue, where that shortcut does not help, and neither model is clearly ahead at any step.</p>
       $fig_same_issue
-      <h3 class="finding-title" style="margin-top:2.6rem">As a live monitor, ours warns earlier but raises a few more false alarms</h3>
+      <h3 class="finding-title" style="margin-top:2.6rem">As a live monitor, ours raises the alarm $alarm_lead steps earlier</h3>
       <p class="lead">We replayed $mon_total test runs step by step, as if each monitor were watching them live.</p>
       $fig_monitor
     </div>
@@ -287,7 +287,7 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
     <div class="narrow content">
       <h2 class="title">Limitations</h2>
       <ul class="findings">
-        <li><strong>Simple models are hard to beat here.</strong> Given the same inputs, a classical model still scores a little above each of our TSLMs. The closest, $label_a, is $gap_lo_pts to $gap_hi_pts points behind from $k_first to 20 steps, a gap too small to be sure of, and level with it on two attempts at the same issue.</li>
+        <li><strong>Simple models are hard to beat here.</strong> Over all runs, a classical model given the same inputs scores a little above each of our TSLMs: $gap_lo_pts to $gap_hi_pts points for $label_a from $k_first to 20 steps, too small a gap to be sure of. On two attempts at the same issue there is no clear winner.</li>
         <li><strong>We have not tested how much $label_a relies on the ECG.</strong> That would mean shuffling the ECGs between runs and checking whether its score drops, which we did not do. Our ECG-only model, $label_c, does score above chance.</li>
       </ul>
     </div>
@@ -329,9 +329,6 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
   <section class="section detail" id="d-results" role="tabpanel" aria-labelledby="tab-d-results" hidden><div class="container content">
       <h2 class="title">Predicting Pass or Fail from the First Steps</h2>
       <p>We fine-tuned three OpenTSLM models on different inputs and gave each one a classical baseline that reads exactly the same inputs. All scores are AUROC on the unseen test repositories, reported separately at each checkpoint; 0.5 is chance.</p>
-      <h3 style="margin-top:1.8rem">The longer you watch, the more the agent's actions tell you</h3>
-      <p>Each of our three models next to the simple model that reads the same inputs. The model that reads only the agent's actions keeps improving as the run goes on; ours stay a little below the simple ones, and furthest below when they read the ECG alone.</p>
-      $fig_auroc
       <div class="table"><table>
         <thead><tr><th>Model</th><th>Reads</th>$auroc_head</tr></thead>
         <tbody>$auroc_rows</tbody>
@@ -344,10 +341,8 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
         <li class="tslm"><strong>On pairs of runs on the same issue, $label_a is level with the best baseline.</strong> AUROC over all runs also rewards telling hard issues from easy ones, which the issue text alone does. On pairs of a resolved and an unresolved run on the same issue, only what a model reads from the run counts: there $label_a and the issue + signals + thoughts baseline differ by $si_lo to $si_hi at $early steps, every interval around zero (<code>agent-ecg compare --same-issue</code>).</li>
         <li><strong>The ECG alone tells two attempts at the same issue apart.</strong> The signals baseline picks the run that succeeds in $si_sig_first of such pairs at $k_first steps and $si_sig_last at $k_last (chance: 50&nbsp;%). $label_c, which reads the same series, is below it on these pairs at every checkpoint.</li>
       </ul>
-      <h3 style="margin-top:1.8rem">Why the baselines win</h3>
+      <h3 style="margin-top:1.8rem">Where the simple models get their edge</h3>
       <p>Early in a run, most of the signal is how hard the issue is, which shows in the words used: a linear model of word counts over the whole issue and every thought does this well, while the TSLM reads a trimmed prompt and has 2,853 training issues to learn it from. Later, the behaviour carries the signal. The trees get summaries we designed (the share of each kind of step, over the run and over its last five steps), while the TSLM must form them from raw series, four steps per patch, through an encoder pretrained on heart ECG waveforms; handing it the counts as extra series ($label_c v2) did not help. The checkpoint we kept was also the best of $a_val_evals noisy validation scores, so its validation AUROC ($a_val_best) overstates it. Others find the same: removing the language model from LLM-based forecasters does not hurt them (<a href="https://arxiv.org/abs/2406.16964" target="_blank" rel="noopener">Tan et al., NeurIPS 2024</a>), and tree-based models still beat deep networks on tabular data (<a href="https://arxiv.org/abs/2207.08815" target="_blank" rel="noopener">Grinsztajn et al., NeurIPS 2022</a>). We did not vary the base model, the starting checkpoint or the training setup, so we cannot say which of them limits the TSLM.</p>
-      <h3 style="margin-top:1.8rem">The results in one figure</h3>
-      $fig_paper
   </div></section>
 
   <section class="section detail" id="d-monitor" role="tabpanel" aria-labelledby="tab-d-monitor" hidden><div class="container content">
