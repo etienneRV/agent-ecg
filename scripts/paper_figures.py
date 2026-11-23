@@ -61,6 +61,7 @@ STYLE = {
     "ytick.major.width": 2,
     "legend.frameon": False,
     "svg.fonttype": "none",
+    "svg.hashsalt": "agent-ecg",  # stable element ids: reruns give the same SVG files
     "pdf.fonttype": 42,
 }
 
