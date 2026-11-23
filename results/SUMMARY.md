@@ -85,6 +85,20 @@ Gaps with 95 % intervals (bold: the interval excludes zero):
 - Figures (`uv run python scripts/paper_figures.py`): [figures/results.png](figures/results.png) (four panels, PDF and SVG
   alongside) and [figures/social.png](figures/social.png) (16:9, for posts).
 
+## Why early prediction is hard, and a monitor that remembers earlier attempts
+
+From `scripts/history_monitor.py` ([history_monitor.md](history_monitor.md)):
+
+- 77 % of issues are never solved in any attempt, 1 % always, 22 % sometimes; the issue explains 52 % of the
+  variance in outcomes. Training: 60,985 runs, 2,853 issues, 659 ever solved.
+- The other attempts' success rate at the same issue ranks a test run with AUROC 0.930 / 0.922 / 0.908 / 0.905 /
+  0.870 at 5 / 10 / 15 / 20 / 30 steps; ecg-full alone: 0.657 / 0.677 / 0.684 / 0.679 / 0.624.
+- Chance an attempt succeeds after m failed attempts at the same issue: 16.6 % (m = 0), 8.1 % (1), 3.4 % (3),
+  2.0 % (5).
+- ecg-full + 3 earlier attempts (cross-fitted logistic regression): 0.852 / 0.843 / 0.833 / 0.841 / 0.816, a gain of
+  +0.195 [+0.139, +0.250] at 5 steps and significant at every checkpoint; 3 earlier attempts alone: 0.848 / 0.834 /
+  0.820 / 0.821 / 0.822.
+
 ## ecg-full's other two tasks (full test split, 23,520 checkpoints)
 
 - **Ending** (6 classes): accuracy 0.662, macro-F1 0.222; signals baseline 0.655 / 0.225; majority 0.494 / 0.110.
