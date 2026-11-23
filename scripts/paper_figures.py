@@ -112,16 +112,26 @@ def load() -> dict:
 # ---------------------------------------------------------------- drawing helpers
 
 
-def letter(ax, text: str) -> None:
-    ax.text(-0.13, 1.08, text, transform=ax.transAxes, fontsize=26, fontweight="bold", va="bottom", ha="left")
+def letter(ax, text: str, x: float = -0.13) -> None:
+    ax.text(x, 1.08, text, transform=ax.transAxes, fontsize=26, fontweight="bold", va="bottom", ha="left")
 
 
-def series(ax, values: dict, color: str, label: str, *, dashed: bool = False, band: bool = True, z: int = 3) -> None:
+def series(
+    ax,
+    values: dict,
+    color: str,
+    label: str,
+    *,
+    dashed: bool = False,
+    band: bool = True,
+    z: int = 3,
+    alpha: float = 0.11,
+) -> None:
     x = np.array(STEPS)
     y = np.array([values[k][0] for k in STEPS])
     if band:
         lo, hi = np.array([values[k][1] for k in STEPS]), np.array([values[k][2] for k in STEPS])
-        ax.fill_between(x, lo, hi, color=color, alpha=0.11, lw=0, zorder=z - 1)
+        ax.fill_between(x, lo, hi, color=color, alpha=alpha, lw=0, zorder=z - 1)
     ax.plot(x, y, color=color, lw=3, ls="--" if dashed else "-", marker="o", ms=7, label=label, zorder=z)
 
 
@@ -336,6 +346,57 @@ def site_same_issue(d: dict) -> None:
     plt.close(fig)
 
 
+def site_auroc(d: dict) -> None:
+    """The website's accuracy chart: each of our three models next to the simple model that reads the same inputs."""
+    tslm = {k: charts.model_auroc(p / "report.test.json") for k, p in charts.tslm_runs().items()}
+    names = charts.tslm_labels()
+    simple = {
+        n: charts.model_auroc(RESULTS / f"{n}.test.json")
+        for n in ("signals", "signals_thoughts", "issue_signals_thoughts", "issue")
+    }
+    panels = (
+        ("C", "Reads the agent's actions (the ECG)", "signals"),
+        ("B", "Reads its thoughts and actions", "signals_thoughts"),
+        ("A", "Reads the issue, thoughts and actions", "issue_signals_thoughts"),
+    )
+    fig, axes = plt.subplots(1, 3, figsize=(17, 6.6), sharey=True)
+    fig.subplots_adjust(left=0.065, right=0.99, top=0.74, bottom=0.14, wspace=0.08)
+    for ax, (slot, title, base), tag in zip(axes, panels, "abc", strict=True):
+        ax.axhline(0.5, color=PALETTE["gray"], lw=1.6, ls=":", zorder=1)
+        ax.text(31.5, 0.506, "coin flip", ha="right", va="bottom", fontsize=12, color=PALETTE["gray"])
+        series(ax, simple["issue"], "#A9A9A9", "Simple model, issue text only", dashed=True, band=False)
+        series(ax, simple[base], PALETTE["gray"], "Simple model, same inputs", alpha=0.07)
+        series(ax, tslm[slot], PALETTE["blue_main"], "Our model", z=4, alpha=0.09)
+        steps_axis(ax)
+        ax.set_ylim(0.47, 0.78)
+        ax.set_title(title, fontsize=16.5, pad=30)
+        ax.text(
+            0.5,
+            1.035,
+            f"our model: {names[slot]}",
+            transform=ax.transAxes,
+            ha="center",
+            fontsize=12.5,
+            color=PALETTE["gray"],
+        )
+        letter(ax, tag, x=-0.13 if tag == "a" else -0.04)
+    axes[0].set_ylabel("AUROC (0.5 = coin flip)")
+    for ax in axes[1:]:
+        ax.tick_params(axis="y", left=False)
+    handles, labels = axes[0].get_legend_handles_labels()
+    order = [2, 1, 0]  # ours, same inputs, issue only
+    fig.legend(
+        [handles[i] for i in order],
+        [labels[i] for i in order],
+        loc="upper center",
+        ncol=3,
+        fontsize=14,
+        bbox_to_anchor=(0.53, 0.995),
+    )
+    save_web(fig, "auroc_paper")
+    plt.close(fig)
+
+
 def site_monitor(d: dict) -> None:
     """The website's live-monitor chart: three rates side by side, and which failing runs each monitor caught."""
     m = d["monitor"]
@@ -412,6 +473,7 @@ def main() -> None:
     social_figure(d)
     site_same_issue(d)
     site_monitor(d)
+    site_auroc(d)
 
 
 if __name__ == "__main__":

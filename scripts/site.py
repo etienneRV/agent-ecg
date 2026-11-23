@@ -24,7 +24,7 @@ RESULTS = charts.RESULTS
 SITE = ROOT / "site"
 SITE_URL = "https://etiennerv.github.io/agent-ecg/"  # GitHub Pages address of the repo; used for link previews
 FIGS = ("hero_ecg", "auroc_by_step", "monitor_numbers", "failing_vs_resolved", "training_curves")
-PAPER_FIGS = ("same_issue", "paper_results", "monitor_paper")  # scripts/paper_figures.py
+PAPER_FIGS = ("same_issue", "paper_results", "monitor_paper", "auroc_paper")  # scripts/paper_figures.py
 ENDINGS = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
 
 
@@ -330,8 +330,8 @@ def main() -> None:
         f"(grey, dashed) {values['show_signals']} on this run. Below it are the 19 series the model reads, one row each.",
     )
     values["fig_auroc"] = figure(
-        "auroc_by_step",
-        "Test AUROC at 5 to 30 steps for three TSLMs and their baselines",
+        "auroc_paper",
+        "Three panels: AUROC at 5 to 30 steps for each of our models and the simple model that reads the same inputs",
         "Each panel puts one of our models (blue) next to a simple model that reads the same inputs (grey). The "
         "dashed line is a model that reads only the issue text. Shading: 95&nbsp;% confidence interval.",
     )
