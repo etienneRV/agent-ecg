@@ -1,9 +1,9 @@
 <title>Agent ECG</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
-<meta name="description" content="A heart monitor for AI coding agents: it reads every step of a run and flags failing runs $alarm_lead steps before a classical monitor.">
+<meta name="description" content="A heart monitor for AI coding agents: it reads every step of a run and flags failing runs $alarm_lead steps before a simple statistical model does.">
 <meta property="og:title" content="Agent ECG: catch a failing coding agent mid-run">
-<meta property="og:description" content="A heart monitor for AI coding agents: it reads every step of a run and flags failing runs $alarm_lead steps before a classical monitor.">
+<meta property="og:description" content="A heart monitor for AI coding agents: it reads every step of a run and flags failing runs $alarm_lead steps before a simple statistical model does.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="$site_url">
 <meta property="og:image" content="${site_url}social_preview.png">
@@ -195,54 +195,71 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
   <section class="section">
     <div class="narrow">
       <h2 class="title centered">Abstract</h2>
-      <p class="abstract">$fail_first of SWE-agent runs on real GitHub issues fail, and you only find out when the run is over. Agent ECG watches the run while it happens. We turned $n_runs runs into a new TimeNet dataset that records each run like a heartbeat: $n_ckpt checkpoints, 19 signals per step, the agent's own reasoning and the issue it was given. On top of it we fine-tuned a time-series language model (OpenTSLM on Llama 3.2 1B) that reads a run step by step and says whether it will make it. Everything is tested on $test_runs runs from $test_repos repositories it never saw. Replayed as a live monitor, it flags failing runs $alarm_lead steps sooner than a classical monitor (half of its catches by step $a_median, against step $s_median) and catches $a_only failing runs that monitor lets through. On two attempts at the same issue it is level with the strongest classical baseline at every step; over all runs that baseline keeps a small edge ($gap_lo to $gap_hi AUROC), mostly by spotting hard issues from their text. And at every step it writes a status report in plain English.</p>
+      <p class="abstract">In our data, SWE-agent (an open-source coding agent, here running on Llama 3.1) fails $fail_first of its runs on real GitHub issues, and you only find out when the run is over. Agent ECG watches the run while it happens. We turned $n_runs runs into a new TimeNet dataset that records each run like a heartbeat: $n_ckpt snapshots of runs still in progress, with 19 signals per step, the agent's own reasoning and the issue it was given. On top of it we fine-tuned a time-series language model (OpenTSLM on Llama 3.2 1B) that reads a run step by step and says whether it will make it, and we compared it with simple statistical models that count words and actions. Everything is tested on $test_runs runs from $test_repos repositories it never saw. Replayed as a live monitor, it flags failing runs $alarm_lead steps sooner than the simple model (half of its catches by step $a_median, against step $s_median) and catches $a_only failing runs that the simple model lets through. On two attempts at the same issue it is level with the strongest simple model at every step; over all runs that model keeps a small edge, $gap_lo_pts to $gap_hi_pts points on a 100-point scale where a coin flip scores 50, mostly by spotting hard issues from their text. And at every step it writes a status report in plain English.</p>
+    </div>
+  </section>
+
+  <!-- the agent's ECG: the time series the model reads -->
+  <section class="section light">
+    <div class="container">
+      <h2 class="title centered">What It Reads: The Agent's ECG</h2>
+      <div class="narrow">
+        <p class="lead">Every step of a run adds one beat to 19 time series: how long the agent thinks, what it types and what comes back, what it does, and how the environment answers. Stacked together they form the run's ECG. Our TimeNet dataset records it for all $n_runs runs, and the monitor reads it one step at a time, while the run is still going.</p>
+        <div class="channels">
+          <div><h4>4 lengths</h4><p>the agent's thought, its command, the environment's reply, and the whole conversation so far</p></div>
+          <div><h4>5 actions</h4><p>edit, create a file, run code, read, search</p></div>
+          <div><h4>5 replies</h4><p>rejected edit, traceback, command error, timeout, silent success</p></div>
+          <div><h4>5 patterns</h4><p>repeated command, same file as the last edit, and whether an edit touches a source, test or own file</p></div>
+        </div>
+      </div>
+      $fig_hero
     </div>
   </section>
 
   <!-- method -->
-  <section class="section light">
+  <section class="section">
     <div class="container">
       <h2 class="title centered">Method</h2>
-      <div class="pipe-wrap"><svg class="pipeline" viewBox="0 0 980 440" role="img" aria-label="Method. Top: each run is split into checkpoints, its first 5, 10, 15, 20 or 30 steps; the model sees only those steps, as 19 series plus the agent's thoughts and the issue. Bottom: a TSLM and a classical baseline read the same input and give a chance of failure, which the monitor turns into health and an alarm.">
+      <div class="pipe-wrap"><svg class="pipeline" viewBox="0 0 980 440" role="img" aria-label="Method. Top: each run is cut into snapshots of its first 5, 10, 15, 20 or 30 steps; the model sees only those steps, as 19 signals plus the agent's thoughts and the issue. Bottom: our model and a simple model read the same input and give a chance of failure, which the monitor turns into a health score and an alarm.">
   <defs><marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#94a3b8"/></marker></defs>
   <g font-family="Inter, Helvetica, Arial, sans-serif">
-    <text x="20" y="30" font-size="12" font-weight="700" letter-spacing="1" fill="#64748b">1 · EACH RUN IS SPLIT INTO CHECKPOINTS</text>
+    <text x="20" y="30" font-size="12" font-weight="700" letter-spacing="1" fill="#64748b">1 · EACH RUN IS CUT INTO SNAPSHOTS</text>
     <rect x="20" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="37" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="54" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="71" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="88" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="105" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="122" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="139" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="156" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="173" y="62" width="14" height="26" rx="3" fill="#334155"/><rect x="190" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="207" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="224" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="241" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="258" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="275" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="292" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="309" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="326" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="343" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="360" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="377" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="394" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="411" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="428" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="445" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="462" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="479" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="496" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="513" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="530" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="547" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="564" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/><rect x="581" y="62" width="14" height="26" rx="3" fill="#e2e8f0"/>
     <line x1="103.5" y1="52" x2="103.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="103.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">5</text><line x1="188.5" y1="52" x2="188.5" y2="98" stroke="#d32323" stroke-width="2.5" stroke-dasharray=""/><text x="188.5" y="114" text-anchor="middle" font-size="12" font-weight="700" fill="#d32323">10</text><line x1="273.5" y1="52" x2="273.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="273.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">15</text><line x1="358.5" y1="52" x2="358.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="358.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">20</text><line x1="528.5" y1="52" x2="528.5" y2="98" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/><text x="528.5" y="114" text-anchor="middle" font-size="12" font-weight="400" fill="#94a3b8">30</text>
-    <text x="106" y="138" text-anchor="middle" font-size="12.5" font-weight="600" fill="#d32323">checkpoint: first 10 steps</text>
+    <text x="106" y="138" text-anchor="middle" font-size="12.5" font-weight="600" fill="#d32323">snapshot: first 10 steps</text>
     <text x="400" y="138" text-anchor="middle" font-size="12.5" fill="#64748b">rest of the run, and its outcome: hidden</text>
     <text x="310" y="168" text-anchor="middle" font-size="12.5" fill="#475569">The model checks the run after 5, 10, 15, 20 and 30 steps.</text>
     <line x1="604" y1="75" x2="634" y2="75" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
     <rect x="640" y="40" width="330" height="152" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
-    <text x="805" y="63" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">Checkpoint: the model's input</text>
+    <text x="805" y="63" text-anchor="middle" font-size="14" font-weight="700" fill="#1e293b">Snapshot: what the model sees</text>
     <polyline points="656,79 668,83 680,83 692,79 704,80 716,83 728,81 740,83 752,77 764,83 776,77 788,81 800,80" fill="none" stroke="#475569" stroke-width="1.4"/><polyline points="656,95 668,91 680,91 692,93 704,95 716,95 728,93 740,93 752,91 764,91 776,91 788,95 800,93" fill="none" stroke="#475569" stroke-width="1.4"/><line x1="656" y1="104" x2="800" y2="104" stroke="#f1f5f9" stroke-width="9"/><rect x="790" y="100" width="3" height="8" fill="#1e293b"/><rect x="658" y="100" width="3" height="8" fill="#1e293b"/><rect x="670" y="100" width="3" height="8" fill="#1e293b"/><rect x="682" y="100" width="3" height="8" fill="#1e293b"/><line x1="656" y1="116" x2="800" y2="116" stroke="#f1f5f9" stroke-width="9"/><rect x="766" y="112" width="3" height="8" fill="#1e293b"/><rect x="658" y="112" width="3" height="8" fill="#1e293b"/><rect x="706" y="112" width="3" height="8" fill="#1e293b"/><rect x="778" y="112" width="3" height="8" fill="#1e293b"/><line x1="656" y1="128" x2="800" y2="128" stroke="#f1f5f9" stroke-width="9"/><rect x="706" y="124" width="3" height="8" fill="#1e293b"/><rect x="742" y="124" width="3" height="8" fill="#1e293b"/><rect x="766" y="124" width="3" height="8" fill="#1e293b"/><rect x="730" y="124" width="3" height="8" fill="#1e293b"/><line x1="656" y1="140" x2="800" y2="140" stroke="#f1f5f9" stroke-width="9"/><rect x="790" y="136" width="3" height="8" fill="#1e293b"/><rect x="730" y="136" width="3" height="8" fill="#1e293b"/><rect x="778" y="136" width="3" height="8" fill="#1e293b"/><rect x="742" y="136" width="3" height="8" fill="#1e293b"/>
-    <text x="728" y="178" text-anchor="middle" font-size="12" fill="#475569">19 series: the agent's ECG</text>
+    <text x="728" y="178" text-anchor="middle" font-size="12" fill="#475569">19 signals per step: the agent's ECG</text>
     <rect x="818" y="80" width="138" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
     <text x="887" y="98" text-anchor="middle" font-size="12" fill="#334155">agent's thoughts</text>
     <rect x="818" y="116" width="138" height="26" rx="6" fill="#f8fafc" stroke="#e2e8f0"/>
     <text x="887" y="134" text-anchor="middle" font-size="12" fill="#334155">issue text</text>
     <text x="887" y="178" text-anchor="middle" font-size="12" fill="#475569">text, by model</text>
     <text x="20" y="246" font-size="12" font-weight="700" letter-spacing="1" fill="#64748b">2 · MODELS AND MONITOR</text>
-    <text x="20" y="282" font-size="13" fill="#334155">Each TSLM is paired with a</text>
-    <text x="20" y="300" font-size="13" fill="#334155">classical baseline that reads</text>
+    <text x="20" y="282" font-size="13" fill="#334155">Each of our models is paired with a</text>
+    <text x="20" y="300" font-size="13" fill="#334155">simple model that reads</text>
     <text x="20" y="318" font-size="13" fill="#334155">exactly the same input:</text>
     <text x="20" y="346" font-size="13" font-weight="600" fill="#1e293b">ECG only · + thoughts · + issue</text>
     <path d="M805,192 V214 H330 V380" fill="none" stroke="#94a3b8" stroke-width="2"/>
     <line x1="330" y1="290" x2="356" y2="290" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
     <line x1="330" y1="380" x2="356" y2="380" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
     <rect x="362" y="255" width="280" height="70" rx="14" fill="#eef6fc" stroke="#bfdcf0"/>
-    <text x="502" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="#0a74b8">TSLM</text>
-    <text x="502" y="301" text-anchor="middle" font-size="12.5" fill="#475569">OpenTSLM-SoftPrompt, Llama 3.2 1B:</text>
-    <text x="502" y="317" text-anchor="middle" font-size="12.5" fill="#475569">series become tokens next to the text</text>
+    <text x="502" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="#0a74b8">Our model</text>
+    <text x="502" y="301" text-anchor="middle" font-size="12.5" fill="#475569">a language model (Llama 3.2 1B)</text>
+    <text x="502" y="317" text-anchor="middle" font-size="12.5" fill="#475569">that reads signals and text together</text>
     <rect x="362" y="345" width="280" height="70" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
-    <text x="502" y="373" text-anchor="middle" font-size="15" font-weight="700" fill="#475569">Baseline</text>
-    <text x="502" y="394" text-anchor="middle" font-size="12.5" fill="#475569">classical model on the same input</text>
+    <text x="502" y="373" text-anchor="middle" font-size="15" font-weight="700" fill="#475569">Simple model</text>
+    <text x="502" y="394" text-anchor="middle" font-size="12.5" fill="#475569">counts words and actions, same input</text>
     <path d="M642,290 H672 V335" fill="none" stroke="#94a3b8" stroke-width="2"/>
     <path d="M642,380 H672 V335" fill="none" stroke="#94a3b8" stroke-width="2"/>
     <line x1="672" y1="335" x2="702" y2="335" stroke="#94a3b8" stroke-width="2" marker-end="url(#arr)"/>
     <rect x="708" y="255" width="262" height="160" rx="14" fill="#ffffff" stroke="#e2e8f0"/>
     <text x="839" y="281" text-anchor="middle" font-size="15" font-weight="700" fill="#1e293b">Monitor</text>
-    <text x="839" y="302" text-anchor="middle" font-size="12.5" fill="#475569">chance of failure → health 0–100,</text>
+    <text x="839" y="302" text-anchor="middle" font-size="12.5" fill="#475569">chance of failure → health 0 to 100,</text>
     <text x="839" y="319" text-anchor="middle" font-size="12.5" fill="#475569">compared with runs of the same age</text>
     <rect x="730" y="336" width="218" height="12" rx="6" fill="#e2e8f0"/>
     <rect x="730" y="336" width="44" height="12" rx="6" fill="#d32323"/>
@@ -254,7 +271,7 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
   </section>
 
   <!-- demo -->
-  <section class="section">
+  <section class="section light">
     <div class="container">
       <h2 class="title centered">Demo</h2>
       <figure class="demo">
@@ -266,19 +283,19 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
   </section>
 
   <!-- results -->
-  <section class="section light">
+  <section class="section">
     <div class="container">
       <h2 class="title">Results</h2>
       <div class="keys">
-        <div class="key tslm"><b>step $a_median</b><h3>$alarm_lead steps ahead</h3><p>Half of its catches come by step $a_median. The classical monitor needs until step $s_median.</p></div>
-        <div class="key tslm"><b>$a_only</b><h3>Failures the other monitor missed</h3><p>Replayed on $mon_total runs it had never seen, it caught $a_only failing runs that the classical monitor let through.</p></div>
+        <div class="key tslm"><b>step $a_median</b><h3>$alarm_lead steps ahead</h3><p>Half of its catches come by step $a_median. The simple model needs until step $s_median.</p></div>
+        <div class="key tslm"><b>$a_only</b><h3>Failures the other monitor missed</h3><p>Replayed on $mon_total runs it had never seen, it caught $a_only failing runs that the simple model let through.</p></div>
         <div class="key tslm"><b>$a_first_pct</b><h3>Nearly 2 in 3 after $k_first steps</h3><p>Show it a run that will succeed and one that will fail. After only $k_first steps it picks the failing one $a_first_pct of the time. Reading the issue alone gets $iss_first_pct; a coin flip gets 50&nbsp;%.</p></div>
-        <div class="key tslm"><b>&asymp;&nbsp;0</b><h3>Dead heat on the same issue</h3><p>Two attempts at the same issue: no clear winner between our model and the strongest classical baseline, at any step.</p></div>
-        <div class="key tslm"><b>$status_format</b><h3>It reports in plain English</h3><p>Every step comes with a written status report: what the agent has done and where the run is heading. The classical models give you a number.</p></div>
+        <div class="key tslm"><b>&asymp;&nbsp;0</b><h3>Dead heat on the same issue</h3><p>Two attempts at the same issue: no clear winner between our model and the strongest simple model, at any step.</p></div>
+        <div class="key tslm"><b>$status_format</b><h3>It reports in plain English</h3><p>Every step comes with a written status report: what the agent has done and where the run is heading. The simple models only give a number.</p></div>
         <div class="key"><b>$test_repos</b><h3>Repositories it never saw</h3><p>Every result on this page comes from $test_runs runs on $test_repos repositories kept out of training.</p></div>
       </div>
       <h3 class="finding-title" style="margin-top:2.6rem">Same issue, dead heat</h3>
-      <p class="lead">Over all runs, the strongest classical baseline keeps a small edge of $gap_lo_pts to $gap_hi_pts points, mostly by spotting hard issues from their text before the agent even starts. Put two attempts at the same issue side by side, where that shortcut is useless, and the edge is gone: no clear winner at any step.</p>
+      <p class="lead">Over all runs, the strongest simple model keeps a small edge of $gap_lo_pts to $gap_hi_pts points, mostly by spotting hard issues from their text before the agent even starts. Put two attempts at the same issue side by side, where that shortcut is useless, and the edge is gone: no clear winner at any step.</p>
       $fig_same_issue
       <h3 class="finding-title" style="margin-top:2.6rem">It calls it $alarm_lead steps sooner</h3>
       <p class="lead">We replayed $mon_total unseen runs step by step, as if both monitors were watching them live.</p>
@@ -287,12 +304,12 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
   </section>
 
   <!-- limitations -->
-  <section class="section">
+  <section class="section light">
     <div class="narrow content">
       <h2 class="title">What it can't do yet</h2>
       <ul class="findings">
-        <li><strong>Beat the strongest baseline over all runs.</strong> Given the same inputs, a classical model stays $gap_lo_pts to $gap_hi_pts points ahead of $label_a from $k_first to 20 steps, a gap too small to be sure of.</li>
-        <li><strong>Prove it reads the ECG.</strong> We have not shuffled the ECGs between runs to check how much $label_a relies on them. Our ECG-only model, $label_c, does score above chance.</li>
+        <li><strong>Beat the strongest simple model over all runs.</strong> Given the same inputs, it stays $gap_lo_pts to $gap_hi_pts points ahead of our model from $k_first to 20 steps, a gap too small to be sure of.</li>
+        <li><strong>Prove it reads the ECG.</strong> We have not shuffled the ECGs between runs to check how much our model relies on them. A version that reads only the ECG does score above chance.</li>
       </ul>
     </div>
   </section>
@@ -358,7 +375,6 @@ pre.cmd { background: var(--code-bg); border: 1px solid var(--border); border-ra
       </table></div>
       <p class="note">* At the natural share of resolved runs among runs that last 20 steps ($natural). False alarms are the share of resolved runs flagged.</p>
       <p style="margin-top:1.2rem">The two monitors flag mostly different runs: $a_only only by $mon_name, $s_only only by the signals baseline, and $both by both. Part of $mon_name's head start comes from the issue text: half of its alarms fire at the earliest possible step, and they cluster by issue. The example run below is one where $mon_name's alarm rests on behaviour, and $mon_name spares the other runs of the same issue.</p>
-      $fig_hero
       $fig_runs
   </div></section>
 

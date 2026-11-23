@@ -377,7 +377,8 @@ def main() -> None:
         "Our model's score minus the best simple model's on two attempts at the same issue, at 5 to 30 steps, with confidence intervals",
         "Our model's score minus that of the best simple model, which reads the same inputs, on pairs of a failing "
         "and a succeeding attempt at the same issue. Each bar is a 95&nbsp;% confidence interval; every one crosses "
-        "zero, so neither model is clearly ahead. Data: <code>results/same_issue/</code>.",
+        "zero, so neither model is clearly ahead (each bar shows where the true gap most likely lies). Data: "
+        "<code>results/same_issue/</code>.",
     )
     values["fig_paper"] = figure(
         "paper_results",

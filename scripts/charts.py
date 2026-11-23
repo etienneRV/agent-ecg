@@ -88,20 +88,20 @@ LIGHT = Theme(
     "light",
     bg="#ffffff",
     panel="#f3f5f4",
-    ink="#111816",
-    ink2="#3d4744",
+    ink="#272727",
+    ink2="#3d3d3d",
     muted="#6b7571",
     grid="#e3e7e5",
     stable="#16924c",
     watch="#b98900",
     low="#d9620a",
     critical="#d32323",
-    tslm="#0a74b8",
-    cpu="#6b7280",
+    tslm="#0F4D92",
+    cpu="#767676",
     glow=False,
 )
 
-FONT = ["Inter", "Helvetica Neue", "Helvetica", "Arial", "DejaVu Sans"]
+FONT = ["Helvetica", "Arial", "DejaVu Sans"]  # the paper figures' house style (figures4papers)
 SIZE = {"title": 34, "subtitle": 20, "label": 19, "tick": 17, "small": 15, "note": 14, "big": 64}
 
 
@@ -151,9 +151,9 @@ def footer(fig: plt.Figure, t: Theme, text: str) -> None:
 
 
 def style_axis(ax: plt.Axes, t: Theme) -> None:
-    for side in ("left", "bottom"):
-        ax.spines[side].set_color(t.grid)
-        ax.spines[side].set_linewidth(1.2)
+    for side in ("left", "bottom"):  # the website's light charts take the paper figures' dark, heavier axes
+        ax.spines[side].set_color(t.ink2 if t.name == "light" else t.grid)
+        ax.spines[side].set_linewidth(1.8 if t.name == "light" else 1.2)
     ax.tick_params(length=0, pad=8)
 
 
