@@ -24,7 +24,7 @@ RESULTS = charts.RESULTS
 SITE = ROOT / "site"
 SITE_URL = "https://etiennerv.github.io/agent-ecg/"  # GitHub Pages address of the repo; used for link previews
 FIGS = ("hero_ecg", "auroc_by_step", "monitor_numbers", "failing_vs_resolved", "training_curves")
-PAPER_FIGS = ("same_issue", "paper_results")  # scripts/paper_figures.py
+PAPER_FIGS = ("same_issue", "paper_results", "monitor_paper")  # scripts/paper_figures.py
 ENDINGS = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
 
 
@@ -86,6 +86,10 @@ def auroc_table() -> dict:
     gaps = [cpu["issue_signals_thoughts"][k][0] - tslm["A"][k][0] for k in early]
     sig = cpu["signals"]
     return {
+        "sig_first_pct": f"{100 * sig[charts.STEPS[0]][0]:.0f}&nbsp;%",
+        "sig_last_pct": f"{100 * sig[charts.STEPS[-1]][0]:.0f}&nbsp;%",
+        "gap_lo_pts": f"{100 * min(gaps):.0f}",
+        "gap_hi_pts": f"{100 * max(gaps):.0f}",
         "label_a": names["A"],
         "label_b": names["B"],
         "label_c": names["C"],
@@ -116,6 +120,7 @@ def monitor() -> dict:
     return {
         "mon_total": a["failing"] + a["resolved"],
         "mon_failing": a["failing"],
+        "mon_neither": a["failing"] - m["a_only"] - m["both"] - m["s_only"],
         "mon_resolved": a["resolved"],
         "mon_rows": row(charts.MONITOR_MODEL, a) + row(charts.SIGNALS_BASELINE, s),
         "a_right": f"{a['right']:.0f}&nbsp;%",
@@ -234,6 +239,8 @@ def same_issue() -> dict:
     return {
         "si_lo": signed(min(a[k][0] for k in early)),
         "si_hi": signed(max(a[k][0] for k in early)),
+        "si_lo_pts": f"{100 * min(a[k][0] for k in early):+.1f}".replace("-", "&minus;"),
+        "si_hi_pts": f"{100 * max(a[k][0] for k in early):+.1f}".replace("-", "&minus;"),
         "si_sig_first": f"{(0.5 + sig[charts.STEPS[0]][0]) * 100:.0f}&nbsp;%",
         "si_sig_last": f"{(0.5 + sig[charts.STEPS[-1]][0]) * 100:.0f}&nbsp;%",
         "a_val_evals": len(history),
@@ -325,13 +332,16 @@ def main() -> None:
     values["fig_auroc"] = figure(
         "auroc_by_step",
         "Test AUROC at 5 to 30 steps for three TSLMs and their baselines",
-        "Each panel pairs a TSLM (blue) with the baseline that reads the same inputs (grey). The dashed line reads "
-        "the issue text only; the shading is a 95&nbsp;% interval from resampling test repositories.",
+        "Each panel puts one of our models (blue) next to a simple model that reads the same inputs (grey). The "
+        "dashed line is a model that reads only the issue text. Shading: 95&nbsp;% confidence interval.",
     )
     values["fig_monitor"] = figure(
-        "monitor_numbers",
-        "Stat cards and a Venn diagram comparing the two live monitors",
-        f"The Venn counts are the failing runs each monitor flags (of {values['mon_failing']}); the circles are not to scale.",
+        "monitor_paper",
+        "Bars comparing how often each monitor flags failing and successful runs and how early, and a Venn diagram of the failing runs each one caught",
+        f"We replayed all {values['mon_resolved']} test runs that succeeded and lasted at least 20 steps, plus "
+        f"{values['mon_failing']} failing runs picked at random. The simple model reads only the agent's actions. Right: "
+        f"of the {values['mon_failing']} failing runs, which monitor caught which; {values['mon_neither']} were caught "
+        "by neither. The circles are not to scale.",
     )
     values["fig_runs"] = figure(
         "failing_vs_resolved",
@@ -347,11 +357,10 @@ def main() -> None:
     values["fig_same_issue"] = figure(
         "same_issue",
         "Two panels: the gap between ecg-full and its baseline over all runs and on same-issue pairs, and the share of same-issue pairs each model ranks right",
-        f"(a) {values['label_a']} minus the issue + signals + thoughts baseline at each checkpoint: pink over all test "
-        "runs (AUROC), blue on pairs of a resolved and an unresolved run on the same issue. Bars: 95&nbsp;% intervals "
-        "from resampling test repositories. (b) The share of such pairs where a model scores the resolved run higher. "
-        "The issue text alone scores 0.50 by construction; the band is the ECG baseline's 95&nbsp;% interval. "
-        "Sources: <code>results/same_issue/</code>.",
+        "Left: our model's score minus the simple model's (same inputs), over all test runs (pink) and over two "
+        "attempts at the same issue (blue). Each bar is a 95&nbsp;% confidence interval; a bar that crosses zero means "
+        "no clear winner. Right: how often each model ranks the attempt that succeeds above the one that fails. The "
+        "issue text alone scores 0.50 here by design. Data: <code>results/same_issue/</code>.",
     )
     values["fig_paper"] = figure(
         "paper_results",
