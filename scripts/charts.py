@@ -381,6 +381,31 @@ def alarm(ax: plt.Axes, t: Theme, df: pd.DataFrame, text: str) -> int | None:
     return step
 
 
+ENDING_TEXT = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
+
+
+def after_alarm(ax: plt.Axes, t: Theme, step: int, last: int, row: pd.Series | None = None) -> None:
+    """Fade everything after the alarm: in use the run is stopped there, so what follows is what stopping saves.
+    With ``row`` (the run's longest checkpoint), also say what the run did when left running."""
+    ax.axvspan(step + 0.05, last + 0.6, color=t.bg, alpha=0.68, lw=0, zorder=5.5)
+    if row is None:
+        return
+    total = len(row["action_kind"]) + int(row["remaining"])
+    ending = ENDING_TEXT.get(row["ending"], str(row["ending"]).replace("_", " "))
+    fixed = "and fixed the issue" if row["resolved"] else "without fixing the issue"
+    ax.text(
+        last + 0.4,
+        21,
+        f"Left running: {total - step} more steps (to step {total}),\nthen it {ending} {fixed}",
+        ha="right",
+        va="center",
+        fontsize=SIZE["small"],
+        color=t.ink2,
+        zorder=7,
+        linespacing=1.3,
+    )
+
+
 def legend_line(fig: plt.Figure, t: Theme, x: float, y: float, items: list[tuple[str, dict]]) -> None:
     """A one-row legend in figure coordinates: a short line sample and its label for each item."""
     ax = fig.add_axes([x, y - 0.015, 0.9 - x, 0.03])
@@ -444,9 +469,9 @@ def hero_ecg(t: Theme, out: Path) -> None:
         left,
         0.855,
         [
-            (f"{MONITOR_MODEL} (issue + thoughts + ECG)", {"segments": [t.stable, t.watch, t.low, t.critical]}),
+            (f"our model ({MONITOR_MODEL})", {"segments": [t.stable, t.watch, t.low, t.critical]}),
             (
-                SIGNALS_BASELINE + ("" if alarm_step(s) else ": no alarm"),
+                "simple model, actions only" + ("" if alarm_step(s) else ": no alarm"),
                 {"color": t.cpu, "lw": 2, "ls": (0, (5, 3))},
             ),
         ],
@@ -485,6 +510,8 @@ def hero_ecg(t: Theme, out: Path) -> None:
     if step is not None:
         lx.axvline(step, color=t.critical, lw=1.5, alpha=0.7, zorder=1)
         ax.axvline(step, color=t.critical, lw=1.5, alpha=0.4, zorder=1)
+        after_alarm(ax, t, step, n, row)
+        lx.axvspan(step + 0.5, n + 0.6, color=t.bg, alpha=0.6, lw=0, zorder=3)
     lx.set_yticks([])
     lx.set_xticks([1, 5, 10, 15, 20, 25, n] if n not in (25, 26) else [1, 5, 10, 15, 20, n])
     lx.text(
@@ -527,6 +554,7 @@ def failing_vs_resolved(t: Theme, out: Path) -> None:
         step = alarm(ax, t, a, "")
         if step is not None:
             ax.texts[-1].set_text(f"step {step}: stop the agent")
+            after_alarm(ax, t, step, int(a["step"].max()), row)
         sa, ss = alarm_step(a), alarm_step(s)
         say = lambda name, st, df: f"{name} alarms at step {st}" if st else f"{name} lowest: {lowest_state(df)}"  # noqa: E731
         ax.text(
@@ -884,6 +912,7 @@ def social_preview(t: Theme) -> None:
     if step is not None:
         ax.texts[-1].set_text(f"step {step}: stop the agent")
         ax.texts[-1].set_fontsize(20)
+        after_alarm(ax, t, step, int(a["step"].max()), run_row(SHOWCASE))
     fig.savefig(ROOT / "site" / "social_preview.png", dpi=DPI)
     plt.close(fig)
     print("  site/social_preview.png")

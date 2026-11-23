@@ -24,7 +24,7 @@ RESULTS = charts.RESULTS
 SITE = ROOT / "site"
 SITE_URL = "https://etiennerv.github.io/agent-ecg/"  # GitHub Pages address of the repo; used for link previews
 FIGS = ("hero_ecg", "auroc_by_step", "monitor_numbers", "failing_vs_resolved", "training_curves")
-PAPER_FIGS = ("same_issue", "paper_results", "monitor_paper")  # scripts/paper_figures.py
+PAPER_FIGS = ("same_issue", "paper_results", "monitor_paper", "auroc_paper")  # scripts/paper_figures.py
 ENDINGS = {"context_limit": "ran out of context", "submitted": "submitted a patch", "early_exit": "exited early"}
 
 
@@ -87,6 +87,7 @@ def auroc_table() -> dict:
     sig = cpu["signals"]
     return {
         "sig_first_pct": f"{100 * sig[charts.STEPS[0]][0]:.0f}&nbsp;%",
+        "a_first_pct": f"{100 * tslm['A'][charts.STEPS[0]][0]:.0f}&nbsp;%",
         "sig_last_pct": f"{100 * sig[charts.STEPS[-1]][0]:.0f}&nbsp;%",
         "gap_lo_pts": f"{100 * min(gaps):.0f}",
         "gap_hi_pts": f"{100 * max(gaps):.0f}",
@@ -125,9 +126,12 @@ def monitor() -> dict:
         "mon_rows": row(charts.MONITOR_MODEL, a) + row(charts.SIGNALS_BASELINE, s),
         "a_right": f"{a['right']:.0f}&nbsp;%",
         "a_flagged": f"{a['flagged']:.0f}&nbsp;%",
+        "s_flagged": f"{s['flagged']:.0f}&nbsp;%",
+        "s_false": f"{s['false_alarms']:.0f}&nbsp;%",
         "a_false": f"{a['false_alarms']:.0f}&nbsp;%",
         "a_median": a["median_step"],
         "s_median": s["median_step"],
+        "alarm_lead": s["median_step"] - a["median_step"],
         "natural": f"{m['natural']:.1f}&nbsp;%",
         "both": m["both"],
         "a_only": m["a_only"],
@@ -141,7 +145,12 @@ def showcase() -> dict:
     s = charts.replay(charts.SCAN / "replay.showcase.signals.jsonl", charts.SHOWCASE)
     row = charts.run_row(charts.SHOWCASE)
     step = charts.alarm_step(a)
+    total = len(row["action_kind"]) + int(row["remaining"])
+    late = json.loads((RESULTS / "issue_signals_thoughts.test.json").read_text())["outcome"]["k=15"]["resolved_rate"]
     return {
+        "show_saved": total - step,
+        "show_fixed": "and fixed the issue" if row["resolved"] else "without fixing the issue",
+        "late_fail": f"{round(10 * (1 - late))} in 10",
         "show_issue": row["instance_id"],
         "show_steps": len(row["action_kind"]),
         "show_alarm": step,
@@ -239,6 +248,8 @@ def same_issue() -> dict:
     return {
         "si_lo": signed(min(a[k][0] for k in early)),
         "si_hi": signed(max(a[k][0] for k in early)),
+        "si_best_step": max(early, key=lambda k: a[k][0]),
+        "status_format": f"{100 * json.loads((RESULTS / 'opentslm' / 'full-multi.alltasks' / 'report.test.json').read_text())['status']['all (pooled)']['parse_rate']:.1f}&nbsp;%",
         "si_lo_pts": f"{100 * min(a[k][0] for k in early):+.1f}".replace("-", "&minus;"),
         "si_hi_pts": f"{100 * max(a[k][0] for k in early):+.1f}".replace("-", "&minus;"),
         "si_sig_first": f"{(0.5 + sig[charts.STEPS[0]][0]) * 100:.0f}&nbsp;%",
@@ -324,29 +335,35 @@ def main() -> None:
     values["fig_hero"] = figure(
         "hero_ecg",
         "Health of one agent run over 30 steps, with the 19 input series below",
-        f"One example, chosen to illustrate: an unseen test run on <code>{values['show_issue']}</code>. {charts.MONITOR_MODEL}'s health falls through watch and low "
-        f"while the agent keeps re-editing the same file after the linter rejected its edits, and the alarm fires at "
-        f"step {values['show_alarm']}. The run went on to fail (it {values['show_end']}). The signals baseline "
-        f"(grey, dashed) {values['show_signals']} on this run. Below it are the 19 series the model reads, one row each.",
+        f"One example, chosen to illustrate: an unseen test run on <code>{values['show_issue']}</code>. Our model's health "
+        f"falls through watch and low while the agent keeps re-editing the same file after the linter rejected its edits, "
+        f"and the alarm fires at step {values['show_alarm']}. In use, the run would be stopped there; the faded part shows "
+        f"what it did instead. It went on for {values['show_saved']} more steps and {values['show_end']} "
+        f"{values['show_fixed']}. Health climbs back once the agent stops repeating the rejected edit, because it ranks "
+        f"the run against others that have lasted as long, and by step 15 about {values['late_fail']} of those fail too: "
+        f"a stable reading late in a run is no promise of success. The simple model reading only the actions (grey, "
+        f"dashed) {values['show_signals']} on this run. Below are the 19 series the model reads, one row each.",
     )
     values["fig_auroc"] = figure(
-        "auroc_by_step",
-        "Test AUROC at 5 to 30 steps for three TSLMs and their baselines",
+        "auroc_paper",
+        "Three panels: AUROC at 5 to 30 steps for each of our models and the simple model that reads the same inputs",
         "Each panel puts one of our models (blue) next to a simple model that reads the same inputs (grey). The "
         "dashed line is a model that reads only the issue text. Shading: 95&nbsp;% confidence interval.",
     )
     values["fig_monitor"] = figure(
         "monitor_paper",
-        "Bars comparing how often each monitor flags failing and successful runs and how early, and a Venn diagram of the failing runs each one caught",
+        "Bars comparing how early each monitor flags failing runs, and a Venn diagram of the failing runs each one caught",
         f"We replayed all {values['mon_resolved']} test runs that succeeded and lasted at least 20 steps, plus "
-        f"{values['mon_failing']} failing runs picked at random. The simple model reads only the agent's actions. Right: "
-        f"of the {values['mon_failing']} failing runs, which monitor caught which; {values['mon_neither']} were caught "
-        "by neither. The circles are not to scale.",
+        f"{values['mon_failing']} failing runs picked at random; the simple model reads only the agent's actions. Our "
+        f"model flagged {values['a_flagged']} of the failing runs (simple model: {values['s_flagged']}) and raised false "
+        f"alarms on {values['a_false']} of the runs that succeeded (simple model: {values['s_false']}). The circles "
+        "are not to scale.",
     )
     values["fig_runs"] = figure(
         "failing_vs_resolved",
         "Health over time for a failing and a resolved run, both monitors",
-        f"The showcase failing run and a resolved run. {charts.MONITOR_MODEL} stays stable on the resolved run until a dip to watch "
+        f"The showcase failing run and a resolved run. After the alarm the failing run is faded: in use it would be "
+        f"stopped there. {charts.MONITOR_MODEL} stays stable on the resolved run until a dip to watch "
         "at the end; the signals baseline reads it as low early on.",
     )
     values["fig_training"] = figure(
@@ -356,11 +373,10 @@ def main() -> None:
     )
     values["fig_same_issue"] = figure(
         "same_issue",
-        "Two panels: the gap between ecg-full and its baseline over all runs and on same-issue pairs, and the share of same-issue pairs each model ranks right",
-        "Left: our model's score minus the simple model's (same inputs), over all test runs (pink) and over two "
-        "attempts at the same issue (blue). Each bar is a 95&nbsp;% confidence interval; a bar that crosses zero means "
-        "no clear winner. Right: how often each model ranks the attempt that succeeds above the one that fails. The "
-        "issue text alone scores 0.50 here by design. Data: <code>results/same_issue/</code>.",
+        "Our model's score minus the best simple model's on two attempts at the same issue, at 5 to 30 steps, with confidence intervals",
+        "Our model's score minus that of the best simple model, which reads the same inputs, on pairs of a failing "
+        "and a succeeding attempt at the same issue. Each bar is a 95&nbsp;% confidence interval; every one crosses "
+        "zero, so neither model is clearly ahead. Data: <code>results/same_issue/</code>.",
     )
     values["fig_paper"] = figure(
         "paper_results",

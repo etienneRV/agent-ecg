@@ -61,6 +61,7 @@ STYLE = {
     "ytick.major.width": 2,
     "legend.frameon": False,
     "svg.fonttype": "none",
+    "svg.hashsalt": "agent-ecg",  # stable element ids: reruns give the same SVG files
     "pdf.fonttype": 42,
 }
 
@@ -112,16 +113,26 @@ def load() -> dict:
 # ---------------------------------------------------------------- drawing helpers
 
 
-def letter(ax, text: str) -> None:
-    ax.text(-0.13, 1.08, text, transform=ax.transAxes, fontsize=26, fontweight="bold", va="bottom", ha="left")
+def letter(ax, text: str, x: float = -0.13) -> None:
+    ax.text(x, 1.08, text, transform=ax.transAxes, fontsize=26, fontweight="bold", va="bottom", ha="left")
 
 
-def series(ax, values: dict, color: str, label: str, *, dashed: bool = False, band: bool = True, z: int = 3) -> None:
+def series(
+    ax,
+    values: dict,
+    color: str,
+    label: str,
+    *,
+    dashed: bool = False,
+    band: bool = True,
+    z: int = 3,
+    alpha: float = 0.11,
+) -> None:
     x = np.array(STEPS)
     y = np.array([values[k][0] for k in STEPS])
     if band:
         lo, hi = np.array([values[k][1] for k in STEPS]), np.array([values[k][2] for k in STEPS])
-        ax.fill_between(x, lo, hi, color=color, alpha=0.11, lw=0, zorder=z - 1)
+        ax.fill_between(x, lo, hi, color=color, alpha=alpha, lw=0, zorder=z - 1)
     ax.plot(x, y, color=color, lw=3, ls="--" if dashed else "-", marker="o", ms=7, label=label, zorder=z)
 
 
@@ -324,65 +335,115 @@ def social_figure(d: dict) -> None:
 
 
 def site_same_issue(d: dict) -> None:
-    """The website's same-issue chart: the social card's two panels, without its title and banner (the page has
-    its own heading and caption)."""
-    fig, axes = plt.subplots(1, 2, figsize=(16, 6.6))
-    fig.subplots_adjust(left=0.08, right=0.98, top=0.86, bottom=0.14, wspace=0.28)
-    panel_gap(axes[0], d)
-    panel_same(axes[1], d)
-    for ax, tag in zip(axes, "ab", strict=True):
-        letter(ax, tag)
+    """The website's same-issue chart: our model minus the best simple model on two attempts at the same issue."""
+    g = d["gap_same"]
+    fig, ax = plt.subplots(figsize=(13, 6.2))
+    fig.subplots_adjust(left=0.12, right=0.97, top=0.86, bottom=0.15)
+    x = np.array(STEPS, float)
+    y = np.array([g[k][0] for k in STEPS])
+    err = np.array([[g[k][0] - g[k][1] for k in STEPS], [g[k][2] - g[k][0] for k in STEPS]])
+    ax.axhspan(0, 0.12, color=PALETTE["blue_light"], alpha=0.35, lw=0, zorder=0)
+    ax.axhline(0, color=PALETTE["ink"], lw=1.8, zorder=1)
+    ax.errorbar(
+        x,
+        y,
+        yerr=err,
+        fmt="o",
+        ms=13,
+        color=PALETTE["blue_main"],
+        ecolor=PALETTE["blue_main"],
+        elinewidth=3.5,
+        capsize=7,
+        capthick=3,
+        mec=PALETTE["ink"],
+        mew=1.2,
+        zorder=3,
+    )
+    ax.text(31.5, 0.108, "ours ahead", ha="right", va="top", fontsize=14, color=PALETTE["blue_main"])
+    ax.text(31.5, -0.158, "simple model ahead", ha="right", va="bottom", fontsize=14, color=PALETTE["gray"])
+    steps_axis(ax)
+    ax.set_ylim(-0.17, 0.12)
+    ax.set_ylabel("Our score minus the simple model's")
+    ax.set_title("Two attempts at the same issue: no clear winner at any step", fontsize=18, pad=14)
     save_web(fig, "same_issue")
     plt.close(fig)
 
 
+def site_auroc(d: dict) -> None:
+    """The website's accuracy chart: each of our three models next to the simple model that reads the same inputs."""
+    tslm = {k: charts.model_auroc(p / "report.test.json") for k, p in charts.tslm_runs().items()}
+    names = charts.tslm_labels()
+    simple = {
+        n: charts.model_auroc(RESULTS / f"{n}.test.json")
+        for n in ("signals", "signals_thoughts", "issue_signals_thoughts", "issue")
+    }
+    panels = (
+        ("C", "Reads the agent's actions (the ECG)", "signals"),
+        ("B", "Reads its thoughts and actions", "signals_thoughts"),
+        ("A", "Reads the issue, thoughts and actions", "issue_signals_thoughts"),
+    )
+    fig, axes = plt.subplots(1, 3, figsize=(17, 6.6), sharey=True)
+    fig.subplots_adjust(left=0.065, right=0.99, top=0.74, bottom=0.14, wspace=0.08)
+    for ax, (slot, title, base), tag in zip(axes, panels, "abc", strict=True):
+        ax.axhline(0.5, color=PALETTE["gray"], lw=1.6, ls=":", zorder=1)
+        ax.text(31.5, 0.506, "coin flip", ha="right", va="bottom", fontsize=12, color=PALETTE["gray"])
+        series(ax, simple["issue"], "#A9A9A9", "Simple model, issue text only", dashed=True, band=False)
+        series(ax, simple[base], PALETTE["gray"], "Simple model, same inputs", alpha=0.07)
+        series(ax, tslm[slot], PALETTE["blue_main"], "Our model", z=4, alpha=0.09)
+        steps_axis(ax)
+        ax.set_ylim(0.47, 0.78)
+        ax.set_title(title, fontsize=16.5, pad=30)
+        ax.text(
+            0.5,
+            1.035,
+            f"our model: {names[slot]}",
+            transform=ax.transAxes,
+            ha="center",
+            fontsize=12.5,
+            color=PALETTE["gray"],
+        )
+        letter(ax, tag, x=-0.13 if tag == "a" else -0.04)
+    axes[0].set_ylabel("AUROC (0.5 = coin flip)")
+    for ax in axes[1:]:
+        ax.tick_params(axis="y", left=False)
+    handles, labels = axes[0].get_legend_handles_labels()
+    order = [2, 1, 0]  # ours, same inputs, issue only
+    fig.legend(
+        [handles[i] for i in order],
+        [labels[i] for i in order],
+        loc="upper center",
+        ncol=3,
+        fontsize=14,
+        bbox_to_anchor=(0.53, 0.995),
+    )
+    save_web(fig, "auroc_paper")
+    plt.close(fig)
+
+
 def site_monitor(d: dict) -> None:
-    """The website's live-monitor chart: three rates side by side, and which failing runs each monitor caught."""
+    """The website's live-monitor chart: how early each monitor flags failing runs, and which ones each catches."""
     m = d["monitor"]
     a, s = m["A"], m["signals"]
     neither = a["failing"] - m["a_only"] - m["both"] - m["s_only"]
     fig = plt.figure(figsize=(16, 6.4))
-    rates = (
-        ("Failing runs\nflagged", a["flagged"], s["flagged"], "{:.0f}%", 46, "higher is better"),
-        (
-            "False alarms on runs\nthat succeeded",
-            a["false_alarms"],
-            s["false_alarms"],
-            "{:.0f}%",
-            46,
-            "lower is better",
-        ),
-        ("Half the catches\ncame by", a["median_step"], s["median_step"], "step {:.0f}", 12.5, "lower is earlier"),
+    ax = fig.add_axes([0.13, 0.3, 0.33, 0.36])
+    steps = [a["median_step"], s["median_step"]]
+    ax.barh(
+        [1, 0], steps, height=0.56, color=[PALETTE["blue_main"], PALETTE["neutral"]], edgecolor=PALETTE["ink"], lw=2
     )
-    for i, (title, ours, simple, fmt, top, hint) in enumerate(rates):
-        ax = fig.add_axes([0.035 + i * 0.19, 0.2, 0.14, 0.56])
-        bars = ax.bar(
-            [0, 1],
-            [ours, simple],
-            width=0.62,
-            color=[PALETTE["blue_main"], PALETTE["neutral"]],
-            edgecolor=PALETTE["ink"],
-            lw=2,
-            zorder=2,
-        )
-        for bar, v in zip(bars, (ours, simple), strict=True):
-            ax.text(
-                bar.get_x() + bar.get_width() / 2,
-                v + top * 0.03,
-                fmt.format(v),
-                ha="center",
-                va="bottom",
-                fontsize=17,
-                fontweight="bold",
-            )
-        ax.set_xticks([0, 1], ["Ours", "Simple\nmodel"])
-        ax.tick_params(axis="x", length=0, labelsize=14)
-        ax.set_ylim(0, top)
-        ax.set_yticks([])
-        ax.spines["left"].set_visible(False)
-        ax.set_title(title, fontsize=16, pad=14)
-        ax.text(0.5, -0.25, hint, transform=ax.transAxes, ha="center", fontsize=12.5, color=PALETTE["gray"])
-    ax = fig.add_axes([0.6, 0.02, 0.38, 0.92])
+    for y, v in zip([1, 0], steps, strict=True):
+        ax.text(v + 0.25, y, f"step {v}", va="center", fontsize=19, fontweight="bold", color=PALETTE["ink"])
+    ax.set_yticks([1, 0], ["Our model", "Simple model"])
+    ax.tick_params(axis="y", length=0, labelsize=16)
+    ax.set_xlim(0, max(steps) * 1.4)
+    ax.set_xticks([])
+    ax.spines["bottom"].set_visible(False)
+    ax.spines["left"].set_visible(False)
+    ax.text(0, 1.42, "Raises the alarm earlier", transform=ax.transAxes, fontsize=20, fontweight="bold")
+    ax.text(
+        0, 1.2, "the step by which half of its catches came", transform=ax.transAxes, fontsize=14, color=PALETTE["gray"]
+    )
+    ax = fig.add_axes([0.56, 0.02, 0.42, 0.92])
     ax.set_aspect("equal")
     ax.axis("off")
     cx = 0.62
@@ -390,15 +451,24 @@ def site_monitor(d: dict) -> None:
     ax.add_patch(
         Circle((cx, 0), 1, facecolor=PALETTE["neutral"], edgecolor=PALETTE["gray"], lw=2.5, alpha=0.55, zorder=2)
     )
-    for x, n, label in ((-1.08, m["a_only"], "ours only"), (0, m["both"], "both"), (1.08, m["s_only"], "simple only")):
-        ax.text(
-            x, 0.1, f"{n}", ha="center", va="center", fontsize=34, fontweight="bold", color=PALETTE["ink"], zorder=3
-        )
+    for x, n, label, color in (
+        (-1.08, m["a_only"], "only ours", PALETTE["blue_main"]),
+        (0, m["both"], "both", PALETTE["ink"]),
+        (1.08, m["s_only"], "only simple", PALETTE["ink"]),
+    ):
+        ax.text(x, 0.1, f"{n}", ha="center", va="center", fontsize=34, fontweight="bold", color=color, zorder=3)
         ax.text(x, -0.3, label, ha="center", va="center", fontsize=14, color=PALETTE["ink"], zorder=3)
     ax.text(-cx, 1.2, "Our model", ha="center", fontsize=16, fontweight="bold", color=PALETTE["blue_main"])
     ax.text(cx, 1.2, "Simple model", ha="center", fontsize=16, fontweight="bold", color=PALETTE["gray"])
-    ax.text(0, 1.62, f"Which of the {a['failing']} failing runs each one caught", ha="center", fontsize=17)
-    ax.text(0, -1.38, f"{neither} were caught by neither", ha="center", fontsize=14, color=PALETTE["gray"])
+    ax.text(0, 1.62, f"Catches {m['a_only']} failing runs the simple model misses", ha="center", fontsize=17)
+    ax.text(
+        0,
+        -1.38,
+        f"of {a['failing']} failing runs replayed; {neither} caught by neither",
+        ha="center",
+        fontsize=14,
+        color=PALETTE["gray"],
+    )
     ax.set_xlim(-1.9, 1.9)
     ax.set_ylim(-1.6, 1.85)
     save_web(fig, "monitor_paper")
@@ -412,6 +482,7 @@ def main() -> None:
     social_figure(d)
     site_same_issue(d)
     site_monitor(d)
+    site_auroc(d)
 
 
 if __name__ == "__main__":
